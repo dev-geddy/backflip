@@ -12,3 +12,14 @@ Rules: cite upward only (L3→L2→L1, by stable ID); conflict order L1>L2>L3; p
 - Not done until docs current — no code lands with stale docs.
 
 If `/docs/constitution.md` missing, run skill Bootstrap first.
+
+## Code placement (colocation)
+Non-route code — components, hooks, utils, contexts, etc. — goes in **underscore-prefixed dirs**: `_components`, `_hooks`, `_utils`, `_contexts`, `_lib`, … (underscore = Next.js private folder, excluded from routing).
+
+Colocate by **scope proximity**:
+- App-wide → `app/_components/…` (in the app's `app/` root).
+- Layout-scoped → in that layout's dir.
+- Page-scoped → in that page's dir.
+- Cross-app / shared → `packages/*`.
+
+Invariants: `L1-ARCH-07`, `L1-ARCH-08`.
