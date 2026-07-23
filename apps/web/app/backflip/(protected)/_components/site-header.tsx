@@ -10,8 +10,7 @@ export function SiteHeader({ title = "Dashboard" }: { title?: string }) {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        {/* Pinned to 1rem — excluded from the house +2px text bump. */}
-        <h1 className="text-[1rem] font-medium">{title}</h1>
+        <h1 className="text-base font-medium">{title}</h1>
       </div>
     </header>
   )
