@@ -47,5 +47,11 @@ How to operate the backflip monorepo. Terse. Exact commands.
 ## Code placement
 Colocation convention: non-route code → underscore dirs (`_components`, `_hooks`, …), scoped by proximity. See `CLAUDE.md` + `L1-ARCH-07/08`.
 
+## UX conventions
+- Keyboard-first: add shortcuts for common/repeated actions (nav, submit, toggle, close) so users skip the mouse.
+- Surface each shortcut visibly with the `kbd` component (`@workspace/ui/components/kbd`) so it's discoverable.
+- Use, don't overuse: only high-value/frequent actions. No shortcut for rare/destructive-without-confirm ops. Avoid clashing with browser/OS defaults.
+- Explanations: use `hover-card` (`@workspace/ui/components/hover-card`) for contextual detail/definitions where helpful — keep inline UI clean, reveal depth on hover. Don't overuse.
+
 ## Stack
 Next.js 16.2.6 · React 19.2.4 · TypeScript 5 · Tailwind v4 · shadcn/ui · Turborepo · yarn 4.17.1.
