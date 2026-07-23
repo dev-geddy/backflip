@@ -1,19 +1,31 @@
-import Link from "next/link"
+import type { Metadata } from "next"
 
-export default function Page() {
+import { FeatureGrid } from "./_components/feature-grid"
+import { Hero } from "./_components/hero"
+import { HowItWorks } from "./_components/how-it-works"
+import { SiteFooter } from "./_components/site-footer"
+import { SiteHeader } from "./_components/site-header"
+import { WordmarkBand } from "./_components/wordmark-band"
+
+export const metadata: Metadata = {
+  title: "Backflip — a batteries-included platform foundation",
+  description:
+    "Clone it and start building features, not boilerplate. Auth, admin dashboard, Postgres + Drizzle, a shadcn UI system, and AI wiring, ready on day one.",
+}
+
+// Server Component (RSC). No client hooks here — the only interactive island is
+// the theme toggle inside <SiteHeader />.
+export default function HomePage() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-8">
-      <h1 className="text-[9vw] leading-none font-bold tracking-tight text-muted-foreground/20 select-none">
-        backflip
-      </h1>
-      <nav className="flex gap-6 text-sm">
-        <Link href="/backflip" className="underline underline-offset-4 hover:text-foreground">
-          Admin
-        </Link>
-        <Link href="/ui-samples" className="underline underline-offset-4 hover:text-foreground">
-          UI Samples
-        </Link>
-      </nav>
+    <div className="min-h-dvh bg-background text-foreground">
+      <SiteHeader />
+      <main>
+        <Hero />
+        <FeatureGrid />
+        <HowItWorks />
+        <WordmarkBand />
+      </main>
+      <SiteFooter />
     </div>
   )
 }
