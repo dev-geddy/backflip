@@ -47,7 +47,8 @@ export function AppSidebar({
               render={<Link href="/backflip" />}
             >
               <RiShapesLine className="size-5!" />
-              <span className="text-base font-semibold">Backflip</span>
+              {/* Pinned to 1rem — excluded from the house +2px text bump. */}
+              <span className="text-[1rem] font-semibold">Backflip</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
