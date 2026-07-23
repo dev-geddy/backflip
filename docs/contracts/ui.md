@@ -7,14 +7,14 @@
 > **Depends on L2:** none
 
 ## Owns
-Shared design system: `packages/ui` component library, theme, and the `/styleguide` demo.
+Shared design system: `packages/ui` component library, theme, and the `/ui-samples` demo.
 
 ## Interfaces
 - `L2-UI-01` — `@workspace/ui/components/*` — shadcn component set. Apps import from here, never fork.
 - `L2-UI-02` — `@workspace/ui/lib/utils` → `cn()` — class merge helper.
 - `L2-UI-03` — `@workspace/ui/globals.css` — theme tokens (CSS vars), imported once in root layout.
 - `L2-UI-04` — Root layout providers: `ThemeProvider` (next-themes), `TooltipProvider`, `Toaster` (sonner). (`apps/web/app/layout.tsx`)
-- `L2-UI-05` — Route `/styleguide` — renders every component; `d` toggles dark mode. (`apps/web/app/styleguide/page.tsx`)
+- `L2-UI-05` — Route `/ui-samples` — renders every component; `d` toggles dark mode. (`apps/web/app/ui-samples/page.tsx`)
 
 ## Schemas
 - `L2-UI-06` — shadcn config (`packages/ui/components.json`): style `base-mira`, baseColor `neutral`, RSC on, icons `remixicon`, css vars on.
@@ -29,7 +29,7 @@ Shared design system: `packages/ui` component library, theme, and the `/stylegui
 - `L2-UI-11` — Component used without required provider → runtime context error. Mount provider in root layout.
 
 ## Acceptance
-- `L2-UI-12` — `/styleguide` renders all components without error; dark toggle works.
+- `L2-UI-12` — `/ui-samples` renders all components without error; dark toggle works.
 - `L2-UI-13` — Any app imports a component via `@workspace/ui/components/*` and it themes correctly.
 
 ## Constrained L3
