@@ -30,7 +30,9 @@ dist
 
 # editors / tooling
 .idea/
-.claude/
+.claude/*
+!.claude/skills/
+.claude/settings.local.json
 
 # debug
 npm-debug.log*

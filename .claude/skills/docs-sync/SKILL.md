@@ -52,8 +52,13 @@ Check `/docs/constitution.md`.
 - **New bounded context/domain** → draft new L2 contract (`references/l2-contract-template.md`, cite L1) + new L3 notes + add domain to L1 "Governed domains". L2 = propose+approve; L3 = free.
 - **Deleted/moved code** → prune or update matching L2/L3. Dead docs = drift.
 
+**Code placement (project convention — enforce on every change)**
+- Non-route code (components, hooks, utils, contexts, …) → underscore-prefixed dirs: `_components`, `_hooks`, `_utils`, `_contexts`, `_lib`, … Underscore = Next.js private folder (no routing).
+- Colocate by scope proximity: app-wide → `app/_components/…`; layout-scoped → in that layout dir; page-scoped → in that page dir; cross-app/shared → `packages/*`.
+- Invariants: `L1-ARCH-07`, `L1-ARCH-08`. Misplaced code = drift → move it.
+
 **Definition of done**
-Code change not done until: L3 updated, new/changed L2 proposed, no stale doc left.
+Code change not done until: L3 updated, new/changed L2 proposed, code placed per convention, no stale doc left.
 
 **Halt — never silent**
 - Need L2 change (interface/schema/invariant/dep/error)? → don't edit mid-flow. Emit L2 diff + affected-L3 list → STOP → await human.
