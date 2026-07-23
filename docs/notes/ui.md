@@ -15,6 +15,9 @@
 - `apps/web/app/ui-samples/page.tsx` — component demo (`UISamplesPage`, heading "UI Samples"), dashboard/masonry layout reproducing the `base-mira` create-preview; exercises ~50 components (item, field, input-group, native-select, toggle-group, chart/recharts, empty, spinner, progress, calendar, radio, table, tabs, accordion, …). `d` = dark toggle. Satisfies `L2-UI-05`, `L2-UI-12`. Note: uncontrolled `defaultValue` passed to base-ui ToggleGroup/Slider must be stable module-scope refs (base-ui warns on identity change per render).
 - `apps/web/next.config.ts` — `transpilePackages: ["@workspace/ui"]`. Satisfies `L2-UI-10`.
 
+## Form-element sizing (house tweak)
+Form primitives bumped +2px padding + +2px font over the base-mira defaults, heights grown to fit: `button` (all size + icon variants; also `cursor-pointer` on every button), `input`, `textarea`, `native-select`, `select` trigger. Arbitrary px values (`px-[10px]`, `py-[4px]`, `text-base`) where no clean Tailwind step exists. Re-adding these via `shadcn add` would overwrite the tweak.
+
 ## Installed components (60)
 Full `base-mira` registry (added via `shadcn add -a -c packages/ui`):
 accordion, alert, alert-dialog, aspect-ratio, attachment, avatar, badge, breadcrumb, bubble,
