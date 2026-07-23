@@ -10,9 +10,11 @@
 - `packages/db/src/load-env.ts` — loads root `.env` + `.env.local` (root = 3 up from src). Imported first by standalone scripts (seed, drizzle.config).
 - `packages/db/src/seed/owner.ts` — `init-owner`. Reads `ADMIN_EMAIL`/`ADMIN_PASSWORD`, bcrypt(12), upsert on email, role `owner`. Satisfies `L2-DB-04`.
 - `packages/db/drizzle.config.ts` — dialect postgresql, schema `src/schema.ts`, out `migrations/`. Imports `load-env`.
-- `packages/db/src/migrate.ts` — programmatic migrator (`drizzle-orm/.../migrator`). `db:migrate` runs this via tsx. `drizzle-kit migrate` silently no-ops here, so we don't use it. `db:generate`/`db:studio` still use drizzle-kit.
 - `packages/db/src/crypto.ts` — `encryptSecret`/`decryptSecret` (AES-256-GCM, key = sha256(`ENCRYPTION_KEY`)). Satisfies `L2-DB-16`.
 - `packages/db/migrations/` — single squashed baseline (`0000_*.sql`) + `meta/`. Satisfies `L2-DB-08`.
+
+## Gotcha — type-change migrations
+- `drizzle-kit generate` emits column type changes as bare `SET DATA TYPE` with no `USING` cast. For incompatible casts (e.g. text→integer) Postgres rejects the SQL, and `drizzle-kit migrate` fails *quietly* (prints "applying…", no success line, journal not advanced — looks like a no-op). Fix: hand-edit the generated SQL to add `USING <col>::<type>`, or `db:push` in dev. (This is what broke the old `0001`; the baseline was squashed to avoid it.)
 
 ## Notes / deviations
 - tsconfig overrides base to `module ESNext` + `moduleResolution Bundler` (pkg is consumed by Next bundler + run by tsx; avoids NodeNext `.js` extension churn).
