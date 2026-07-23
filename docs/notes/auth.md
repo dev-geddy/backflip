@@ -3,7 +3,7 @@
 > L3 = how / volatile. AI writes free. Cites L2 IDs up. Matches code as-is.
 
 ## File map
-- `apps/web/middleware.ts` — session gate. Satisfies `L2-AUTH-01`, `L2-AUTH-06`, `L2-AUTH-08`. Matcher `/backflip/:path*`.
+- `apps/web/proxy.ts` — session gate. Exports `proxy(request)` (Next 16 renamed `middleware`→`proxy`). Satisfies `L2-AUTH-01`, `L2-AUTH-06`, `L2-AUTH-08`. Matcher `/backflip/:path*`.
 - `apps/web/app/backflip/layout.tsx` — scope root layout. Wraps (auth) + (protected). Shell TBD.
 - `apps/web/app/backflip/(auth)/login/page.tsx` — login page. Satisfies `L2-AUTH-02`. Placeholder.
 - `apps/web/app/backflip/(protected)/layout.tsx` — authed chrome host. Placeholder.

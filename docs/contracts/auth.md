@@ -10,7 +10,7 @@
 Admin auth boundary for `/backflip/*`: session gate, login route, Google sign-in flow.
 
 ## Interfaces
-- `L2-AUTH-01` — `middleware(request)` — gates `/backflip/:path*`; unauth → redirect `/backflip/login?from=<path>`. Login route stays public. (`apps/web/middleware.ts`)
+- `L2-AUTH-01` — `proxy(request)` — gates `/backflip/:path*`; unauth → redirect `/backflip/login?from=<path>`. Login route stays public. (`apps/web/proxy.ts`) [Next 16 renamed the `middleware` convention → `proxy`.]
 - `L2-AUTH-02` — Route `/backflip/login` — public admin login page (Google sign-in). [STUB — placeholder page]
 - `L2-AUTH-03` — Google OAuth callback endpoint — establishes session on success. [NOT IMPLEMENTED]
 - `L2-AUTH-04` — Sign-out — clears session. [NOT IMPLEMENTED]
