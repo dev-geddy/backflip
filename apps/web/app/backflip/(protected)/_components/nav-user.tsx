@@ -20,11 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar"
-import {
-  RiMore2Line,
-  RiLogoutBoxLine,
-  RiUserLine,
-} from "@remixicon/react"
+import { RiMore2Line, RiLogoutBoxLine, RiUserLine } from "@remixicon/react"
 import { signOut } from "next-auth/react"
 
 import type { SessionUser } from "./types"
