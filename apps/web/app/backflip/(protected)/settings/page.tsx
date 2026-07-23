@@ -44,7 +44,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6 px-4 lg:px-6">
+    <div className="flex w-full flex-col gap-6">
       <Card className="p-6">
         <section className="flex flex-col gap-6">
           <h2 className="text-lg font-semibold">AI integration</h2>
