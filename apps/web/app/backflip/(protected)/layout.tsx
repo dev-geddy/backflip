@@ -1,20 +1,19 @@
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { redirect } from "next/navigation"
 
-import { Separator } from "@workspace/ui/components/separator"
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@workspace/ui/components/sidebar"
 
 import { auth } from "@/app/_lib/auth"
 import { AppSidebar } from "./_components/app-sidebar"
+import { SiteHeader } from "./_components/site-header"
 import type { SessionUser } from "./_components/types"
 
 /**
- * Authenticated /backflip shell: sidebar + header. The proxy already gates
- * this subtree; `auth()` here provides the session user for the nav.
+ * Authenticated /backflip shell (dashboard-01 layout): inset sidebar + site
+ * header. The proxy already gates this subtree; `auth()` provides the user.
  */
 export default async function ProtectedLayout({
   children,
@@ -32,18 +31,20 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar user={user} />
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" user={user} />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <h1 className="text-sm font-medium">Dashboard</h1>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
