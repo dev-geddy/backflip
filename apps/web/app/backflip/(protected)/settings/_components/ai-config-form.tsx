@@ -3,14 +3,7 @@
 import { useActionState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
-import { Field, FieldDescription, FieldLabel } from "@workspace/ui/components/field"
+import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { NativeSelect } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
@@ -38,7 +31,11 @@ const LABEL: Record<ProviderConfig["provider"], string> = {
 }
 
 const MODELS: Record<ProviderConfig["provider"], string[]> = {
-  anthropic: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5-20251001"],
+  anthropic: [
+    "claude-opus-4-8",
+    "claude-sonnet-5",
+    "claude-haiku-4-5-20251001",
+  ],
   openai: ["gpt-4.1", "gpt-4o", "o3", "o4-mini"],
   google: ["gemini-2.5-pro", "gemini-2.5-flash"],
 }
@@ -47,11 +44,13 @@ function ProviderForm({ cfg }: { cfg: ProviderConfig }) {
   const [state, action, pending] = useActionState(saveAiConfig, null)
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex max-w-80 flex-col gap-4">
       <input type="hidden" name="provider" value={cfg.provider} />
 
+      <div className="text-sm font-medium">{LABEL[cfg.provider]}</div>
+
       <Field>
-        <FieldLabel htmlFor={`model-${cfg.provider}`}>Model</FieldLabel>
+        <FieldLabel htmlFor={`model-${cfg.provider}`}>Default model</FieldLabel>
         <NativeSelect
           id={`model-${cfg.provider}`}
           name="model"
@@ -77,9 +76,6 @@ function ProviderForm({ cfg }: { cfg: ProviderConfig }) {
             cfg.hasKey ? "•••••••• set — leave blank to keep" : "Paste API key"
           }
         />
-        <FieldDescription>
-          Stored encrypted. Leave blank to keep the current key.
-        </FieldDescription>
       </Field>
 
       <div className="flex items-center gap-3">
@@ -97,7 +93,9 @@ function ProviderForm({ cfg }: { cfg: ProviderConfig }) {
           name="isDefault"
           defaultChecked={cfg.isDefault}
         />
-        <FieldLabel htmlFor={`def-${cfg.provider}`}>Default provider</FieldLabel>
+        <FieldLabel htmlFor={`def-${cfg.provider}`}>
+          Default provider
+        </FieldLabel>
       </div>
 
       <div className="flex items-center gap-3">
@@ -123,19 +121,8 @@ export function AiConfigForm({ initial }: { initial: ProviderConfig[] }) {
         ))}
       </TabsList>
       {initial.map((c) => (
-        <TabsContent key={c.provider} value={c.provider}>
-          <Card>
-            <CardHeader>
-              <CardTitle>{LABEL[c.provider]}</CardTitle>
-              <CardDescription>
-                Configure the {LABEL[c.provider]} provider. Keys are encrypted at
-                rest.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProviderForm cfg={c} />
-            </CardContent>
-          </Card>
+        <TabsContent key={c.provider} value={c.provider} className="pt-4">
+          <ProviderForm cfg={c} />
         </TabsContent>
       ))}
     </Tabs>
