@@ -4,7 +4,7 @@
 
 ## File map
 - `apps/web/app/backflip/(protected)/settings/page.tsx` — server; loads `ai_config`, maps to view model (no key decryption; `hasKey` boolean). Satisfies `L2-AI-01`.
-- `settings/_components/ai-config-form.tsx` — client; Tabs per provider; `useActionState(saveAiConfig)`. Fields: model (`native-select`), API key (password, write-only), enabled + default (`Switch`, base-ui `name`). Static `MODELS` list per provider. (baseUrl/temperature columns exist but aren't in the form.)
+- `settings/_components/ai-config-form.tsx` — client; Tabs per provider (provider selector), flat form content (no Card), inputs capped 320px. `useActionState(saveAiConfig)`. Fields: **default model** (`native-select`; per-provider default, individual AI features may request a different model at call time), API key (password, write-only), enabled + default provider (`Switch`, base-ui `name`). Static `MODELS` list per provider. (baseUrl/temperature columns exist but aren't in the form.) Page wraps each settings section in a `Card`; inside, two-column layout: form left, vertical `Separator`, explanation prose right. Provider name shown as a title above the form.
 - `settings/_actions.ts` — `saveAiConfig` (`"use server"`): auth-gate → upsert on provider → encrypt key if provided → unset other defaults → `revalidatePath`. Satisfies `L2-AI-02`, `L2-AI-06..08`.
 - `packages/db` — `ai_config` table + `encryptSecret`/`decryptSecret` (`L2-DB-16/17`).
 

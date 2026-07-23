@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { aiConfig, db, encryptSecret } from "@workspace/db"
+import { aiConfig, db, emailConfig, encryptSecret } from "@workspace/db"
 import { ne } from "drizzle-orm"
 
 import { auth } from "@/app/_lib/auth"
@@ -25,8 +25,7 @@ export async function saveAiConfig(
   }
 
   const model = (String(formData.get("model") ?? "").trim() || null) as
-    | string
-    | null
+    string | null
   const enabled = formData.get("enabled") != null
   const isDefault = formData.get("isDefault") != null
   const apiKey = String(formData.get("apiKey") ?? "")
@@ -51,6 +50,38 @@ export async function saveAiConfig(
       .set({ isDefault: false })
       .where(ne(aiConfig.provider, provider as Provider))
   }
+
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Saved." }
+}
+
+/**
+ * Upsert the single Resend email config row. Encrypts the API key when
+ * supplied; blank key field keeps the existing key. Admin-gated.
+ */
+export async function saveEmailConfig(
+  _prev: SaveState,
+  formData: FormData
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+
+  const str = (k: string) => String(formData.get(k) ?? "").trim() || null
+  const set: Record<string, unknown> = {
+    provider: "resend",
+    fromEmail: str("fromEmail"),
+    fromName: str("fromName"),
+    replyTo: str("replyTo"),
+    enabled: formData.get("enabled") != null,
+    updatedAt: new Date(),
+  }
+  const apiKey = String(formData.get("apiKey") ?? "")
+  if (apiKey) set.apiKeyEnc = encryptSecret(apiKey)
+
+  await db
+    .insert(emailConfig)
+    .values(set as typeof emailConfig.$inferInsert)
+    .onConflictDoUpdate({ target: emailConfig.provider, set })
 
   revalidatePath("/backflip/settings")
   return { ok: true, message: "Saved." }
