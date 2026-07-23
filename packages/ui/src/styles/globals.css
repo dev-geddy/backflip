@@ -117,18 +117,6 @@
     --color-sidebar-ring: var(--sidebar-ring);
     --font-sans: var(--font-sans);
     --font-heading: var(--font-heading);
-    /* House scale: every text-* utility is bumped +2px over the Tailwind
-       default (font only; line-heights keep their default ratios). One place,
-       so form/button fonts grow exactly once — never baked into components. */
-    --text-xs: calc(0.75rem + 2px);
-    --text-sm: calc(0.875rem + 2px);
-    --text-base: calc(1rem + 2px);
-    --text-lg: calc(1.125rem + 2px);
-    --text-xl: calc(1.25rem + 2px);
-    --text-2xl: calc(1.5rem + 2px);
-    --text-3xl: calc(1.875rem + 2px);
-    --text-4xl: calc(2.25rem + 2px);
-    --text-5xl: calc(3rem + 2px);
 }
 
 @layer base {
