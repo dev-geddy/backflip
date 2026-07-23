@@ -9,24 +9,28 @@ Stack: Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · Drizzle + Postgres 
 - **Node ≥ 20** with **corepack** (pins `yarn@4.17.1` — always run `corepack yarn …`)
 
 ## Run it locally
+
+**1. Create env files (first time only).** Copy the template, then add `.env.local`:
 ```bash
-# 1. Env files (first time only)
 cp .env.example .env
-cat > .env.local <<'EOF'
+```
+Create **`.env.local`** with:
+```
 ADMIN_EMAIL=you@example.com
 ADMIN_PASSWORD=change-me-strong
 AUTH_SECRET=replace-with-openssl-rand-base64-33
 AUTH_TRUST_HOST=true
-EOF
+```
+Generate a real secret with `openssl rand -base64 33`.
 
-# 2. Install + database + admin + run
+**2. Install, set up the database, run:**
+```bash
 corepack yarn install
 docker compose up -d db      # start Postgres (Docker)
 corepack yarn db:migrate     # create tables
 corepack yarn init-owner     # seed admin from .env.local
 corepack yarn dev            # app → http://localhost:3070
 ```
-Generate a real secret: `openssl rand -base64 33`.
 
 ## Log in
 - Sign in at **http://localhost:3070/backflip/login** with your `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
