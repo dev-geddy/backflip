@@ -1,0 +1,47 @@
+# Constitution (L1) — Backflip
+
+> L1 = invariants / why. Human-only changes. Cites nothing up. Governs L2 below.
+> Style: terse. One fact per line.
+> Source intent: `/docs/kickoff/phase1.md`.
+
+## Purpose
+Foundation platform. Baseline setup + features so builders bootstrap projects fast.
+Tailored for AI-assisted dev — non-technical builders extend it via established guidelines.
+
+## Domain model
+- **Platform** — the shared foundation (stack, conventions, UI system, docs discipline).
+- **Admin** — operator surface under `/backflip/*`. Auth-gated.
+- **Public** — end-user facing surface. Open.
+- **Admin user** — authenticates via Google. Holds a session.
+- **UI system** — shared component library + theme, consumed by all surfaces.
+
+## Boundaries
+- `L1-ARCH-01` — Two surfaces: Public (open) and Admin (`/backflip/*`, gated). Distinct rendering strategies.
+- `L1-ARCH-02` — Public pages: mostly SSR.
+- `L1-ARCH-03` — Admin pages: driven by API endpoints (client fetch + loaders), not direct SSR data. [NEEDS HUMAN CONFIRMATION]
+- `L1-ARCH-04` — Admin scope owns its auth boundary. Unauthenticated → redirect to admin login.
+- `L1-ARCH-05` — Shared UI lives in `packages/ui`; apps consume, never fork components. [NEEDS HUMAN CONFIRMATION]
+- `L1-ARCH-06` — Monorepo: `apps/*` (deployables) + `packages/*` (shared libs/config).
+- `L1-ARCH-07` — Non-route code (components, hooks, utils, contexts, etc.) lives in underscore-prefixed dirs: `_components`, `_hooks`, `_utils`, `_contexts`, `_lib`, … Underscore = Next.js private folder, opted out of routing.
+- `L1-ARCH-08` — Colocate by scope proximity. App-wide → `app/_components/…`. Layout-scoped → in that layout's dir. Page-scoped → in that page's dir. Cross-app/shared → `packages/*` (per `L1-ARCH-05`).
+
+## Constraints (non-negotiable)
+- `L1-CON-01` — Admin auth is Google login based.
+- `L1-CON-02` — `/backflip/*` requires a valid session; only the admin login route is public within scope.
+- `L1-CON-03` — Foundation ships baseline + guidelines; features stay generic/extensible, not project-specific. [NEEDS HUMAN CONFIRMATION]
+- `L1-CON-04` — Three-level doc system maintained with every code change (see project CLAUDE.md).
+
+## Stack + rationale
+- `L1-STACK-01` — Next.js 16 (App Router) — unified SSR/RSC + API routes for both surfaces.
+- `L1-STACK-02` — TypeScript 5 — type safety across the foundation.
+- `L1-STACK-03` — React 19.2 — current, RSC support.
+- `L1-STACK-04` — Turborepo + yarn 4 (corepack) — monorepo builds; corepack pins yarn@4.17.1 (see [[backflip-yarn-corepack]]).
+- `L1-STACK-05` — shadcn/ui, `base-mira` style, neutral base, remixicon — themed component system from monorepo preset.
+- `L1-STACK-06` — Tailwind CSS v4 — styling, CSS variables theming.
+
+## Governed domains (L2)
+- `auth` → `/docs/contracts/auth.md`
+- `ui` → `/docs/contracts/ui.md`
+
+---
+IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.
