@@ -50,6 +50,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `infra` → `/docs/contracts/infra.md`
 - `db` → `/docs/contracts/db.md`
 - `ai` → `/docs/contracts/ai.md`
+- `email` → `/docs/contracts/email.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.
