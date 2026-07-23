@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
@@ -21,10 +21,10 @@ export type ProviderConfig = {
   model: string
   enabled: boolean
   isDefault: boolean
-  hasKey: boolean
+  keyPreview: string | null
 }
 
-const LABEL: Record<ProviderConfig["provider"], string> = {
+export const LABEL: Record<ProviderConfig["provider"], string> = {
   anthropic: "Anthropic (Claude)",
   openai: "OpenAI",
   google: "Google (Gemini)",
@@ -40,8 +40,20 @@ const MODELS: Record<ProviderConfig["provider"], string[]> = {
   google: ["gemini-2.5-pro", "gemini-2.5-flash"],
 }
 
-function ProviderForm({ cfg }: { cfg: ProviderConfig }) {
+function ProviderForm({
+  cfg,
+  onSaved,
+  onCancel,
+}: {
+  cfg: ProviderConfig
+  onSaved?: () => void
+  onCancel?: () => void
+}) {
   const [state, action, pending] = useActionState(saveAiConfig, null)
+
+  useEffect(() => {
+    if (state?.ok) onSaved?.()
+  }, [state, onSaved])
 
   return (
     <form action={action} className="flex max-w-80 flex-col gap-4">
@@ -73,7 +85,9 @@ function ProviderForm({ cfg }: { cfg: ProviderConfig }) {
           type="password"
           autoComplete="off"
           placeholder={
-            cfg.hasKey ? "•••••••• set — leave blank to keep" : "Paste API key"
+            cfg.keyPreview
+              ? `${cfg.keyPreview} — leave blank to keep`
+              : "Paste API key"
           }
         />
       </Field>
@@ -102,15 +116,33 @@ function ProviderForm({ cfg }: { cfg: ProviderConfig }) {
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save"}
         </Button>
-        {state ? (
-          <span className="text-sm text-muted-foreground">{state.message}</span>
+        {onCancel ? (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        ) : null}
+        {state && !state.ok ? (
+          <span className="text-sm text-destructive">{state.message}</span>
         ) : null}
       </div>
     </form>
   )
 }
 
-export function AiConfigForm({ initial }: { initial: ProviderConfig[] }) {
+export function AiConfigForm({
+  initial,
+  onSaved,
+  onCancel,
+}: {
+  initial: ProviderConfig[]
+  onSaved?: () => void
+  onCancel?: () => void
+}) {
   return (
     <Tabs defaultValue={initial[0]?.provider ?? "anthropic"}>
       <TabsList>
@@ -122,7 +154,7 @@ export function AiConfigForm({ initial }: { initial: ProviderConfig[] }) {
       </TabsList>
       {initial.map((c) => (
         <TabsContent key={c.provider} value={c.provider} className="pt-4">
-          <ProviderForm cfg={c} />
+          <ProviderForm cfg={c} onSaved={onSaved} onCancel={onCancel} />
         </TabsContent>
       ))}
     </Tabs>

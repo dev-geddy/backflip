@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
@@ -14,11 +14,23 @@ export type EmailConfig = {
   fromName: string
   replyTo: string
   enabled: boolean
-  hasKey: boolean
+  keyPreview: string | null
 }
 
-export function EmailConfigForm({ initial }: { initial: EmailConfig }) {
+export function EmailConfigForm({
+  initial,
+  onSaved,
+  onCancel,
+}: {
+  initial: EmailConfig
+  onSaved?: () => void
+  onCancel?: () => void
+}) {
   const [state, action, pending] = useActionState(saveEmailConfig, null)
+
+  useEffect(() => {
+    if (state?.ok) onSaved?.()
+  }, [state, onSaved])
 
   return (
     <form action={action} className="flex max-w-80 flex-col gap-4">
@@ -30,7 +42,9 @@ export function EmailConfigForm({ initial }: { initial: EmailConfig }) {
           type="password"
           autoComplete="off"
           placeholder={
-            initial.hasKey ? "•••••••• set — leave blank to keep" : "re_…"
+            initial.keyPreview
+              ? `${initial.keyPreview} — leave blank to keep`
+              : "re_…"
           }
         />
       </Field>
@@ -83,8 +97,18 @@ export function EmailConfigForm({ initial }: { initial: EmailConfig }) {
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save"}
         </Button>
-        {state ? (
-          <span className="text-sm text-muted-foreground">{state.message}</span>
+        {onCancel ? (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        ) : null}
+        {state && !state.ok ? (
+          <span className="text-sm text-destructive">{state.message}</span>
         ) : null}
       </div>
     </form>

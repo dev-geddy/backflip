@@ -1,13 +1,12 @@
 import { aiConfig, db, emailConfig } from "@workspace/db"
 import { Card } from "@workspace/ui/components/card"
-import { Separator } from "@workspace/ui/components/separator"
 import { eq } from "drizzle-orm"
 
-import { AiConfigForm, type ProviderConfig } from "./_components/ai-config-form"
-import {
-  EmailConfigForm,
-  type EmailConfig,
-} from "./_components/email-config-form"
+import { AiSection } from "./_components/ai-section"
+import { type ProviderConfig } from "./_components/ai-config-form"
+import { type EmailConfig } from "./_components/email-config-form"
+import { EmailSection } from "./_components/email-section"
+import { keyPreview } from "./_lib/mask"
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 
@@ -27,7 +26,7 @@ export default async function SettingsPage() {
       model: r?.model ?? "",
       enabled: r?.enabled ?? false,
       isDefault: r?.isDefault ?? false,
-      hasKey: Boolean(r?.apiKeyEnc),
+      keyPreview: keyPreview(r?.apiKeyEnc),
     }
   })
 
@@ -40,7 +39,7 @@ export default async function SettingsPage() {
     fromName: emailRow?.fromName ?? "",
     replyTo: emailRow?.replyTo ?? "",
     enabled: emailRow?.enabled ?? false,
-    hasKey: Boolean(emailRow?.apiKeyEnc),
+    keyPreview: keyPreview(emailRow?.apiKeyEnc),
   }
 
   return (
@@ -48,51 +47,14 @@ export default async function SettingsPage() {
       <Card className="p-6">
         <section className="flex flex-col gap-6">
           <h2 className="text-lg font-semibold">AI integration</h2>
-          <div className="flex flex-col gap-6 md:flex-row md:gap-8">
-            <div className="w-full md:max-w-md">
-              <AiConfigForm initial={initial} />
-            </div>
-            <Separator orientation="vertical" className="hidden md:block" />
-            <div className="w-full space-y-3 text-sm text-muted-foreground md:max-w-xs">
-              <p>
-                Configure providers for the AI SDK, then pick one default. The
-                app calls the default provider unless overridden.
-              </p>
-              <p>
-                API keys are encrypted at rest and never sent to the browser.
-                Leave the key field blank to keep the current key.
-              </p>
-              <p>Only one provider can be the default at a time.</p>
-              <p>
-                The model chosen here is the provider&rsquo;s default.
-                Individual AI features may request a different model at call
-                time.
-              </p>
-            </div>
-          </div>
+          <AiSection initial={initial} />
         </section>
       </Card>
 
       <Card className="p-6">
         <section className="flex flex-col gap-6">
           <h2 className="text-lg font-semibold">Email</h2>
-          <div className="flex flex-col gap-6 md:flex-row md:gap-8">
-            <div className="w-full md:max-w-md">
-              <EmailConfigForm initial={email} />
-            </div>
-            <Separator orientation="vertical" className="hidden md:block" />
-            <div className="w-full space-y-3 text-sm text-muted-foreground md:max-w-xs">
-              <p>Resend config for sending transactional email.</p>
-              <p>
-                The API key is encrypted at rest and never sent to the browser.
-                Leave it blank to keep the current key.
-              </p>
-              <p>
-                From email must be a verified sender on your Resend domain.
-                Reply-to is optional.
-              </p>
-            </div>
-          </div>
+          <EmailSection initial={email} />
         </section>
       </Card>
     </div>
