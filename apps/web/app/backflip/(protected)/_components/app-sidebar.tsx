@@ -29,7 +29,7 @@ const navMain: NavItem[] = [
 ]
 
 const navSecondary: NavSecondaryItem[] = [
-  { title: "Users", url: "#", icon: RiGroupLine },
+  { title: "Users", url: "/backflip/users", icon: RiGroupLine },
   { title: "Settings", url: "/backflip/settings", icon: RiSettings3Line },
 ]
 
