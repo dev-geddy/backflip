@@ -25,6 +25,24 @@ corepack yarn dev             # app → http://localhost:3070
 
 App reads `DATABASE_URL` from `.env` (`localhost:5544`).
 
+### Database (Drizzle)
+
+Schema + migrations live in `packages/db` (`@workspace/db`).
+
+```bash
+corepack yarn db:generate     # generate SQL after schema change
+corepack yarn db:migrate      # apply migrations to the docker db
+corepack yarn db:studio       # drizzle studio
+corepack yarn init-owner      # seed/refresh the platform owner
+```
+
+Owner seed reads `ADMIN_EMAIL` + `ADMIN_PASSWORD` from **`.env.local`** (gitignored). Example:
+
+```
+ADMIN_EMAIL=you@example.com
+ADMIN_PASSWORD=<strong random string>
+```
+
 ### 2. Full Docker (app + db)
 
 App on **:3071** (containerized production build), postgres in Docker.

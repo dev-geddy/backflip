@@ -39,6 +39,12 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - Creds: `.env` (gitignored) — copy of `.env.example` (committed template). Same values seed the db container and are read by the local app.
 - Files: `docker-compose.yml`, `apps/web/Dockerfile`, `.dockerignore`. See `README.md`.
 
+## Database (Drizzle, `packages/db` = `@workspace/db`)
+- Schema: `packages/db/src/schema.ts`. Client: `import { db } from "@workspace/db"`.
+- `corepack yarn db:generate` — generate SQL after schema edit. `db:migrate` — apply to docker db. `db:studio` — GUI. `db:push` (per-pkg) — quick dev sync.
+- `corepack yarn init-owner` — seed/refresh platform owner from `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), role `owner`.
+- Env: `DATABASE_URL` in `.env`; admin seed creds in `.env.local` (both gitignored). Needs db up (`docker compose up -d db`).
+
 ## Quality gates (turbo, from repo root)
 - Typecheck: `corepack yarn typecheck` (per-app: `corepack yarn workspace web typecheck` → `tsc --noEmit`).
 - Lint: `corepack yarn lint`.
