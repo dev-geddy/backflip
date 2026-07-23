@@ -7,7 +7,11 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "init-owner": "yarn workspace @workspace/db init-owner",
+    "db:generate": "yarn workspace @workspace/db db:generate",
+    "db:migrate": "yarn workspace @workspace/db db:migrate",
+    "db:studio": "yarn workspace @workspace/db db:studio"
   },
   "devDependencies": {
     "@workspace/eslint-config": "*",
