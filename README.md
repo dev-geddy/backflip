@@ -41,6 +41,8 @@ corepack yarn dev            # app → http://localhost:3070
 
 ## Good to know
 - **Ports**: app `3070`, Postgres `5544` (change `POSTGRES_PORT` in `.env` if it clashes).
+- **Secrets**: set a real `ENCRYPTION_KEY` in `.env` (`openssl rand -base64 32`) — it encrypts stored secrets (AI provider keys).
 - **DB changes**: edit `packages/db/src/schema.ts` → `corepack yarn db:generate` → `db:migrate`.
+- **Admin dashboard UI** is built from shadcn blocks — browse and lift components/layouts from **https://ui.shadcn.com/blocks** (this project uses `login-03`, `dashboard-01`, `sidebar-08`).
 - **Full Docker** (app + db): `docker compose up --build` → app on `3071`.
 - More commands + conventions: `.claude/skills/dev-workflow`.

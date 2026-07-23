@@ -21,7 +21,7 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import {
-  RiExpandUpDownLine,
+  RiMore2Line,
   RiLogoutBoxLine,
   RiUserLine,
 } from "@remixicon/react"
@@ -59,7 +59,7 @@ export function NavUser({ user }: { user: SessionUser }) {
               <span className="truncate font-medium">{label}</span>
               <span className="truncate text-xs">{user.email}</span>
             </div>
-            <RiExpandUpDownLine className="ml-auto size-4" />
+            <RiMore2Line className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"

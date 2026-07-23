@@ -1,3 +1,4 @@
+CREATE TYPE "public"."ai_provider" AS ENUM('anthropic', 'openai', 'google');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('owner', 'admin', 'member');--> statement-breakpoint
 CREATE TABLE "account" (
 	"userId" text NOT NULL,
@@ -6,12 +7,25 @@ CREATE TABLE "account" (
 	"providerAccountId" text NOT NULL,
 	"refresh_token" text,
 	"access_token" text,
-	"expires_at" text,
+	"expires_at" integer,
 	"token_type" text,
 	"scope" text,
 	"id_token" text,
 	"session_state" text,
 	CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId")
+);
+--> statement-breakpoint
+CREATE TABLE "ai_config" (
+	"id" text PRIMARY KEY NOT NULL,
+	"provider" "ai_provider" NOT NULL,
+	"model" text,
+	"apiKeyEnc" text,
+	"baseUrl" text,
+	"temperature" real DEFAULT 0.7 NOT NULL,
+	"enabled" boolean DEFAULT false NOT NULL,
+	"isDefault" boolean DEFAULT false NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "ai_config_provider_unique" UNIQUE("provider")
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
