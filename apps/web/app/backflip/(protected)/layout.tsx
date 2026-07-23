@@ -1,10 +1,7 @@
 import type { CSSProperties, ReactNode } from "react"
 import { redirect } from "next/navigation"
 
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@workspace/ui/components/sidebar"
+import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 
 import { auth } from "@/app/_lib/auth"
 import { AppSidebar } from "./_components/app-sidebar"
