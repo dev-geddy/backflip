@@ -97,3 +97,20 @@ export const aiConfig = pgTable("ai_config", {
   isDefault: boolean("isDefault").notNull().default(false),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 })
+
+/**
+ * Email sending config — single row (provider `resend`). `apiKeyEnc` is
+ * AES-256-GCM encrypted (see `crypto.ts`); plaintext never leaves the server.
+ */
+export const emailConfig = pgTable("email_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  provider: text("provider").notNull().unique().default("resend"),
+  apiKeyEnc: text("apiKeyEnc"),
+  fromEmail: text("fromEmail"),
+  fromName: text("fromName"),
+  replyTo: text("replyTo"),
+  enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
