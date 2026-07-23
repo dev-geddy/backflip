@@ -15,10 +15,8 @@
 - `apps/web/app/ui-samples/page.tsx` — component demo (`UISamplesPage`, heading "UI Samples"), dashboard/masonry layout reproducing the `base-mira` create-preview; exercises ~50 components (item, field, input-group, native-select, toggle-group, chart/recharts, empty, spinner, progress, calendar, radio, table, tabs, accordion, …). `d` = dark toggle. Satisfies `L2-UI-05`, `L2-UI-12`. Note: uncontrolled `defaultValue` passed to base-ui ToggleGroup/Slider must be stable module-scope refs (base-ui warns on identity change per render).
 - `apps/web/next.config.ts` — `transpilePackages: ["@workspace/ui"]`. Satisfies `L2-UI-10`.
 
-## House text scale (+2px, theme-level)
-`globals.css` `@theme inline` overrides the Tailwind `--text-*` scale to `calc(default + 2px)` (xs…5xl). Every `text-*` utility (forms, buttons, body, headings) grows exactly +2px — one place, nothing baked into components. Line-heights keep default ratios. Root stays `font-size: 17px`. `cursor: pointer` on buttons is a base-layer rule (`button:not(:disabled)`), not per-component.
-- Excluded from the bump (pinned `text-[1rem]`): admin sidebar wordmark ("Backflip") in `app-sidebar.tsx`, and the admin top-bar title ("Dashboard") in `site-header.tsx`.
-- Arbitrary sizes like the homepage hero `text-[clamp(...)]` are unaffected (they don't read the scale).
+## Form-element sizing (house tweak, padding only)
+Form primitives get +2px padding + grown heights over base-mira defaults — **font sizes unchanged**: `button` (size + icon variants), `input`, `textarea`, `native-select`, `select` trigger. Arbitrary px (`px-[10px]`, `py-[4px]`, `h-8`) where no clean Tailwind step. No theme-level text-scale bump (reverted). `cursor: pointer` on buttons is a base-layer rule. Re-`shadcn add` would overwrite these.
 
 ## Installed components (60)
 Full `base-mira` registry (added via `shadcn add -a -c packages/ui`):
