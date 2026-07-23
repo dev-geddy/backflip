@@ -40,11 +40,13 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-STACK-06` — Tailwind CSS v4 — styling, CSS variables theming.
 - `L1-STACK-07` — PostgreSQL — primary datastore. Runs in Docker for local dev.
 - `L1-STACK-08` — Docker Compose — local infra. DB always dockerized; app runs local (preferred dev) or containerized.
+- `L1-STACK-09` — Drizzle ORM + drizzle-kit — type-safe schema, queries, migrations over Postgres. Lives in shared `packages/db` (`@workspace/db`).
 
 ## Governed domains (L2)
 - `auth` → `/docs/contracts/auth.md`
 - `ui` → `/docs/contracts/ui.md`
 - `infra` → `/docs/contracts/infra.md`
+- `db` → `/docs/contracts/db.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.

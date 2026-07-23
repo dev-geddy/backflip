@@ -44,6 +44,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# external reference repos (cloned for examples, not part of the project)
+.external-repos
+
 # vercel
 .vercel
 
