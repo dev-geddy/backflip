@@ -1,8 +1,10 @@
 import {
+  boolean,
   integer,
   pgEnum,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
 } from "drizzle-orm/pg-core"
@@ -73,3 +75,25 @@ export const verificationTokens = pgTable(
   },
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
 )
+
+/** AI providers supported by the integration config. */
+export const aiProvider = pgEnum("ai_provider", ["anthropic", "openai", "google"])
+
+/**
+ * AI integration config — one row per provider. Consumed by the (future)
+ * AI SDK layer. `apiKeyEnc` is AES-256-GCM encrypted (see `crypto.ts`); the
+ * plaintext key never leaves the server.
+ */
+export const aiConfig = pgTable("ai_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  provider: aiProvider("provider").notNull().unique(),
+  model: text("model"),
+  apiKeyEnc: text("apiKeyEnc"),
+  baseUrl: text("baseUrl"),
+  temperature: real("temperature").notNull().default(0.7),
+  enabled: boolean("enabled").notNull().default(false),
+  isDefault: boolean("isDefault").notNull().default(false),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})

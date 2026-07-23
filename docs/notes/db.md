@@ -4,13 +4,15 @@
 
 ## File map
 - `packages/db/package.json` — `@workspace/db`. Deps: drizzle-orm, pg, bcryptjs. Dev: drizzle-kit, tsx, dotenv, @types/pg. Scripts satisfy `L2-DB-03`.
-- `packages/db/src/schema.ts` — Drizzle schema. `user_role` enum + `user`/`account`/`session`/`verificationToken`. Satisfies `L2-DB-05`, `L2-DB-06`, `L2-DB-07`.
+- `packages/db/src/schema.ts` — Drizzle schema. `user_role` enum + `user`/`account`/`session`/`verificationToken`; `ai_provider` enum + `ai_config`. Satisfies `L2-DB-05`, `L2-DB-06`, `L2-DB-07`, `L2-DB-17`.
 - `packages/db/src/client.ts` — `db = drizzle(process.env.DATABASE_URL!, { schema })` (node-postgres). Satisfies `L2-DB-01`.
 - `packages/db/src/index.ts` — barrel: `export * from schema` + `db`. Satisfies `L2-DB-02`, `L2-DB-09`.
 - `packages/db/src/load-env.ts` — loads root `.env` + `.env.local` (root = 3 up from src). Imported first by standalone scripts (seed, drizzle.config).
 - `packages/db/src/seed/owner.ts` — `init-owner`. Reads `ADMIN_EMAIL`/`ADMIN_PASSWORD`, bcrypt(12), upsert on email, role `owner`. Satisfies `L2-DB-04`.
 - `packages/db/drizzle.config.ts` — dialect postgresql, schema `src/schema.ts`, out `migrations/`. Imports `load-env`.
-- `packages/db/migrations/` — generated SQL (`0000_*.sql`) + `meta/`. Satisfies `L2-DB-08`.
+- `packages/db/src/migrate.ts` — programmatic migrator (`drizzle-orm/.../migrator`). `db:migrate` runs this via tsx. `drizzle-kit migrate` silently no-ops here, so we don't use it. `db:generate`/`db:studio` still use drizzle-kit.
+- `packages/db/src/crypto.ts` — `encryptSecret`/`decryptSecret` (AES-256-GCM, key = sha256(`ENCRYPTION_KEY`)). Satisfies `L2-DB-16`.
+- `packages/db/migrations/` — single squashed baseline (`0000_*.sql`) + `meta/`. Satisfies `L2-DB-08`.
 
 ## Notes / deviations
 - tsconfig overrides base to `module ESNext` + `moduleResolution Bundler` (pkg is consumed by Next bundler + run by tsx; avoids NodeNext `.js` extension churn).

@@ -3,6 +3,7 @@
   "ui": "tui",
   "globalEnv": [
     "DATABASE_URL",
+    "ENCRYPTION_KEY",
     "AUTH_SECRET",
     "AUTH_TRUST_HOST",
     "AUTH_GOOGLE_ID",
