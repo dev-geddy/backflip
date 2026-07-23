@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3070",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3070",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"

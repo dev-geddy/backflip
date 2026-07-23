@@ -13,6 +13,11 @@ description: >
 
 How to operate the backflip monorepo. Terse. Exact commands.
 
+## Working directory
+- All work stays in the project dir. No `/tmp` or other scratch/system dirs for logs, output, or intermediate files — use the project (e.g. `.next`, ignored paths) instead.
+- No workaround commands / shims. Fix the real thing. (See "Package manager" below.)
+- Look outside the project only when explicitly asked.
+
 ## Package manager — ALWAYS corepack yarn
 - Pinned: `yarn@4.17.1` (`packageManager` in root `package.json`). Berry, not classic.
 - **Always prefix `corepack`**: `corepack yarn <cmd>`. Bare `yarn` on this machine = classic 1.22, refuses.
@@ -23,6 +28,16 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - Dev (web app): `corepack yarn workspace web dev` → **port 3070**.
 - All workspaces dev (turbo): `corepack yarn dev`.
 - Prod: `corepack yarn workspace web build` then `corepack yarn workspace web start`.
+
+## Docker + database
+- **Preferred dev flow: app local, db in Docker.** Run app via `corepack yarn dev` (port 3070, hot reload); run only postgres in Docker.
+  - First time: `cp .env.example .env`.
+  - `docker compose up -d db` → postgres on `localhost:${POSTGRES_PORT:-5544}`.
+  - `corepack yarn dev` → app on 3070, reads `DATABASE_URL` from `.env`.
+- Full Docker (app + db): `docker compose up --build` → app on **3071** (containerized prod build), db as above. In-container app connects to db at `db:5432`.
+- Postgres host port default **5544** (env `POSTGRES_PORT`), kept off 5432 to avoid clashes. Change in `.env` if it collides.
+- Creds: `.env` (gitignored) — copy of `.env.example` (committed template). Same values seed the db container and are read by the local app.
+- Files: `docker-compose.yml`, `apps/web/Dockerfile`, `.dockerignore`. See `README.md`.
 
 ## Quality gates (turbo, from repo root)
 - Typecheck: `corepack yarn typecheck` (per-app: `corepack yarn workspace web typecheck` → `tsc --noEmit`).
