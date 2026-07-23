@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 /**
- * Admin auth boundary for the /backflip scope.
+ * Admin auth boundary for the /backflip scope. Runs as a Next.js
+ * proxy (the renamed `middleware` convention, Next 16+).
  *
  * Setup-only stub: the real check will validate a Google-auth session.
  * For now it looks for a `session` cookie and redirects unauthenticated
@@ -12,7 +13,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 const LOGIN_PATH = "/backflip/login"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname === LOGIN_PATH) {
