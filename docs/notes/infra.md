@@ -1,0 +1,26 @@
+# Notes (L3) — infra
+
+> L3 = how / volatile. AI writes free. Cites L2 IDs up. Matches code as-is.
+
+## File map
+- `docker-compose.yml` — services `db` + `app`. Satisfies `L2-INF-01`, `L2-INF-02`, `L2-INF-05`. `name: backflip`. Volume `backflip_pgdata`.
+- `apps/web/Dockerfile` — 3-stage (base → build → runner), context = repo root. `corepack enable`, `yarn install --immutable`, `yarn workspace web build`, runs `yarn workspace web start`. Satisfies `L2-INF-04`.
+- `.dockerignore` — excludes node_modules, `.next`, `.turbo`, `.git`, `.env*` (keeps `.env.example`).
+- `.env.example` — committed template. `.env` — gitignored, local creds. Satisfies `L2-INF-07`, `L2-INF-09`.
+- `apps/web/package.json` — `dev` = `next dev -p 3070`, `start` = `next start -p 3070`. Satisfies `L2-INF-03`.
+- `.gitignore` — `.env*` then `!.env.example`. Satisfies `L2-INF-09`.
+- `README.md` — run instructions (local-app+docker-db; full-docker).
+
+## State
+- Preferred dev: app local (3070) + db in Docker. Full-docker (app 3071) is the alt run path.
+- App Docker = prod build, no hot reload (local is the dev driver).
+- No DB client wired yet in app code — `DATABASE_URL` is provisioned/config only. TODO when data layer lands.
+
+## Ports
+- App: local 3070 / docker host 3071 → container 3070.
+- Postgres: host `${POSTGRES_PORT:-5544}` → container 5432. Default 5544 chosen off 5432 (docker daemon was down at setup — couldn't scan existing images; verify no clash, adjust `POSTGRES_PORT` if needed). Satisfies `L2-INF-08`.
+
+## TODO
+- Wire a Postgres client / migrations when the data layer starts.
+- Optional: Next `output: "standalone"` for a leaner app image.
+- Optional: dev-mode app container with source mount if containerized hot reload is ever wanted.
