@@ -7,8 +7,11 @@
 - `apps/web/app/_lib/auth/types.ts` — module augmentation: `session.user.id`/`role`, JWT `id`/`role`.
 - `apps/web/app/api/auth/[...nextauth]/route.ts` — `export { GET, POST } = handlers`; `runtime = "nodejs"`. Satisfies `L2-AUTH-03`.
 - `apps/web/proxy.ts` — edge gate via `getToken`. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
-- `apps/web/app/backflip/(auth)/login/page.tsx` — login page (credentials + Google). Satisfies `L2-AUTH-04`. [UI phase]
-- `apps/web/app/backflip/(protected)/{layout,page}.tsx` — authed chrome + dashboard. [UI phase]
+- `apps/web/app/backflip/(auth)/login/page.tsx` — login page (server; reads `from`, open-redirect guarded). Satisfies `L2-AUTH-04`.
+- `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Credentials via `signIn("credentials", {redirect:false})`; Google button via `signIn("google")`.
+- `apps/web/app/backflip/(protected)/layout.tsx` — authed shell (server; `auth()` → user). SidebarProvider + AppSidebar + SidebarInset + header.
+- `apps/web/app/backflip/(protected)/_components/` — `app-sidebar`, `nav-main` (collapsible groups), `nav-user` (dropdown → `signOut`), `section-cards`, `dashboard-chart` (recharts area), `recent-table`, `types`.
+- `apps/web/app/backflip/(protected)/page.tsx` — dashboard: cards + chart + table.
 
 ## Implementation notes
 - **Credentials → JWT**: Credentials provider forces `jwt` session strategy; adapter still used to persist Google accounts.
@@ -18,10 +21,16 @@
 - `packages/typescript-config/nextjs.json` sets `declaration:false` — fixes next-auth v5 TS2742 ("inferred type cannot be named") under `noEmit`.
 
 ## State
-- Credentials login verified end-to-end (seeded owner → session `role: owner` → protected 200).
+- Credentials login verified end-to-end earlier (seeded owner → session `role: owner` → protected 200).
+- Login UI (`login-03`) + dashboard shell (`sidebar-08`) built; typecheck + lint clean; login page renders.
 - Google wired; inert until `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` set in `.env.local`. Redirect URI `http://localhost:3070/api/auth/callback/google`.
-- Sign-out available via Auth.js `signOut` (wired into `nav-user` in the dashboard UI phase).
+- Sign-out wired in `nav-user` → `signOut({ callbackUrl: "/backflip/login" })`.
+
+## Dashboard notes
+- Admin shell replicated from `sidebar-08`; dashboard content (cards + chart) from the shadcn dashboard example. Icons mapped lucide → remixicon (project convention).
+- Simplification vs example: the heavy dnd/tanstack `data-table` was replaced with a plain `@workspace/ui` table (`recent-table`). Revisit if a sortable/editable grid is needed.
+- base-mira composition uses base-ui `render={<el/>}` (not `asChild`) — see [[ui]] notes.
 
 ## TODO
-- Login UI (`login-03` block) + Google button.
-- `nav-user` sign-out in admin shell.
+- Real data for cards/chart/table (currently static sample).
+- Google end-to-end test once creds provided.
