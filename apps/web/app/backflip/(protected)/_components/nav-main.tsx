@@ -1,6 +1,7 @@
 "use client"
 
 import type { ComponentType } from "react"
+import Link from "next/link"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -44,7 +45,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title} render={<a href={item.url} />}>
+              <SidebarMenuButton tooltip={item.title} render={<Link href={item.url} />}>
                 {item.icon ? <item.icon /> : null}
                 <span>{item.title}</span>
               </SidebarMenuButton>

@@ -1,6 +1,7 @@
 "use client"
 
 import type { ComponentProps } from "react"
+import Link from "next/link"
 
 import {
   Sidebar,
@@ -12,11 +13,8 @@ import {
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar"
 import {
-  RiBarChartBoxLine,
   RiDashboardLine,
-  RiFileList3Line,
   RiGroupLine,
-  RiQuestionLine,
   RiSettings3Line,
   RiShapesLine,
 } from "@remixicon/react"
@@ -28,14 +26,11 @@ import type { SessionUser } from "./types"
 
 const navMain: NavItem[] = [
   { title: "Dashboard", url: "/backflip", icon: RiDashboardLine },
-  { title: "Users", url: "#", icon: RiGroupLine },
-  { title: "Analytics", url: "#", icon: RiBarChartBoxLine },
-  { title: "Content", url: "#", icon: RiFileList3Line },
 ]
 
 const navSecondary: NavSecondaryItem[] = [
+  { title: "Users", url: "#", icon: RiGroupLine },
   { title: "Settings", url: "#", icon: RiSettings3Line },
-  { title: "Get Help", url: "#", icon: RiQuestionLine },
 ]
 
 export function AppSidebar({
@@ -49,7 +44,7 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<a href="/backflip" />}
+              render={<Link href="/backflip" />}
             >
               <RiShapesLine className="size-5!" />
               <span className="text-base font-semibold">Backflip</span>
