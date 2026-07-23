@@ -17,9 +17,19 @@ import {
 
 const rows = [
   { name: "Cover page", type: "Narrative", status: "Done", limit: "5" },
-  { name: "Table of contents", type: "Narrative", status: "In Process", limit: "3" },
+  {
+    name: "Table of contents",
+    type: "Narrative",
+    status: "In Process",
+    limit: "3",
+  },
   { name: "Executive summary", type: "Narrative", status: "Done", limit: "8" },
-  { name: "Technical approach", type: "Technical", status: "In Process", limit: "12" },
+  {
+    name: "Technical approach",
+    type: "Technical",
+    status: "In Process",
+    limit: "12",
+  },
   { name: "Design", type: "Technical", status: "Done", limit: "6" },
 ]
 
@@ -46,7 +56,9 @@ export function RecentTable() {
                 <TableCell className="font-medium">{r.name}</TableCell>
                 <TableCell>{r.type}</TableCell>
                 <TableCell>
-                  <Badge variant={r.status === "Done" ? "outline" : "secondary"}>
+                  <Badge
+                    variant={r.status === "Done" ? "outline" : "secondary"}
+                  >
                     {r.status}
                   </Badge>
                 </TableCell>

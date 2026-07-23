@@ -34,7 +34,10 @@ export function DashboardChart() {
         <CardTitle>Visitors</CardTitle>
         <CardDescription>Last 6 months</CardDescription>
       </CardHeader>
-      <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full px-2 pb-4">
+      <ChartContainer
+        config={chartConfig}
+        className="aspect-auto h-[250px] w-full px-2 pb-4"
+      >
         <AreaChart data={chartData} margin={{ left: 12, right: 12 }}>
           <CartesianGrid vertical={false} />
           <XAxis
