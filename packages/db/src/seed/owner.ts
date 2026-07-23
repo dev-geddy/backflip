@@ -24,10 +24,10 @@ async function main() {
 
   await db
     .insert(users)
-    .values({ email, passwordHash, role: "owner", name: "Owner" })
+    .values({ email, passwordHash, role: "owner", name: "Dev Geddy" })
     .onConflictDoUpdate({
       target: users.email,
-      set: { passwordHash, role: "owner" },
+      set: { passwordHash, role: "owner", name: "Dev Geddy" },
     })
 
   console.log(`✓ Owner seeded: ${email}`)
