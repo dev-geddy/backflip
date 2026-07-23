@@ -30,7 +30,7 @@ const navMain: NavItem[] = [
 
 const navSecondary: NavSecondaryItem[] = [
   { title: "Users", url: "#", icon: RiGroupLine },
-  { title: "Settings", url: "#", icon: RiSettings3Line },
+  { title: "Settings", url: "/backflip/settings", icon: RiSettings3Line },
 ]
 
 export function AppSidebar({

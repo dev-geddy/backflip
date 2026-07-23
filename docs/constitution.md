@@ -42,12 +42,14 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-STACK-08` — Docker Compose — local infra. DB always dockerized; app runs local (preferred dev) or containerized.
 - `L1-STACK-09` — Drizzle ORM + drizzle-kit — type-safe schema, queries, migrations over Postgres. Lives in shared `packages/db` (`@workspace/db`).
 - `L1-STACK-10` — Auth.js v5 (next-auth) — authentication (Credentials + Google), Drizzle adapter, JWT sessions.
+- `L1-STACK-11` — Vercel AI SDK (`ai` + `@ai-sdk/*`) — provider-agnostic AI integration (Anthropic default, OpenAI, Google). Config-driven provider/model.
 
 ## Governed domains (L2)
 - `auth` → `/docs/contracts/auth.md`
 - `ui` → `/docs/contracts/ui.md`
 - `infra` → `/docs/contracts/infra.md`
 - `db` → `/docs/contracts/db.md`
+- `ai` → `/docs/contracts/ai.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.

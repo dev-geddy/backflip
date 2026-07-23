@@ -41,7 +41,8 @@ How to operate the backflip monorepo. Terse. Exact commands.
 
 ## Database (Drizzle, `packages/db` = `@workspace/db`)
 - Schema: `packages/db/src/schema.ts`. Client: `import { db } from "@workspace/db"`.
-- `corepack yarn db:generate` — generate SQL after schema edit. `db:migrate` — apply to docker db. `db:studio` — GUI. `db:push` (per-pkg) — quick dev sync.
+- `corepack yarn db:generate` — generate SQL after schema edit. `db:migrate` — apply to docker db (programmatic migrator `src/migrate.ts`; `drizzle-kit migrate` silently no-ops here, don't use it). `db:studio` — GUI. `db:push` (per-pkg) — quick dev sync.
+- Secrets at rest: `encryptSecret`/`decryptSecret` from `@workspace/db` (AES, `ENCRYPTION_KEY`). Used for AI provider keys.
 - `corepack yarn init-owner` — seed/refresh platform owner from `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), role `owner`.
 - Env: `DATABASE_URL` in `.env`; admin seed creds in `.env.local` (both gitignored). Needs db up (`docker compose up -d db`).
 - **DB discipline (do automatically):**
@@ -63,6 +64,7 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - `corepack yarn dlx shadcn@latest add <component>`.
 - Run under `corepack yarn dlx` so berry prepends itself to the child PATH (shadcn spawns bare `yarn` internally).
 - Components land in `packages/ui/src/components/`. Config: `packages/ui/components.json` (style `base-mira`, neutral, remixicon, RSC).
+- UI blocks/layouts reference: https://ui.shadcn.com/blocks. Replicate by hand into our structure (clone to `.external-repos/`, gitignored); port `asChild`→base-ui `render`, lucide/tabler icons→remixicon. Don't `shadcn add <block>` (dumps files off-convention).
 
 ## Monorepo layout
 - `apps/*` — deployables. `apps/web` = Next.js 16 app (App Router).
