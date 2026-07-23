@@ -44,6 +44,10 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - `corepack yarn db:generate` — generate SQL after schema edit. `db:migrate` — apply to docker db. `db:studio` — GUI. `db:push` (per-pkg) — quick dev sync.
 - `corepack yarn init-owner` — seed/refresh platform owner from `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), role `owner`.
 - Env: `DATABASE_URL` in `.env`; admin seed creds in `.env.local` (both gitignored). Needs db up (`docker compose up -d db`).
+- **DB discipline (do automatically):**
+  - Schema edited (`packages/db/src/schema.ts`) → run `db:generate` then `db:migrate`. Commit the generated SQL. No schema change lands without its migration.
+  - Seed data added/changed → run the matching seed (e.g. `init-owner`).
+  - Before any db op, ensure the db is up: if `docker compose up -d db` / the container isn't running, start it (or ask the user to start Docker if the daemon is down).
 
 ## Quality gates (turbo, from repo root)
 - Typecheck: `corepack yarn typecheck` (per-app: `corepack yarn workspace web typecheck` → `tsc --noEmit`).

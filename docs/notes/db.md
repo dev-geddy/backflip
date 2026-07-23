@@ -15,7 +15,7 @@
 ## Notes / deviations
 - tsconfig overrides base to `module ESNext` + `moduleResolution Bundler` (pkg is consumed by Next bundler + run by tsx; avoids NodeNext `.js` extension churn).
 - Column names kept Auth.js-exact (camelCase, quoted in pg): `passwordHash`, `emailVerified`, `providerAccountId`, etc. Query with double-quotes in raw SQL.
-- `account.expires_at` typed `text` (Auth.js example uses integer; either works — revisit if adapter complains).
+- `account.expires_at` typed `integer` (required by `@auth/drizzle-adapter` types).
 - `session`/`verificationToken` tables unused under JWT strategy; kept for adapter completeness.
 - Env: `DATABASE_URL` (localhost:5544) in `.env`; admin seed creds in `.env.local` (both gitignored).
 

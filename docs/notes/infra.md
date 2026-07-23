@@ -14,7 +14,13 @@
 ## State
 - Preferred dev: app local (3070) + db in Docker. Full-docker (app 3071) is the alt run path.
 - App Docker = prod build, no hot reload (local is the dev driver).
-- No DB client wired yet in app code — `DATABASE_URL` is provisioned/config only. TODO when data layer lands.
+- `DATABASE_URL` consumed by `@workspace/db` (app + seed).
+
+## Env loading (monorepo)
+- Root `.env` + `.env.local` are the single source. Next runs in `apps/web` so it won't read root env by itself.
+- Local dev: `web` `dev` script uses `dotenv-cli` (`dotenv -e ../../.env -e ../../.env.local -- next dev`) to inject root env (needed by edge proxy + node routes).
+- Docker app: compose `env_file: [.env, .env.local]` injects env; `DATABASE_URL` overridden to `db:5432` via `environment:`.
+- Postgres 5544 verified clear (existing pg containers on 5436/5437).
 
 ## Ports
 - App: local 3070 / docker host 3071 → container 3070.
