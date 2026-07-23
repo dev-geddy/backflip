@@ -12,7 +12,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 ## Interfaces
 - `L2-DB-01` — `@workspace/db` → `db` — Drizzle client (node-postgres) over `DATABASE_URL`. (`packages/db/src/client.ts`)
 - `L2-DB-02` — `@workspace/db` re-exports schema tables + `db`. (`packages/db/src/index.ts`)
-- `L2-DB-03` — Scripts (root): `corepack yarn db:generate | db:migrate | db:studio`, `corepack yarn init-owner`. Per-pkg: `db:push` too. `db:migrate` runs the programmatic drizzle-orm migrator (`src/migrate.ts`), not `drizzle-kit migrate` (which silently no-ops here).
+- `L2-DB-03` — Scripts (root): `corepack yarn db:generate | db:migrate | db:studio`, `corepack yarn init-owner`. Per-pkg: `db:push` too. Migrate/generate/studio via drizzle-kit.
 - `L2-DB-16` — `encryptSecret(plain)` / `decryptSecret(enc)` — AES-256-GCM over `ENCRYPTION_KEY` (sha256-derived). For secrets at rest (AI keys). Server-only. (`packages/db/src/crypto.ts`)
 - `L2-DB-04` — `corepack yarn init-owner` — seeds/updates platform owner from `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), bcrypt-hashed, role `owner`. Idempotent (upsert on email).
 
@@ -20,7 +20,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-05` — `user_role` enum: `owner` | `admin` | `member`.
 - `L2-DB-06` — `user` table: `id` (uuid text pk), `name`, `email` (unique, not null), `emailVerified`, `image`, `passwordHash` (bcrypt, null = OAuth-only), `role` (default `member`), `createdAt`.
 - `L2-DB-07` — Auth.js adapter tables: `account`, `session`, `verificationToken` (standard Auth.js Drizzle shape).
-- `L2-DB-08` — Migrations: drizzle-kit generated SQL in `packages/db/migrations/`, committed. Dialect postgresql. Applied by the programmatic migrator (`db:migrate`).
+- `L2-DB-08` — Migrations: drizzle-kit generated SQL in `packages/db/migrations/`, committed. Dialect postgresql. Applied via `drizzle-kit migrate` (`db:migrate`).
 - `L2-DB-17` — `ai_config` table (one row per `ai_provider` enum: anthropic|openai|google): `provider` (unique), `model`, `apiKeyEnc` (AES), `baseUrl`, `temperature` (default 0.7), `enabled`, `isDefault`, `updatedAt`. Owned by the `ai` domain.
 
 ## Invariants
