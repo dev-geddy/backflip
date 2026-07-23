@@ -10,7 +10,7 @@
 - `apps/web/app/backflip/(auth)/login/page.tsx` — login page (server; reads `from`, open-redirect guarded). Satisfies `L2-AUTH-04`.
 - `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Credentials via `signIn("credentials", {redirect:false})`; Google button via `signIn("google")`.
 - `apps/web/app/backflip/(protected)/layout.tsx` — authed shell (server; `auth()` → user). SidebarProvider + AppSidebar + SidebarInset + header.
-- `apps/web/app/backflip/(protected)/_components/` — `app-sidebar`, `nav-main` (collapsible groups), `nav-user` (dropdown → `signOut`), `section-cards`, `dashboard-chart` (recharts area), `recent-table`, `types`.
+- `apps/web/app/backflip/(protected)/_components/` — `app-sidebar` (dashboard-01 shell, logo = `RiShapesLine` + "Backflip"), `nav-main` (flat items + Quick Create), `nav-secondary`, `site-header`, `nav-user` (dropdown → `signOut`), `section-cards`, `dashboard-chart` (recharts area), `recent-table`, `types`.
 - `apps/web/app/backflip/(protected)/page.tsx` — dashboard: cards + chart + table.
 
 ## Implementation notes
@@ -27,7 +27,7 @@
 - Sign-out wired in `nav-user` → `signOut({ callbackUrl: "/backflip/login" })`.
 
 ## Dashboard notes
-- Admin shell replicated from `sidebar-08`; dashboard content (cards + chart) from the shadcn dashboard example. Icons mapped lucide → remixicon (project convention).
+- Admin shell replicated from `dashboard-01` (inset sidebar + `site-header`, `--sidebar-width`/`--header-height` vars). Logo = icon + "Backflip" (no "Admin"). Dashboard content (cards + chart) from the shadcn dashboard example. Icons mapped tabler/lucide → remixicon (project convention).
 - Simplification vs example: the heavy dnd/tanstack `data-table` was replaced with a plain `@workspace/ui` table (`recent-table`). Revisit if a sortable/editable grid is needed.
 - base-mira composition uses base-ui `render={<el/>}` (not `asChild`) — see [[ui]] notes.
 

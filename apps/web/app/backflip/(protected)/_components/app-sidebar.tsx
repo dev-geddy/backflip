@@ -12,45 +12,30 @@ import {
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar"
 import {
+  RiBarChartBoxLine,
   RiDashboardLine,
   RiFileList3Line,
+  RiGroupLine,
+  RiQuestionLine,
   RiSettings3Line,
-  RiUserLine,
+  RiShapesLine,
 } from "@remixicon/react"
 
 import { NavMain, type NavItem } from "./nav-main"
+import { NavSecondary, type NavSecondaryItem } from "./nav-secondary"
 import { NavUser } from "./nav-user"
 import type { SessionUser } from "./types"
 
 const navMain: NavItem[] = [
-  { title: "Dashboard", url: "/backflip", icon: RiDashboardLine, isActive: true },
-  {
-    title: "Users",
-    url: "#",
-    icon: RiUserLine,
-    items: [
-      { title: "All users", url: "#" },
-      { title: "Invitations", url: "#" },
-    ],
-  },
-  {
-    title: "Content",
-    url: "#",
-    icon: RiFileList3Line,
-    items: [
-      { title: "Pages", url: "#" },
-      { title: "Media", url: "#" },
-    ],
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: RiSettings3Line,
-    items: [
-      { title: "General", url: "#" },
-      { title: "Team", url: "#" },
-    ],
-  },
+  { title: "Dashboard", url: "/backflip", icon: RiDashboardLine },
+  { title: "Users", url: "#", icon: RiGroupLine },
+  { title: "Analytics", url: "#", icon: RiBarChartBoxLine },
+  { title: "Content", url: "#", icon: RiFileList3Line },
+]
+
+const navSecondary: NavSecondaryItem[] = [
+  { title: "Settings", url: "#", icon: RiSettings3Line },
+  { title: "Get Help", url: "#", icon: RiQuestionLine },
 ]
 
 export function AppSidebar({
@@ -58,24 +43,23 @@ export function AppSidebar({
   ...props
 }: ComponentProps<typeof Sidebar> & { user: SessionUser }) {
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<a href="/backflip" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-                b
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">backflip</span>
-                <span className="truncate text-xs">Admin</span>
-              </div>
+            <SidebarMenuButton
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              render={<a href="/backflip" />}
+            >
+              <RiShapesLine className="size-5!" />
+              <span className="text-base font-semibold">Backflip</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
