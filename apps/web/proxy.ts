@@ -1,27 +1,37 @@
+import { getToken } from "next-auth/jwt"
 import { NextResponse, type NextRequest } from "next/server"
 
 /**
- * Admin auth boundary for the /backflip scope. Runs as a Next.js
- * proxy (the renamed `middleware` convention, Next 16+).
+ * Admin auth boundary for the /backflip scope. Runs as a Next.js proxy
+ * (the renamed `middleware` convention, Next 16+), on the edge runtime.
  *
- * Setup-only stub: the real check will validate a Google-auth session.
- * For now it looks for a `session` cookie and redirects unauthenticated
- * requests to /backflip/login. /backflip/login itself stays public.
- *
- * See docs/kickoff/phase1.md for the intended auth flow.
+ * Edge-safe: reads the Auth.js JWT via `getToken` (no db / node deps here).
+ * - Unauthenticated request to a protected /backflip path → redirect to login
+ *   with the original path in `from`.
+ * - Authenticated request to the login page → redirect to the dashboard.
+ * The login route is otherwise public.
  */
 
 const LOGIN_PATH = "/backflip/login"
+const HOME_PATH = "/backflip"
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  })
+  const isAuthed = Boolean(token)
+
   if (pathname === LOGIN_PATH) {
+    if (isAuthed) {
+      return NextResponse.redirect(new URL(HOME_PATH, request.url))
+    }
     return NextResponse.next()
   }
 
-  const hasSession = Boolean(request.cookies.get("session")?.value)
-  if (!hasSession) {
+  if (!isAuthed) {
     const loginUrl = new URL(LOGIN_PATH, request.url)
     loginUrl.searchParams.set("from", pathname)
     return NextResponse.redirect(loginUrl)

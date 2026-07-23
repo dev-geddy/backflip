@@ -3,26 +3,25 @@
 > L3 = how / volatile. AI writes free. Cites L2 IDs up. Matches code as-is.
 
 ## File map
-- `apps/web/proxy.ts` — session gate. Exports `proxy(request)` (Next 16 renamed `middleware`→`proxy`). Satisfies `L2-AUTH-01`, `L2-AUTH-06`, `L2-AUTH-08`. Matcher `/backflip/:path*`.
-- `apps/web/app/backflip/layout.tsx` — scope root layout. Wraps (auth) + (protected). Shell TBD.
-- `apps/web/app/backflip/(auth)/login/page.tsx` — login page. Satisfies `L2-AUTH-02`. Placeholder.
-- `apps/web/app/backflip/(protected)/layout.tsx` — authed chrome host. Placeholder.
-- `apps/web/app/backflip/(protected)/page.tsx` — admin dashboard. Placeholder.
+- `apps/web/app/_lib/auth/index.ts` — NextAuth(v5) config. Adapter `DrizzleAdapter(db)`, `session.strategy=jwt`, providers Google + Credentials, callbacks `signIn`/`jwt`/`session`. Exports `handlers, auth, signIn, signOut`. Satisfies `L2-AUTH-02`, `L2-AUTH-05`, `L2-AUTH-09`, `L2-AUTH-10`, `L2-AUTH-11`.
+- `apps/web/app/_lib/auth/types.ts` — module augmentation: `session.user.id`/`role`, JWT `id`/`role`.
+- `apps/web/app/api/auth/[...nextauth]/route.ts` — `export { GET, POST } = handlers`; `runtime = "nodejs"`. Satisfies `L2-AUTH-03`.
+- `apps/web/proxy.ts` — edge gate via `getToken`. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
+- `apps/web/app/backflip/(auth)/login/page.tsx` — login page (credentials + Google). Satisfies `L2-AUTH-04`. [UI phase]
+- `apps/web/app/backflip/(protected)/{layout,page}.tsx` — authed chrome + dashboard. [UI phase]
 
-## State (as of bootstrap)
-- Auth is a **setup-only stub**. Session = presence of non-empty `session` cookie.
-- No Google OAuth yet: `L2-AUTH-03` (callback), `L2-AUTH-04` (sign-out) not implemented.
-- Login page renders placeholder text, no real sign-in button.
+## Implementation notes
+- **Credentials → JWT**: Credentials provider forces `jwt` session strategy; adapter still used to persist Google accounts.
+- **Google pre-registration**: `signIn` callback returns false unless `db` has a `user` with that email → no OAuth self-signup. `allowDangerousEmailAccountLinking: true` links Google to the seeded user by email (emails pre-registered/trusted).
+- **Env loading**: Next runs in `apps/web`, so it won't read root `.env*` on its own. `dev` script uses `dotenv -e ../../.env -e ../../.env.local` to inject root env (needed by edge proxy + node route). Docker app gets env via compose `env_file`.
+- **Edge/node split**: proxy stays edge-safe (`getToken`, no db). Full auth (adapter + bcrypt + pg) is node-only, used by the route handler.
+- `packages/typescript-config/nextjs.json` sets `declaration:false` — fixes next-auth v5 TS2742 ("inferred type cannot be named") under `noEmit`.
 
-## Deviations
-- `L2-AUTH-05` — no real session payload/signing. Cookie presence only. Insecure; stub for wiring, not security.
-- `L2-AUTH-07` — invariant declared but unenforced (no auth provider wired yet).
+## State
+- Credentials login verified end-to-end (seeded owner → session `role: owner` → protected 200).
+- Google wired; inert until `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` set in `.env.local`. Redirect URI `http://localhost:3070/api/auth/callback/google`.
+- Sign-out available via Auth.js `signOut` (wired into `nav-user` in the dashboard UI phase).
 
 ## TODO
-- Wire Google OAuth (provider choice: next-auth / arctic / custom). Establish signed session.
-- Define session payload schema → update `L2-AUTH-05`.
-- Real login UI on `/backflip/login`.
-- Sign-out route.
-
-## ADR
-_(none yet)_
+- Login UI (`login-03` block) + Google button.
+- `nav-user` sign-out in admin shell.
