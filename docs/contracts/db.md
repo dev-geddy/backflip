@@ -17,8 +17,8 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-04` — `corepack yarn init-owner` — seeds/updates platform owner from `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), bcrypt-hashed, role `owner`. Idempotent (upsert on email).
 
 ## Schemas
-- `L2-DB-05` — `user_role` enum: `owner` | `admin` | `member`.
-- `L2-DB-06` — `user` table: `id` (uuid text pk), `name`, `email` (unique, not null), `emailVerified`, `image`, `passwordHash` (bcrypt, null = OAuth-only), `role` (default `member`), `createdAt`.
+- `L2-DB-05` — `user_role` enum: `owner` | `admin` | `teammate`. (Renamed `member`→`teammate` in migration `0002`; capability semantics owned by the `auth` domain.)
+- `L2-DB-06` — `user` table: `id` (uuid text pk), `name`, `email` (unique, not null), `emailVerified`, `image`, `passwordHash` (bcrypt, null = OAuth-only), `role` (default `teammate`), `createdAt`.
 - `L2-DB-07` — Auth.js adapter tables: `account`, `session`, `verificationToken` (standard Auth.js Drizzle shape).
 - `L2-DB-08` — Migrations: drizzle-kit generated SQL in `packages/db/migrations/`, committed. Dialect postgresql. Applied via `drizzle-kit migrate` (`db:migrate`).
 - `L2-DB-17` — `ai_config` table (one row per `ai_provider` enum: anthropic|openai|google): `provider` (unique), `model`, `apiKeyEnc` (AES), `baseUrl`, `temperature` (default 0.7), `enabled`, `isDefault`, `updatedAt`. Owned by the `ai` domain.
@@ -34,7 +34,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-13` — `init-owner` without `ADMIN_EMAIL`/`ADMIN_PASSWORD` → throws (define in `.env.local`).
 
 ## Acceptance
-- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config).
+- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config); migration `0002` renames role `member`→`teammate`.
 - `L2-DB-15` — `init-owner` yields a `user` row: email from `.env.local`, role `owner`, non-null `passwordHash`. Re-run updates, no duplicate.
 
 ## Constrained L3

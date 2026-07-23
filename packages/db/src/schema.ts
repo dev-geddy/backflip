@@ -10,10 +10,11 @@ import {
 } from "drizzle-orm/pg-core"
 
 /**
- * Platform roles. `owner` = top-level admin (seeded). Others reserved for
- * future access tiers.
+ * Platform roles. `owner` = top-level admin (seeded); can do everything.
+ * `admin` = operator, cannot edit system settings. `teammate` = own account
+ * area + admin dashboard only. Capability model lives in the auth domain.
  */
-export const userRole = pgEnum("user_role", ["owner", "admin", "member"])
+export const userRole = pgEnum("user_role", ["owner", "admin", "teammate"])
 
 /**
  * Users. Auth.js base shape (id/name/email/emailVerified/image) plus:
@@ -29,7 +30,7 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
   passwordHash: text("passwordHash"),
-  role: userRole("role").notNull().default("member"),
+  role: userRole("role").notNull().default("teammate"),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
 })
 
