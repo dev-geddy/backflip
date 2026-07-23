@@ -19,7 +19,7 @@ AI integration configuration: provider/model/key settings under `/backflip/setti
 - `L2-AI-05` — Per provider (UI): `model`, `apiKey` (write-only), `enabled`, `isDefault`. (`ai_config` also has `baseUrl`/`temperature` columns with defaults, not exposed in the form.)
 
 ## Invariants
-- `L2-AI-06` — API keys never sent to the client; UI shows only whether a key is set. Stored encrypted (`L2-DB-16`), never plaintext.
+- `L2-AI-06` — Full API keys never sent to the client. UI may show a masked preview (first 3 + last 4 chars around a fixed dot run; keys ≤8 chars fully masked) decrypted server-side. Stored encrypted (`L2-DB-16`), never plaintext.
 - `L2-AI-07` — At most one `isDefault` provider (enforced in `saveAiConfig`).
 - `L2-AI-08` — Blank API-key field on save keeps the existing key (no overwrite).
 
