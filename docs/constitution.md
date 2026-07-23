@@ -26,7 +26,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-ARCH-08` — Colocate by scope proximity. App-wide → `app/_components/…`. Layout-scoped → in that layout's dir. Page-scoped → in that page's dir. Cross-app/shared → `packages/*` (per `L1-ARCH-05`).
 
 ## Constraints (non-negotiable)
-- `L1-CON-01` — Admin auth is Google login based.
+- `L1-CON-01` — Admin auth supports two methods: credentials (email + password) and Google login. Google sign-in is allowed only for emails already registered on the platform.
 - `L1-CON-02` — `/backflip/*` requires a valid session; only the admin login route is public within scope.
 - `L1-CON-03` — Foundation ships baseline + guidelines; features stay generic/extensible, not project-specific. [NEEDS HUMAN CONFIRMATION]
 - `L1-CON-04` — Three-level doc system maintained with every code change (see project CLAUDE.md).
@@ -41,6 +41,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-STACK-07` — PostgreSQL — primary datastore. Runs in Docker for local dev.
 - `L1-STACK-08` — Docker Compose — local infra. DB always dockerized; app runs local (preferred dev) or containerized.
 - `L1-STACK-09` — Drizzle ORM + drizzle-kit — type-safe schema, queries, migrations over Postgres. Lives in shared `packages/db` (`@workspace/db`).
+- `L1-STACK-10` — Auth.js v5 (next-auth) — authentication (Credentials + Google), Drizzle adapter, JWT sessions.
 
 ## Governed domains (L2)
 - `auth` → `/docs/contracts/auth.md`
