@@ -38,10 +38,13 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-STACK-04` — Turborepo + yarn 4 (corepack) — monorepo builds; corepack pins yarn@4.17.1 (see [[backflip-yarn-corepack]]).
 - `L1-STACK-05` — shadcn/ui, `base-mira` style, neutral base, remixicon — themed component system from monorepo preset.
 - `L1-STACK-06` — Tailwind CSS v4 — styling, CSS variables theming.
+- `L1-STACK-07` — PostgreSQL — primary datastore. Runs in Docker for local dev.
+- `L1-STACK-08` — Docker Compose — local infra. DB always dockerized; app runs local (preferred dev) or containerized.
 
 ## Governed domains (L2)
 - `auth` → `/docs/contracts/auth.md`
 - `ui` → `/docs/contracts/ui.md`
+- `infra` → `/docs/contracts/infra.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.
