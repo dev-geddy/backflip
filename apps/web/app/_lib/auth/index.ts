@@ -12,6 +12,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 
+import { isCredentialsEnabled, isGoogleConfigured } from "./config"
 import "./types"
 
 /**
@@ -34,35 +35,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   pages: { signIn: "/backflip/login" },
   providers: [
-    Google({ allowDangerousEmailAccountLinking: true }),
-    Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      authorize: async (creds) => {
-        const email = typeof creds?.email === "string" ? creds.email : ""
-        const password =
-          typeof creds?.password === "string" ? creds.password : ""
-        if (!email || !password) return null
+    // Google only when configured; Credentials unless disabled (Google-only mode).
+    ...(isGoogleConfigured()
+      ? [Google({ allowDangerousEmailAccountLinking: true })]
+      : []),
+    ...(isCredentialsEnabled()
+      ? [
+          Credentials({
+            credentials: {
+              email: { label: "Email", type: "email" },
+              password: { label: "Password", type: "password" },
+            },
+            authorize: async (creds) => {
+              const email = typeof creds?.email === "string" ? creds.email : ""
+              const password =
+                typeof creds?.password === "string" ? creds.password : ""
+              if (!email || !password) return null
 
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, email),
-        })
-        if (!user?.passwordHash) return null
+              const user = await db.query.users.findFirst({
+                where: eq(users.email, email),
+              })
+              if (!user?.passwordHash) return null
 
-        const ok = await bcrypt.compare(password, user.passwordHash)
-        if (!ok) return null
+              const ok = await bcrypt.compare(password, user.passwordHash)
+              if (!ok) return null
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        }
-      },
-    }),
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                image: user.image,
+                role: user.role,
+                tokenVersion: user.tokenVersion,
+              }
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     // Google: reject unless a user with that email already exists.
@@ -76,13 +85,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return Boolean(existing)
     },
     jwt: async ({ token, user }) => {
+      // Sign-in: stamp identity + the current token version into the JWT.
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.tokenVersion = user.tokenVersion ?? 0
+        token.invalid = false
+        return token
+      }
+      // Subsequent requests: revalidate against the DB so a password/email
+      // change (which bumps tokenVersion) forces re-login everywhere.
+      if (token.id) {
+        const current = await db.query.users.findFirst({
+          where: eq(users.id, token.id),
+          columns: { role: true, tokenVersion: true },
+        })
+        if (!current || (current.tokenVersion ?? 0) !== (token.tokenVersion ?? 0)) {
+          token.invalid = true
+        } else {
+          token.role = current.role
+        }
       }
       return token
     },
     session: async ({ session, token }) => {
+      // Revoked/stale JWT → drop identity so guards treat it as unauthenticated.
+      if (token.invalid) {
+        session.user = undefined as unknown as typeof session.user
+        return session
+      }
       if (token.id) session.user.id = token.id
       if (token.role) session.user.role = token.role
       return session
