@@ -7,10 +7,12 @@
 > **Depends on L2:** `db` (user table), `infra` (AUTH_* env)
 
 ## Owns
-Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login route.
+Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login route, and the role-based authorization model (capabilities).
 
 ## Interfaces
 - `L2-AUTH-01` — `proxy(request)` — edge gate on `/backflip/:path*`. Reads Auth.js JWT via `getToken`. Unauth → redirect `/backflip/login?from=<path>`; authed on `/backflip/login` → redirect `/backflip`. Login route otherwise public. (`apps/web/proxy.ts`)
+- `L2-AUTH-19` — `@/app/_lib/auth/permissions` — pure, client-safe authorization model: `Role` (`owner|admin|teammate`), `ROLES`, `ROLE_LABELS`, `Capability`, `can(role, capability)`, helpers `canViewUsers`/`canEditUsers`/`canAccessSettings`. Single source of truth for grants.
+- `L2-AUTH-20` — `@/app/_lib/auth/guard` → `requireCapability(capability)` — server-only route guard. Unauth → `/backflip/login`; authed but lacking capability → `/backflip`. Returns the session user.
 - `L2-AUTH-02` — `@/app/_lib/auth` → `{ handlers, auth, signIn, signOut }` — Auth.js v5 (NextAuth) instance. Node runtime (uses `pg`).
 - `L2-AUTH-03` — Route `/api/auth/[...nextauth]` — Auth.js handlers (sign-in/out, callbacks, session, csrf, providers). `runtime = "nodejs"`.
 - `L2-AUTH-04` — Route `/backflip/login` — public login page: credentials form + Google button.
@@ -25,6 +27,9 @@ Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login rou
 - `L2-AUTH-09` — Credentials auth verifies email + bcrypt(`user.passwordHash`). No plaintext compare.
 - `L2-AUTH-10` — Google sign-in succeeds only if a `user` row with that email already exists (enforced in `signIn` callback). No self-registration via OAuth.
 - `L2-AUTH-11` — Google callback links to the existing user by verified email (pre-registered emails are trusted).
+- `L2-AUTH-21` — Capability grants: **owner** = all (`dashboard`, `account`, `users.view`, `users.edit`, `settings`); **admin** = `dashboard`, `account`, `users.view`; **teammate** = `dashboard`, `account`. Owner is the superset.
+- `L2-AUTH-22` — Authorization is enforced server-side (route guards via `requireCapability`, plus per-action capability checks), never UI-only. Hidden nav items / buttons are cosmetic. Guarded: `/backflip/users` (`users.view`) + `updateUser` (`users.edit`); `/backflip/settings` + `saveAiConfig`/`saveEmailConfig` (`settings`).
+- `L2-AUTH-23` — Self-lockout guard: an owner cannot change their own role (enforced in `updateUser`).
 
 ## Errors
 - `L2-AUTH-12` — Missing/invalid session → 307 redirect to login, original path in `from`. No error body.
@@ -36,6 +41,7 @@ Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login rou
 - `L2-AUTH-16` — Unauth request to any `/backflip/*` (non-login) redirects to `/backflip/login`.
 - `L2-AUTH-17` — Valid credentials → session with `user.role`; protected page reachable.
 - `L2-AUTH-18` — Google sign-in with a pre-registered email yields a session; unknown email is rejected.
+- `L2-AUTH-24` — teammate visiting `/backflip/users` or `/backflip/settings` → redirect `/backflip`; admin visiting `/backflip/settings` → redirect. Owner reaches both; only owner sees Edit on users and can save settings.
 
 ## Constrained L3
 - `/docs/notes/auth.md`
