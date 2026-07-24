@@ -15,9 +15,10 @@
 - `apps/web/app/backflip/(protected)/_components/` — `app-sidebar` (nav items carry a `capability`, filtered by role via `can()`; Account item added), `nav-main`, `nav-secondary`, `site-header`, `nav-user` (Account item → `/backflip/account`; dropdown → `signOut`), `section-cards`, `dashboard-chart`, `recent-table`, `types` (`SessionUser.role: Role`).
 - `apps/web/app/backflip/(protected)/page.tsx` — dashboard: cards + chart + table.
 - `apps/web/app/backflip/(protected)/users/page.tsx` — server; `requireCapability("users.view")`; reads users + derives login methods (`passwordHash` presence + `accounts` providers, hash never sent). Passes `sessionRole`/`sessionUserId`.
-- `apps/web/app/backflip/(protected)/users/_components/users-list.tsx` — stacked compact cards (avatar · name+email · role · login method, smaller font); Edit shown only when `canEditUsers`.
+- `apps/web/app/backflip/(protected)/users/_components/users-list.tsx` — stacked compact cards (avatar · name+email · role · login method, smaller font); Edit shown only when `canEditUsers`. Header carries an **Add user** button, rendered only when `canEditUsers` (owner).
 - `apps/web/app/backflip/(protected)/users/_components/edit-user-dialog.tsx` — owner-only Dialog: name + email + role (`Select`); role field disabled when editing self (hidden field carries the unchanged role). Satisfies `L2-AUTH-22`, `L2-AUTH-23`.
-- `apps/web/app/backflip/(protected)/users/_actions.ts` — `updateUser` server action: `users.edit` gate, self-role guard, unique-email (pg 23505) handling.
+- `apps/web/app/backflip/(protected)/users/_components/add-user-dialog.tsx` — owner-only Dialog: name + email + role (`Select`, default `teammate`) + optional password. `useActionState(createUser)`; on success surfaces the returned message via `sonner` toast (reports welcome-email status, incl. "not configured"), resets the form, closes. Satisfies `L2-AUTH-22`.
+- `apps/web/app/backflip/(protected)/users/_actions.ts` — `updateUser` + `createUser` server actions: `users.edit` gate, unique-email (pg 23505) handling. `updateUser` also self-role guard. `createUser`: optional bcrypt password (null → Google-only sign-in), then best-effort `sendWelcomeEmail` (see [[email]]) — an unconfigured provider or send failure never blocks creation (returns `ok:true` with an info message). Satisfies `L2-AUTH-22`.
 - `apps/web/app/backflip/(protected)/settings/page.tsx` + `_actions.ts` — guarded by capability `settings` (owner) at route + action level.
 
 ## Authorization (RBAC)
