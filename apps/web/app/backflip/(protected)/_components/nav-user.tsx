@@ -21,6 +21,7 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import { RiMore2Line, RiLogoutBoxLine, RiUserLine } from "@remixicon/react"
+import Link from "next/link"
 import { signOut } from "next-auth/react"
 
 import type { SessionUser } from "./types"
@@ -86,7 +87,7 @@ export function NavUser({ user }: { user: SessionUser }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem render={<Link href="/backflip/account" />}>
                 <RiUserLine />
                 Account
               </DropdownMenuItem>

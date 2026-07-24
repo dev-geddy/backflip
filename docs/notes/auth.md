@@ -4,14 +4,33 @@
 
 ## File map
 - `apps/web/app/_lib/auth/index.ts` — NextAuth(v5) config. Adapter `DrizzleAdapter(db)`, `session.strategy=jwt`, providers Google + Credentials, callbacks `signIn`/`jwt`/`session`. Exports `handlers, auth, signIn, signOut`. Satisfies `L2-AUTH-02`, `L2-AUTH-05`, `L2-AUTH-09`, `L2-AUTH-10`, `L2-AUTH-11`.
-- `apps/web/app/_lib/auth/types.ts` — module augmentation: `session.user.id`/`role`, JWT `id`/`role`.
+- `apps/web/app/_lib/auth/types.ts` — module augmentation: `session.user.id`/`role` (`role` typed `Role`), JWT `id`/`role`.
+- `apps/web/app/_lib/auth/permissions.ts` — pure/client-safe RBAC: `Role`, `ROLES`, `ROLE_LABELS`, `Capability`, capability map, `can()` + `canViewUsers`/`canEditUsers`/`canAccessSettings`. Satisfies `L2-AUTH-19`, `L2-AUTH-21`. Imported by server guards AND client UI (nav, edit gating) — keep it free of server-only imports.
+- `apps/web/app/_lib/auth/guard.ts` — `requireCapability(cap)` server guard (`auth()` → redirect). Satisfies `L2-AUTH-20`, `L2-AUTH-22`.
 - `apps/web/app/api/auth/[...nextauth]/route.ts` — `export { GET, POST } = handlers`; `runtime = "nodejs"`. Satisfies `L2-AUTH-03`.
 - `apps/web/proxy.ts` — edge gate via `getToken`. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
 - `apps/web/app/backflip/(auth)/login/page.tsx` — login page (server; reads `from`, open-redirect guarded). Satisfies `L2-AUTH-04`.
 - `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Credentials via `signIn("credentials", {redirect:false})`; Google button via `signIn("google")`.
 - `apps/web/app/backflip/(protected)/layout.tsx` — authed shell (server; `auth()` → user). SidebarProvider + AppSidebar + SidebarInset + header.
-- `apps/web/app/backflip/(protected)/_components/` — `app-sidebar` (dashboard-01 shell, logo = `RiShapesLine` + "Backflip"), `nav-main` (flat items + Quick Create), `nav-secondary`, `site-header`, `nav-user` (dropdown → `signOut`), `section-cards`, `dashboard-chart` (recharts area), `recent-table`, `types`.
+- `apps/web/app/backflip/(protected)/_components/` — `app-sidebar` (nav items carry a `capability`, filtered by role via `can()`; Account item added), `nav-main`, `nav-secondary`, `site-header`, `nav-user` (Account item → `/backflip/account`; dropdown → `signOut`), `section-cards`, `dashboard-chart`, `recent-table`, `types` (`SessionUser.role: Role`).
 - `apps/web/app/backflip/(protected)/page.tsx` — dashboard: cards + chart + table.
+- `apps/web/app/backflip/(protected)/users/page.tsx` — server; `requireCapability("users.view")`; reads users + derives login methods (`passwordHash` presence + `accounts` providers, hash never sent). Passes `sessionRole`/`sessionUserId`.
+- `apps/web/app/backflip/(protected)/users/_components/users-list.tsx` — stacked compact cards (avatar · name+email · role · login method, smaller font); Edit shown only when `canEditUsers`.
+- `apps/web/app/backflip/(protected)/users/_components/edit-user-dialog.tsx` — owner-only Dialog: name + email + role (`Select`); role field disabled when editing self (hidden field carries the unchanged role). Satisfies `L2-AUTH-22`, `L2-AUTH-23`.
+- `apps/web/app/backflip/(protected)/users/_actions.ts` — `updateUser` server action: `users.edit` gate, self-role guard, unique-email (pg 23505) handling.
+- `apps/web/app/backflip/(protected)/settings/page.tsx` + `_actions.ts` — guarded by capability `settings` (owner) at route + action level.
+
+## Authorization (RBAC)
+- One capability map in `permissions.ts` drives everything: nav visibility, edit-button rendering, route guards, and action checks. Add a nav item → give it a `capability`; add a page → guard with `requireCapability`.
+- Grants: owner = all; admin = dashboard + account + users.view (read-only users, no settings); teammate = dashboard + account only. See `L2-AUTH-21`.
+- Server-side is authoritative (`L2-AUTH-22`): hiding UI is cosmetic; `requireCapability` (pages) + `can*` checks (actions) do the enforcing. The edge `proxy` still gates the whole `/backflip/*` subtree for authentication; capability checks are per-route inside it.
+
+## Account page (`/backflip/account`)
+- **Built (this iteration):** read-only summary — `apps/web/app/backflip/(protected)/account/page.tsx`, server, `requireCapability("account")` (all roles). Profile card (name/email/role) + Login methods (Password / linked providers). It's teammate's home surface, so it must exist for the role model to be coherent. No hash sent to client.
+- **Planned (next iteration):** the summary → click-to-edit flow mirroring settings (`settings/_components/*-section.tsx`): each section = Badge + `dl` summary with an Edit button swapping to an inline `useActionState` form.
+  - Sections: **Profile** (name, email — email editable but is the unique login identity), **Security** (password state → change-password form, bcrypt), **Login methods** (read-only).
+  - Server actions `account/_actions.ts` (`saveProfile`, `changePassword`), scoped to the acting user only (never a client-supplied userId). Profile photo out of scope.
+  - Docs at build time: decide new L2 `account` domain vs. extend `auth` (self-service profile); propose then.
 
 ## Implementation notes
 - **Credentials → JWT**: Credentials provider forces `jwt` session strategy; adapter still used to persist Google accounts.
