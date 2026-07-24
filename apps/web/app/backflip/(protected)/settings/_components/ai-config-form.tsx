@@ -7,12 +7,6 @@ import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { NativeSelect } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs"
 
 import { saveAiConfig } from "../_actions"
 
@@ -30,7 +24,7 @@ export const LABEL: Record<ProviderConfig["provider"], string> = {
   google: "Google (Gemini)",
 }
 
-const MODELS: Record<ProviderConfig["provider"], string[]> = {
+export const MODELS: Record<ProviderConfig["provider"], string[]> = {
   anthropic: [
     "claude-opus-4-8",
     "claude-sonnet-5",
@@ -40,7 +34,7 @@ const MODELS: Record<ProviderConfig["provider"], string[]> = {
   google: ["gemini-2.5-pro", "gemini-2.5-flash"],
 }
 
-function ProviderForm({
+export function ProviderForm({
   cfg,
   onSaved,
   onCancel,
@@ -114,7 +108,7 @@ function ProviderForm({
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? "Saving…" : "Save changes"}
         </Button>
         {onCancel ? (
           <Button
@@ -131,32 +125,5 @@ function ProviderForm({
         ) : null}
       </div>
     </form>
-  )
-}
-
-export function AiConfigForm({
-  initial,
-  onSaved,
-  onCancel,
-}: {
-  initial: ProviderConfig[]
-  onSaved?: () => void
-  onCancel?: () => void
-}) {
-  return (
-    <Tabs defaultValue={initial[0]?.provider ?? "anthropic"}>
-      <TabsList>
-        {initial.map((c) => (
-          <TabsTrigger key={c.provider} value={c.provider}>
-            {LABEL[c.provider]}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-      {initial.map((c) => (
-        <TabsContent key={c.provider} value={c.provider} className="pt-4">
-          <ProviderForm cfg={c} onSaved={onSaved} onCancel={onCancel} />
-        </TabsContent>
-      ))}
-    </Tabs>
   )
 }
