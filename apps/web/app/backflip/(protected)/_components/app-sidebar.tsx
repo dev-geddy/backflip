@@ -1,12 +1,16 @@
 "use client"
 
-import type { ComponentProps } from "react"
+import type { ComponentProps, ComponentType } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -21,70 +25,119 @@ import {
 } from "@remixicon/react"
 
 import { can, type Capability } from "@/app/_lib/auth/permissions"
-import { NavMain, type NavItem } from "./nav-main"
-import { NavSecondary, type NavSecondaryItem } from "./nav-secondary"
 import { NavUser } from "./nav-user"
 import type { SessionUser } from "./types"
 
-/** Each nav item declares the capability that reveals it (see permissions). */
-const navMain: (NavItem & { capability: Capability })[] = [
+type NavItem = {
+  title: string
+  url: string
+  icon: ComponentType<{ className?: string }>
+  capability: Capability
+}
+
+/** Nav grouped into design's labeled sections; each item declares its capability. */
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    title: "Dashboard",
-    url: "/backflip",
-    icon: RiDashboardLine,
-    capability: "dashboard",
+    label: "Platform",
+    items: [
+      {
+        title: "Dashboard",
+        url: "/backflip",
+        icon: RiDashboardLine,
+        capability: "dashboard",
+      },
+      {
+        title: "Users",
+        url: "/backflip/users",
+        icon: RiGroupLine,
+        capability: "users.view",
+      },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      {
+        title: "Account",
+        url: "/backflip/account",
+        icon: RiUserLine,
+        capability: "account",
+      },
+      {
+        title: "Settings",
+        url: "/backflip/settings",
+        icon: RiSettings3Line,
+        capability: "settings",
+      },
+    ],
   },
 ]
 
-const navSecondary: (NavSecondaryItem & { capability: Capability })[] = [
-  {
-    title: "Users",
-    url: "/backflip/users",
-    icon: RiGroupLine,
-    capability: "users.view",
-  },
-  {
-    title: "Account",
-    url: "/backflip/account",
-    icon: RiUserLine,
-    capability: "account",
-  },
-  {
-    title: "Settings",
-    url: "/backflip/settings",
-    icon: RiSettings3Line,
-    capability: "settings",
-  },
-]
+function isActive(pathname: string, url: string) {
+  return url === "/backflip" ? pathname === url : pathname.startsWith(url)
+}
 
 export function AppSidebar({
   user,
   ...props
 }: ComponentProps<typeof Sidebar> & { user: SessionUser }) {
-  const visibleMain = navMain.filter((i) => can(user.role, i.capability))
-  const visibleSecondary = navSecondary.filter((i) =>
-    can(user.role, i.capability)
-  )
+  const pathname = usePathname()
+
+  const groups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => can(user.role, i.capability)),
+  })).filter((g) => g.items.length > 0)
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
+              size="lg"
               render={<Link href="/backflip" />}
+              className="gap-2.5"
             >
-              <RiShapesLine className="size-5!" />
-              <span className="text-base font-semibold">Backflip</span>
+              <div className="flex aspect-square size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <RiShapesLine className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left leading-tight">
+                <span className="text-sm font-semibold">Backflip</span>
+                <span className="text-xs text-muted-foreground">
+                  Admin console
+                </span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={visibleMain} />
-        <NavSecondary items={visibleSecondary} className="mt-auto" />
+        {groups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className="uppercase tracking-wide">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={isActive(pathname, item.url)}
+                      render={<Link href={item.url} />}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={user} />
       </SidebarFooter>

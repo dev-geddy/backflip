@@ -58,7 +58,7 @@ export function MembersList({
   return (
     <div className="flex min-h-0 flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b px-4 py-3">
+      <div className="flex h-14 items-center gap-2 border-b px-4">
         <div className="flex items-baseline gap-1.5">
           <span className="text-sm font-semibold">Members</span>
           <span className="text-xs text-muted-foreground">· {total}</span>

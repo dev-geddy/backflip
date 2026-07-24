@@ -83,11 +83,11 @@ export function IntegrationsView({
       {/* List */}
       <div
         className={cn(
-          "min-h-0 w-full flex-col overflow-hidden rounded-xl border bg-card lg:flex lg:w-80 lg:flex-none",
+          "min-h-0 w-full flex-col overflow-hidden rounded-xl border bg-card lg:flex lg:w-[22rem] lg:flex-none",
           mobileDetail ? "hidden" : "flex"
         )}
       >
-        <div className="border-b px-4 py-3">
+        <div className="flex h-14 items-center border-b px-4">
           <span className="text-sm font-semibold">Integrations</span>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
