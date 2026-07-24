@@ -7,14 +7,15 @@
 > **Depends on L2:** `db` (`email_config`, crypto), `auth` (admin gate)
 
 ## Owns
-Email sending configuration (Resend provider config under `/backflip/settings`, backed by `email_config`) **and** transactional sending: a server send layer + react-email templates. First template: welcome email on user creation.
+Email sending configuration (Resend provider config under `/backflip/settings`, backed by `email_config`) **and** transactional sending: a server send layer + a shared GitHub-style react-email shell + per-event templates (welcome, password reset, password changed, email-change verification, email changed).
 
 ## Interfaces
 - `L2-EMAIL-01` — Route `/backflip/settings` Email section — admin Resend config UI (flat form). (`apps/web/app/backflip/(protected)/settings/`)
 - `L2-EMAIL-02` — Server action `saveEmailConfig(prev, formData)` — upserts the single `email_config` row; encrypts the key if supplied. Admin-gated. (`settings/_actions.ts`)
 - `L2-EMAIL-03` — Config persisted in `email_config` (`L2-DB-18`). Key encrypted via `L2-DB-16`.
 - `L2-EMAIL-11` — Send layer `sendWelcomeEmail({ to, name })` (`apps/web/app/_lib/email/send.tsx`) — reads the single `email_config` row, decrypts the key server-side (`L2-DB-16`), renders the template, sends via Resend. Returns `SendResult`: `{sent:true,id}` | `{sent:false,reason:"not_configured"}` | `{sent:false,reason:"error",message}`. Never throws. Consumed by `POST /api/backflip/users` (auth, `L2-AUTH-25`).
-- `L2-EMAIL-12` — Template `WelcomeEmail` (`apps/web/app/_lib/email/welcome-email.tsx`) — react-email component, GitHub-style (neutral grays, system font, bordered white card, single green CTA to `/backflip/login`), rendered to HTML server-side.
+- `L2-EMAIL-12` — Shared shell `EmailShell` + `PrimaryButton`/`FallbackUrl` (`apps/web/app/_lib/email/layout.tsx`) — GitHub-style (neutral grays, system font, bordered white card, single green CTA), inline styles only, rendered to HTML server-side. All templates compose it.
+- `L2-EMAIL-16` — Transactional templates + send functions (all soft-fail per `L2-EMAIL-13`): `sendWelcomeEmail` (new user), `sendPasswordResetEmail` (reset link), `sendPasswordChangedEmail` (security notice), `sendEmailChangeVerification` (confirm link → NEW address), `sendEmailChangedNotice` (heads-up → OLD address). Links use `appUrl()` base (`L2-EMAIL-14`). (`apps/web/app/_lib/email/*-email.tsx`, `send.tsx`)
 
 ## Schemas
 - `L2-EMAIL-04` — Provider: `resend` (fixed, single row). Extensible later.

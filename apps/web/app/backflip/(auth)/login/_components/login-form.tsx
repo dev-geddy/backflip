@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@workspace/ui/components/button"
@@ -92,7 +93,15 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <div className="flex items-center justify-between">
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <Link
+                    href="/backflip/forgot-password"
+                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
