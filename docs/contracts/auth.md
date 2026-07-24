@@ -3,63 +3,66 @@
 > L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
 > Style: terse. One fact per line.
 
-> **Implements L1:** `L1-ARCH-01`, `L1-ARCH-04`, `L1-CON-01`, `L1-CON-02`, `L1-STACK-10`
-> **Depends on L2:** `db` (user table), `infra` (AUTH_* env)
+> **Implements L1:** `L1-ARCH-01`, `L1-ARCH-04`, `L1-CON-01`, `L1-CON-02`, `L1-CON-05`, `L1-STACK-10`
+> **Depends on L2:** `db` (user table, tokens), `infra` (AUTH_* env)
 
 ## Owns
-Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login route, and the role-based authorization model (capabilities).
+Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login route, the role-based authorization model (capabilities), admin user management, self-service account, and password recovery.
 
-## Interfaces
-- `L2-AUTH-01` — `proxy(request)` — edge gate on `/backflip/:path*`. Reads Auth.js JWT via `getToken` (presence only — the edge can't validate token version without a DB). No token on a non-public path → redirect `/backflip/login?from=<path>`. Public paths bypass the gate: `/backflip/login`, `/backflip/forgot-password`, `/backflip/reset-password`. The "already-signed-in → dashboard" redirect lives on the login page (node, validity-aware), not here. (`apps/web/proxy.ts`)
-- `L2-AUTH-19` — `@/app/_lib/auth/permissions` — pure, client-safe authorization model: `Role` (`owner|admin|teammate`), `ROLES`, `ROLE_LABELS`, `Capability`, `can(role, capability)`, helpers `canViewUsers`/`canEditUsers`/`canAccessSettings`. Single source of truth for grants.
-- `L2-AUTH-20` — `@/app/_lib/auth/guard` → `requireCapability(capability)` — server-only route guard. Unauth → `/backflip/login`; authed but lacking capability → `/backflip`. Returns the session user.
-- `L2-AUTH-02` — `@/app/_lib/auth` → `{ handlers, auth, signIn, signOut }` — Auth.js v5 (NextAuth) instance. Node runtime (uses `pg`).
-- `L2-AUTH-03` — Route `/api/auth/[...nextauth]` — Auth.js handlers (sign-in/out, callbacks, session, csrf, providers). `runtime = "nodejs"`.
-- `L2-AUTH-04` — Route `/backflip/login` — public login page: credentials form + Google button.
-- `L2-AUTH-05` — Providers: **Credentials** (email + password) and **Google** (OAuth, `allowDangerousEmailAccountLinking`). Each is included conditionally — Google when configured, Credentials unless disabled (`L2-AUTH-33`).
+> **Reading guide.** Grouped by concern (this is the one large contract, so it groups rather than using the flat Interfaces/Schemas/Invariants layout). Each item keeps its permanent ID; kind shown inline as _(iface | schema | inv | err | accept)_. Code cites these IDs via `@spec` JSDoc tags on the owning module (see the `docs-sync` skill).
 
-- `L2-AUTH-27` — Self-service account (`/backflip/account`, capability `account`, all roles). Server actions in `account/_actions.ts`, ALWAYS scoped to `session.user.id` (never a client id): `saveProfile` (name); `changePassword` (verifies current bcrypt when a hash exists, else sets a first password; min-8 + confirm; → password-changed email; bumps `tokenVersion` per `L2-AUTH-36`); `requestEmailChange` (step-up: re-verifies the current password when one exists; validates + checks availability + rate limit `L2-AUTH-37`; mints an `email_change` token, sends a verify link to the NEW address — the email is NOT changed yet; requires configured email); `confirmEmailChange(token)` (consumes the token, must match the session user, swaps the address, notifies the OLD address, bumps `tokenVersion`). Verify link target: `/backflip/account/verify-email` (protected). Uses `L2-EMAIL-16`, `L2-AUTH-29`, `L2-AUTH-36`, `L2-AUTH-37`, `L2-DB-20`.
-- `L2-AUTH-28` — Password recovery (public, `apps/web/app/backflip/(auth)`). `requestPasswordReset` mints a `password_reset` token if the email exists (subject to the rate limit `L2-AUTH-37`) and emails a reset link, but ALWAYS returns a generic success (no user enumeration). `resetPassword` validates the token (min-8 + confirm), sets `passwordHash`, bumps `tokenVersion` (`L2-AUTH-36`), sends a password-changed notice. Both refuse when credentials login is disabled (`L2-AUTH-33`). Pages: `/backflip/forgot-password`, `/backflip/reset-password?token=…`. Uses `L2-EMAIL-16`, `L2-AUTH-29`, `L2-AUTH-36`, `L2-AUTH-37`, `L2-DB-20`.
-- `L2-AUTH-29` — Token helpers `createUserToken({userId,type,newEmail?})` / `consumeUserToken({rawToken,type})` (`apps/web/app/_lib/auth/tokens.ts`). Single live token per (user,type) — minting invalidates prior ones. 60-minute TTL. Only the hash is stored (`L2-DB-21`); consume checks type + not-expired + not-consumed, then marks consumed (single use).
-- `L2-AUTH-33` — Auth-mode flags (`apps/web/app/_lib/auth/config.ts`, server-only): `isGoogleConfigured()` (both `AUTH_GOOGLE_ID`+`AUTH_GOOGLE_SECRET`), `isCredentialsEnabled()`. `AUTH_CREDENTIALS_ENABLED=false` → Google-only: Credentials provider omitted, password form + "Forgot password?" hidden, recovery actions refuse. Fail-safe: the disable is honored ONLY when Google is configured, so credentials never fully lock out a deployment. The seeded owner is pre-registered, so Google works for them by default (`L2-DB-04`).
+## Authentication & session
+- `L2-AUTH-02` _(iface)_ — `@/app/_lib/auth` → `{ handlers, auth, signIn, signOut }` — Auth.js v5 (NextAuth) instance. Node runtime (uses `pg`).
+- `L2-AUTH-03` _(iface)_ — Route `/api/auth/[...nextauth]` — Auth.js handlers (sign-in/out, callbacks, session, csrf, providers). `runtime = "nodejs"`.
+- `L2-AUTH-04` _(iface)_ — Route `/backflip/login` — public login page: credentials form + Google button.
+- `L2-AUTH-05` _(iface)_ — Providers: **Credentials** (email + password) and **Google** (OAuth, `allowDangerousEmailAccountLinking`). Each is included conditionally — Google when configured, Credentials unless disabled (`L2-AUTH-33`).
+- `L2-AUTH-01` _(iface)_ — `proxy(request)` — edge gate on `/backflip/:path*`. Reads Auth.js JWT via `getToken` (presence only — the edge can't validate token version without a DB). No token on a non-public path → redirect `/backflip/login?from=<path>`. Public paths bypass the gate: `/backflip/login`, `/backflip/forgot-password`, `/backflip/reset-password`. The "already-signed-in → dashboard" redirect lives on the login page (node, validity-aware), not here. (`apps/web/proxy.ts`)
+- `L2-AUTH-33` _(iface)_ — Auth-mode flags (`apps/web/app/_lib/auth/config.ts`, server-only): `isGoogleConfigured()` (both `AUTH_GOOGLE_ID`+`AUTH_GOOGLE_SECRET`), `isCredentialsEnabled()`. `AUTH_CREDENTIALS_ENABLED=false` → Google-only: Credentials provider omitted, password form + "Forgot password?" hidden, recovery actions refuse. Fail-safe: the disable is honored ONLY when Google is configured, so credentials never fully lock out a deployment. The seeded owner is pre-registered, so Google works for them by default (`L2-DB-04`).
+- `L2-AUTH-06` _(schema)_ — Session = Auth.js JWT (encrypted cookie). Strategy `jwt` (required by Credentials). Payload exposes `user.id`, `user.email`, `user.name`, `user.role`, and carries `tokenVersion` for revocation.
+- `L2-AUTH-07` _(schema)_ — Env: `AUTH_SECRET`, `AUTH_TRUST_HOST`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_CREDENTIALS_ENABLED` (root `.env.local`). Credentials work without Google vars; `AUTH_CREDENTIALS_ENABLED=false` needs Google set to take effect (`L2-AUTH-33`).
+- `L2-AUTH-08` _(inv)_ — Every `/backflip/*` path except the login route requires a valid session.
+- `L2-AUTH-09` _(inv)_ — Credentials auth verifies email + bcrypt(`user.passwordHash`). No plaintext compare.
+- `L2-AUTH-10` _(inv)_ — Google sign-in succeeds only if a `user` row with that email already exists (enforced in `signIn` callback). No self-registration via OAuth.
+- `L2-AUTH-11` _(inv)_ — Google callback links to the existing user by verified email (pre-registered emails are trusted).
+- `L2-AUTH-34` _(inv)_ — There is always ≥1 usable sign-in method: `AUTH_CREDENTIALS_ENABLED=false` disables password login only when Google is configured (`L2-AUTH-33`). The owner, being pre-registered, can always sign in with Google when it's configured — regardless of whether a password is set.
+- `L2-AUTH-12` _(err)_ — Missing/invalid session → 307 redirect to login, original path in `from`. No error body.
+- `L2-AUTH-13` _(err)_ — Bad credentials → Auth.js returns to login with error (no session issued).
+- `L2-AUTH-14` _(err)_ — Google email not pre-registered → sign-in denied (`signIn` returns false).
+- `L2-AUTH-15` _(err)_ — Missing `AUTH_SECRET` → Auth.js "server configuration" error. Ensure root env loaded (dev script uses dotenv; docker uses compose `env_file`).
+- `L2-AUTH-16` _(accept)_ — Unauth request to any `/backflip/*` (non-login) redirects to `/backflip/login`.
+- `L2-AUTH-17` _(accept)_ — Valid credentials → session with `user.role`; protected page reachable.
+- `L2-AUTH-18` _(accept)_ — Google sign-in with a pre-registered email yields a session; unknown email is rejected.
+- `L2-AUTH-35` _(accept)_ — With `AUTH_CREDENTIALS_ENABLED=false` and Google configured: the login page shows only the Google button, credentials sign-in and the recovery actions are refused, and a Google-only owner (seeded without `ADMIN_PASSWORD`) signs in via Google. With Google NOT configured, the flag is ignored and password login remains.
 
-## Schemas
-- `L2-AUTH-06` — Session = Auth.js JWT (encrypted cookie). Strategy `jwt` (required by Credentials). Payload exposes `user.id`, `user.email`, `user.name`, `user.role`, and carries `tokenVersion` for revocation.
-- `L2-AUTH-36` — Session revocation: the JWT carries `tokenVersion` (`L2-DB-22`). The `jwt` callback revalidates it against the DB on each request; a mismatch (or missing user) marks the token invalid and the `session` callback drops `user`, so guards treat it as unauthenticated. Password change, password reset, and confirmed email change bump `tokenVersion` → all existing sessions (including the actor's own) are invalidated (`L2-AUTH-27/28`). Cost: one indexed user read per authenticated request.
-- `L2-AUTH-37` — Recovery rate limit: `requestPasswordReset` and `requestEmailChange` are capped per account at `RATE_LIMIT` (3 requests / 15 min, by `user_token.createdAt`). Reset silently skips past the cap (no enumeration signal); email-change returns an explicit "try again later". Per-account only — not per-IP (a future edge limiter). (`_lib/auth/tokens.ts`)
-- `L2-AUTH-07` — Env: `AUTH_SECRET`, `AUTH_TRUST_HOST`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_CREDENTIALS_ENABLED` (root `.env.local`). Credentials work without Google vars; `AUTH_CREDENTIALS_ENABLED=false` needs Google set to take effect (`L2-AUTH-33`).
+## Authorization (capabilities)
+- `L2-AUTH-19` _(iface)_ — `@/app/_lib/auth/permissions` — pure, client-safe authorization model: `Role` (`owner|admin|teammate`), `ROLES`, `ROLE_LABELS`, `Capability`, `can(role, capability)`, helpers `canViewUsers`/`canEditUsers`/`canAccessSettings`. Single source of truth for grants.
+- `L2-AUTH-20` _(iface)_ — `@/app/_lib/auth/guard` → `requireCapability(capability)` — server-only route guard. Unauth → `/backflip/login`; authed but lacking capability → `/backflip`. Returns the session user.
+- `L2-AUTH-21` _(inv)_ — Capability grants: **owner** = all (`dashboard`, `account`, `users.view`, `users.edit`, `settings`); **admin** = `dashboard`, `account`, `users.view`; **teammate** = `dashboard`, `account`. Owner is the superset.
+- `L2-AUTH-22` _(inv)_ — Authorization is enforced server-side (route guards via `requireCapability`, per-action capability checks, and per-endpoint checks), never UI-only. Hidden nav items / buttons are cosmetic. Guarded: `/backflip/users` (`users.view`) + `updateUser` (`users.edit`) + `POST /api/backflip/users` (`users.edit`); `/backflip/settings` + `saveAiConfig`/`saveEmailConfig` (`settings`).
+- `L2-AUTH-24` _(accept)_ — teammate visiting `/backflip/users` or `/backflip/settings` → redirect `/backflip`; admin visiting `/backflip/settings` → redirect. Owner reaches both; only owner sees Edit / Add user on users and can save settings.
 
-## Invariants
-- `L2-AUTH-08` — Every `/backflip/*` path except the login route requires a valid session.
-- `L2-AUTH-09` — Credentials auth verifies email + bcrypt(`user.passwordHash`). No plaintext compare.
-- `L2-AUTH-10` — Google sign-in succeeds only if a `user` row with that email already exists (enforced in `signIn` callback). No self-registration via OAuth.
-- `L2-AUTH-11` — Google callback links to the existing user by verified email (pre-registered emails are trusted).
-- `L2-AUTH-21` — Capability grants: **owner** = all (`dashboard`, `account`, `users.view`, `users.edit`, `settings`); **admin** = `dashboard`, `account`, `users.view`; **teammate** = `dashboard`, `account`. Owner is the superset.
-- `L2-AUTH-22` — Authorization is enforced server-side (route guards via `requireCapability`, per-action capability checks, and per-endpoint checks), never UI-only. Hidden nav items / buttons are cosmetic. Guarded: `/backflip/users` (`users.view`) + `updateUser` (`users.edit`) + `POST /api/backflip/users` (`users.edit`); `/backflip/settings` + `saveAiConfig`/`saveEmailConfig` (`settings`).
-- `L2-AUTH-25` — `POST /api/backflip/users` route handler (owner, `users.edit`; `runtime="nodejs"`) — JSON body `{name?, email, role, password?}`. Inserts a `user` row; optional password → `passwordHash` null means Google-only sign-in (email must be pre-registered per `L2-AUTH-10/11`). On success a welcome email is sent best-effort (`L2-EMAIL-11`); an unconfigured provider or send failure never changes the outcome. Status: 201 created · 400 validation · 401 unauth · 403 forbidden · 409 duplicate email. (`apps/web/app/api/backflip/users/route.ts`)
-- `L2-AUTH-30` — Email change is verification-gated: the `user.email` only changes after the token sent to the NEW address is confirmed by the same signed-in user; the OLD address is notified on completion. A direct `updateUser` email edit by an owner (`L2-AUTH-22`) is the admin exception and is NOT verified.
-- `L2-AUTH-31` — Recovery tokens (`password_reset`, `email_change`) are single-use + 60-min TTL (`L2-AUTH-29`). Forgot-password responds identically whether or not the account exists (no enumeration).
-- `L2-AUTH-34` — There is always ≥1 usable sign-in method: `AUTH_CREDENTIALS_ENABLED=false` disables password login only when Google is configured (`L2-AUTH-33`). The owner, being pre-registered, can always sign in with Google when it's configured — regardless of whether a password is set.
-- `L2-AUTH-23` — Self-lockout guard: an owner cannot change their own role (enforced in `updateUser`).
+## User management (admin)
+- `L2-AUTH-25` _(iface)_ — `POST /api/backflip/users` route handler (owner, `users.edit`; `runtime="nodejs"`) — JSON body `{name?, email, role, password?}`. Inserts a `user` row; optional password → `passwordHash` null means Google-only sign-in (email must be pre-registered per `L2-AUTH-10/11`). On success a welcome email is sent best-effort (`L2-EMAIL-11`); an unconfigured provider or send failure never changes the outcome. Status: 201 created · 400 validation · 401 unauth · 403 forbidden · 409 duplicate email. (`apps/web/app/api/backflip/users/route.ts`)
+- `L2-AUTH-23` _(inv)_ — Self-lockout guard: an owner cannot change their own role (enforced in `updateUser`).
+- `L2-AUTH-26` _(accept)_ — Owner adds a user via the Add user dialog → the row appears in the list; a non-owner never sees the control and `POST /api/backflip/users` rejects a non-owner call with 403 (`L2-AUTH-25`).
 
-## Errors
-- `L2-AUTH-12` — Missing/invalid session → 307 redirect to login, original path in `from`. No error body.
-- `L2-AUTH-13` — Bad credentials → Auth.js returns to login with error (no session issued).
-- `L2-AUTH-14` — Google email not pre-registered → sign-in denied (`signIn` returns false).
-- `L2-AUTH-15` — Missing `AUTH_SECRET` → Auth.js "server configuration" error. Ensure root env loaded (dev script uses dotenv; docker uses compose `env_file`).
+## Account (self-service)
+- `L2-AUTH-27` _(iface)_ — Self-service account (`/backflip/account`, capability `account`, all roles). Server actions in `account/_actions.ts`, ALWAYS scoped to `session.user.id` (never a client id): `saveProfile` (name); `changePassword` (verifies current bcrypt when a hash exists, else sets a first password; min-8 + confirm; → password-changed email; bumps `tokenVersion` per `L2-AUTH-36`); `requestEmailChange` (step-up: re-verifies the current password when one exists; validates + checks availability + rate limit `L2-AUTH-37`; mints an `email_change` token, sends a verify link to the NEW address — the email is NOT changed yet; requires configured email); `confirmEmailChange(token)` (consumes the token, must match the session user, swaps the address, notifies the OLD address, bumps `tokenVersion`). Verify link target: `/backflip/account/verify-email` (protected). Uses `L2-EMAIL-16`, `L2-AUTH-29`, `L2-AUTH-36`, `L2-AUTH-37`, `L2-DB-20`.
+- `L2-AUTH-30` _(inv)_ — Email change is verification-gated: the `user.email` only changes after the token sent to the NEW address is confirmed by the same signed-in user; the OLD address is notified on completion. A direct `updateUser` email edit by an owner (`L2-AUTH-22`) is the admin exception and is NOT verified.
+- `L2-AUTH-32` _(accept)_ — A user changes their password on `/backflip/account` (current verified) → sign-in works with the new password + a password-changed email is sent. Requesting an email change sends a verify link to the new address; only after confirming does sign-in use the new email and the old address get notified. Forgot-password → reset link → new password works, and an unknown email returns the same generic response.
 
-## Acceptance
-- `L2-AUTH-16` — Unauth request to any `/backflip/*` (non-login) redirects to `/backflip/login`.
-- `L2-AUTH-17` — Valid credentials → session with `user.role`; protected page reachable.
-- `L2-AUTH-18` — Google sign-in with a pre-registered email yields a session; unknown email is rejected.
-- `L2-AUTH-24` — teammate visiting `/backflip/users` or `/backflip/settings` → redirect `/backflip`; admin visiting `/backflip/settings` → redirect. Owner reaches both; only owner sees Edit / Add user on users and can save settings.
-- `L2-AUTH-26` — Owner adds a user via the Add user dialog → the row appears in the list; a non-owner never sees the control and `POST /api/backflip/users` rejects a non-owner call with 403 (`L2-AUTH-25`).
-- `L2-AUTH-32` — A user changes their password on `/backflip/account` (current verified) → sign-in works with the new password + a password-changed email is sent. Requesting an email change sends a verify link to the new address; only after confirming does sign-in use the new email and the old address get notified. Forgot-password → reset link → new password works, and an unknown email returns the same generic response.
-- `L2-AUTH-35` — With `AUTH_CREDENTIALS_ENABLED=false` and Google configured: the login page shows only the Google button, credentials sign-in and the recovery actions are refused, and a Google-only owner (seeded without `ADMIN_PASSWORD`) signs in via Google. With Google NOT configured, the flag is ignored and password login remains.
+## Password recovery
+- `L2-AUTH-28` _(iface)_ — Password recovery (public, `apps/web/app/backflip/(auth)`). `requestPasswordReset` mints a `password_reset` token if the email exists (subject to the rate limit `L2-AUTH-37`) and emails a reset link, but ALWAYS returns a generic success (no user enumeration). `resetPassword` validates the token (min-8 + confirm), sets `passwordHash`, bumps `tokenVersion` (`L2-AUTH-36`), sends a password-changed notice. Both refuse when credentials login is disabled (`L2-AUTH-33`). Pages: `/backflip/forgot-password`, `/backflip/reset-password?token=…`. Uses `L2-EMAIL-16`, `L2-AUTH-29`, `L2-AUTH-36`, `L2-AUTH-37`, `L2-DB-20`.
+- `L2-AUTH-31` _(inv)_ — Recovery tokens (`password_reset`, `email_change`) are single-use + 60-min TTL (`L2-AUTH-29`). Forgot-password responds identically whether or not the account exists (no enumeration).
+
+## Sessions, tokens & rate limits
+- `L2-AUTH-29` _(iface)_ — Token helpers `createUserToken({userId,type,newEmail?})` / `consumeUserToken({rawToken,type})` (`apps/web/app/_lib/auth/tokens.ts`). Single live token per (user,type) — minting invalidates prior ones. 60-minute TTL. Only the hash is stored (`L2-DB-21`); consume checks type + not-expired + not-consumed, then marks consumed (single use).
+- `L2-AUTH-36` _(schema)_ — Session revocation: the JWT carries `tokenVersion` (`L2-DB-22`). The `jwt` callback revalidates it against the DB on each request; a mismatch (or missing user) marks the token invalid and the `session` callback drops `user`, so guards treat it as unauthenticated. Password change, password reset, and confirmed email change bump `tokenVersion` → all existing sessions (including the actor's own) are invalidated (`L2-AUTH-27/28`). Cost: one indexed user read per authenticated request.
+- `L2-AUTH-37` _(schema)_ — Recovery rate limit: `requestPasswordReset` and `requestEmailChange` are capped per account at `RATE_LIMIT` (3 requests / 15 min, by `user_token.createdAt`). Reset silently skips past the cap (no enumeration signal); email-change returns an explicit "try again later". Per-account only — not per-IP (a future edge limiter). (`_lib/auth/tokens.ts`)
 
 ## Constrained L3
 - `/docs/notes/auth.md`
 
 ---
-IDs: `L2-AUTH-<NN>`. Permanent, never renumber.
+IDs: `L2-AUTH-<NN>`. Permanent, never renumber. Concern headers may be reorganized freely; IDs may not.
 Change: propose diff + affected-L3 → stop → await human.

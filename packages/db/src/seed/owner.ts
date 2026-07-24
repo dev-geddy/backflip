@@ -14,6 +14,8 @@ import { users } from "../schema"
  * by this seed, so `L2-AUTH-10/11` allows it). When omitted on a re-run, any
  * existing password is preserved (not wiped).
  * Run: `corepack yarn init-owner`.
+ *
+ * @spec L2-DB-04, L2-DB-15
  */
 async function main() {
   const email = process.env.ADMIN_EMAIL

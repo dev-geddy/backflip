@@ -1,5 +1,7 @@
 "use client"
 
+/** Component demo gallery + dark toggle. @spec L2-UI-05, L2-UI-12 */
+
 import { useState } from "react"
 import {
   Area,

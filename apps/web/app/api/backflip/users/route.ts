@@ -30,6 +30,8 @@ function isUniqueViolation(e: unknown) {
  * Status codes: 201 created · 400 validation · 401 unauth · 403 forbidden ·
  * 409 duplicate email. Email delivery never changes the status: an unconfigured
  * Resend or a send failure still returns 201 with an informative `message`.
+ *
+ * @spec L2-AUTH-25
  */
 export async function POST(req: Request) {
   const session = await auth()

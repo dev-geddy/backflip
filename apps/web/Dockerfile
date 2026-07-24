@@ -1,5 +1,6 @@
 # Web app container. Build context = repo root (monorepo).
 # Serves the production build on container port 3070 (compose maps host 3071).
+# @spec L2-INF-04
 FROM node:20-alpine AS base
 RUN corepack enable
 WORKDIR /repo
