@@ -10,8 +10,7 @@
 - `apps/web/app/layout.tsx` — mounts ThemeProvider + TooltipProvider + Toaster. Satisfies `L2-UI-04`, `L2-UI-09`.
 - `apps/web/app/page.tsx` — public marketing homepage (RSC/SSR). Composes `_components/`: `SiteHeader`, `Hero`, `FeatureGrid`, `HowItWorks`, `WordmarkBand`, `SiteFooter`. Sets page `metadata`. Satisfies `L2-UI-11` (proposed).
 - `apps/web/app/_components/*` — homepage sections (app-scoped, `L1-ARCH-07/08`): `site-header.tsx` (`"use client"` — sticky nav + wordmark + theme toggle via `useTheme`, links use `Button render={<a/>}`), `hero.tsx` (headline + CTAs over CSS stripe texture, no image), `feature-grid.tsx` (5 `Card`s from `FEATURES`, remixicon icons), `how-it-works.tsx` (3-step band on `bg-muted`), `wordmark-band.tsx` (oversized `text-muted-foreground/20` accent), `site-footer.tsx`. Theme tokens only, no hex. Icons remixicon only.
-- `apps/web/app/backflip/(protected)/users/page.tsx` — admin user list (RSC). Selects display fields from `users` (no hash), newest first; renders `UsersList`. Sidebar `Users` links here.
-- `apps/web/app/backflip/(protected)/users/_components/users-list.tsx` — flat details card: `PageHeading` (title + `AddUserDialog` action) over a bordered `divide-y` list; each row avatar + name + mono email + role line + role `Badge` + `EditUserDialog` (owner only).
+- `apps/web/app/backflip/(protected)/users/page.tsx` — admin Members surface (RSC). Selects `users` display fields + `emailVerified`/`createdAt` (no hash), newest first; derives per-member `loginMethods`, `usesGoogle`, `status` (Active/Pending) + workspace counts; renders `MembersView`. Sidebar `Users` links here. (Members master-detail — see "Members (design 1A)".)
 - `apps/web/app/ui-samples/page.tsx` — component demo (`UISamplesPage`, heading "UI Samples"), dashboard/masonry layout reproducing the `base-mira` create-preview; exercises ~50 components (item, field, input-group, native-select, toggle-group, chart/recharts, empty, spinner, progress, calendar, radio, table, tabs, accordion, …). `d` = dark toggle. Satisfies `L2-UI-05`, `L2-UI-12`. Note: uncontrolled `defaultValue` passed to base-ui ToggleGroup/Slider must be stable module-scope refs (base-ui warns on identity change per render).
 - `apps/web/next.config.ts` — `transpilePackages: ["@workspace/ui"]`. Satisfies `L2-UI-10`.
 
@@ -25,6 +24,16 @@ Protected `/backflip/*` surface restyled to a flat, hairline aesthetic (imported
 - Sidebar (`app-sidebar`, `nav-*`) intentionally **not** restyled — logo top / user-menu bottom positioning + functionality kept per request; fonts inherit theme.
 - Menu unchanged: Dashboard/Users/Account/Settings (no items added).
 - Green pills use `emerald-*` utilities (only non-token color; light+dark variants). Everything else theme tokens.
+
+## Members page — design 1A master-detail (L2-UI-03; auth domain UI)
+`/backflip/users` ported from a flat card list to a 3-column master/detail (design "Flat Admin" 1A). **Layout-faithful, real-data-only** — no schema/action changes; unsupported design chrome omitted.
+- `users/_components/types.ts` — `Member` (+ derived `status`, `usesGoogle`, `joined`), `WorkspaceCounts`. `MemberStatus` = `active` (has login method OR `emailVerified`) | `pending` (neither). No "suspended" (no backend).
+- `members-view.tsx` (client shell) — selection + `mode` (overview/edit/new) + search/filter state; `flex h-full min-h-0` 3 cols (list `lg:w-[22rem]`, detail `flex-1`, rail `xl:` only). < lg: list/detail stack via `mobileDetail` toggle + back control.
+- `members-list.tsx` — header + count + `New` (owner), search, filter pills (All/Active/Pending), rows (avatar, name + mono email, Google icon from `loginMethods`, status dot), selected = `border-l-2 border-primary bg-muted`.
+- `member-detail.tsx` — profile header; **Overview** def-list (Member ID mono = `users.id`, Email + verified pill from `emailVerified`, Role badge, Sign-in method + Google icon, Date added = `createdAt`); **Edit** inline form → existing `updateUser` (self-role-lock kept); **New** form (name/email/role radio-cards/optional password) → existing `POST /api/backflip/users` + `router.refresh()`. Folds in the removed `add-user-dialog`/`edit-user-dialog`.
+- `member-rail.tsx` — permissions card (✓/— live from `can(member.role, cap)`), workspace stat counts, static help card.
+- Omitted (no backend): bulk suspend/delete, kebab disable/remove/mark-unverified, Team, Two-factor, Suspended status, last-active.
+- Removed: `users-list.tsx`, `add-user-dialog.tsx`, `edit-user-dialog.tsx`. `_actions.ts` `updateUser` + REST route unchanged.
 
 ## Form-element sizing (house tweak, padding only)
 Form primitives get +2px padding + grown heights over base-mira defaults — **font sizes unchanged**: `button` (size + icon variants), `input`, `textarea`, `native-select`, `select` trigger. Arbitrary px (`px-[10px]`, `py-[4px]`, `h-8`) where no clean Tailwind step. No theme-level text-scale bump (reverted). `cursor: pointer` on buttons is a base-layer rule. Re-`shadcn add` would overwrite these.
