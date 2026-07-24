@@ -67,10 +67,10 @@ export function MembersView({
   }
 
   return (
-    <div className="flex h-full min-h-0 gap-4">
+    <div className="flex h-full min-h-0 bg-card">
       <div
         className={cn(
-          "min-h-0 w-full flex-col overflow-hidden rounded-xl border bg-card lg:flex lg:w-[22rem] lg:flex-none",
+          "min-h-0 w-full flex-col overflow-hidden lg:flex lg:w-[372px] lg:flex-none lg:border-r",
           mobileDetail ? "hidden" : "flex"
         )}
       >
@@ -90,7 +90,7 @@ export function MembersView({
 
       <div
         className={cn(
-          "min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card lg:flex",
+          "min-h-0 flex-1 flex-col overflow-hidden lg:flex",
           mobileDetail ? "flex" : "hidden"
         )}
       >
@@ -114,7 +114,7 @@ export function MembersView({
         />
       </div>
 
-      <div className="hidden min-h-0 w-72 flex-none flex-col overflow-y-auto xl:flex">
+      <div className="hidden min-h-0 w-[300px] flex-none flex-col overflow-y-auto border-l p-4 xl:flex">
         <MemberRail member={selected} counts={counts} />
       </div>
     </div>

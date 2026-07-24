@@ -19,7 +19,7 @@ import {
 import {
   RiDashboardLine,
   RiGroupLine,
-  RiSettings3Line,
+  RiStackLine,
   RiShapesLine,
   RiUserLine,
 } from "@remixicon/react"
@@ -41,7 +41,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Platform",
     items: [
       {
-        title: "Dashboard",
+        title: "Overview",
         url: "/backflip",
         icon: RiDashboardLine,
         capability: "dashboard",
@@ -64,9 +64,9 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         capability: "account",
       },
       {
-        title: "Settings",
+        title: "Integrations",
         url: "/backflip/settings",
-        icon: RiSettings3Line,
+        icon: RiStackLine,
         capability: "settings",
       },
     ],
@@ -115,7 +115,7 @@ export function AppSidebar({
       <SidebarContent>
         {groups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="uppercase tracking-wide">
+            <SidebarGroupLabel className="text-[11px] uppercase tracking-wide">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -126,6 +126,7 @@ export function AppSidebar({
                       tooltip={item.title}
                       isActive={isActive(pathname, item.url)}
                       render={<Link href={item.url} />}
+                      className="gap-2.5 text-[13px] data-active:font-semibold"
                     >
                       <item.icon />
                       <span>{item.title}</span>

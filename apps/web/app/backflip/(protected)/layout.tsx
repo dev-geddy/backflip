@@ -47,9 +47,9 @@ export default async function ProtectedLayout({
           userName={user.name}
           userInitials={initials(user.name || user.email)}
         />
-        <div className="flex flex-1 flex-col gap-4 bg-muted/40 p-4 md:gap-6 md:p-6">
-          {children}
-        </div>
+        {/* No outer padding: master-detail pages go full-bleed edge-to-edge;
+            padded pages (dashboard/account) add their own padding. */}
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/40">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   )
