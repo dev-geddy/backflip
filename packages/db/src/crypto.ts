@@ -35,3 +35,17 @@ export function decryptSecret(enc: string): string {
     decipher.final(),
   ]).toString("utf8")
 }
+
+/**
+ * A URL-safe, high-entropy token for one-time links (password reset, email
+ * change). Return value is the RAW token — put it in the link, never store it.
+ * Persist only `hashToken(raw)`.
+ */
+export function generateToken(): string {
+  return randomBytes(32).toString("base64url")
+}
+
+/** SHA-256 (hex) of a raw token — what gets stored + looked up. */
+export function hashToken(raw: string): string {
+  return createHash("sha256").update(raw).digest("hex")
+}

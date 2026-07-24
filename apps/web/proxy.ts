@@ -13,25 +13,33 @@ import { NextResponse, type NextRequest } from "next/server"
  */
 
 const LOGIN_PATH = "/backflip/login"
-const HOME_PATH = "/backflip"
+
+/**
+ * Public auth routes within `/backflip` — reachable without a session. The
+ * password-recovery routes must work logged-out (emailed links); the login
+ * page always renders (it redirects already-signed-in users to the dashboard
+ * itself, via `auth()` — the edge can't validate the JWT's token version
+ * without a DB, so that decision lives node-side, not here).
+ */
+const PUBLIC_PATHS = new Set([
+  LOGIN_PATH,
+  "/backflip/forgot-password",
+  "/backflip/reset-password",
+])
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (PUBLIC_PATHS.has(pathname)) {
+    return NextResponse.next()
+  }
 
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
   })
-  const isAuthed = Boolean(token)
 
-  if (pathname === LOGIN_PATH) {
-    if (isAuthed) {
-      return NextResponse.redirect(new URL(HOME_PATH, request.url))
-    }
-    return NextResponse.next()
-  }
-
-  if (!isAuthed) {
+  if (!token) {
     const loginUrl = new URL(LOGIN_PATH, request.url)
     loginUrl.searchParams.set("from", pathname)
     return NextResponse.redirect(loginUrl)
