@@ -11,7 +11,7 @@
 - `packages/db` — `email_config` table + `encryptSecret`/`decryptSecret` (`L2-DB-16/18`).
 - `apps/web/app/_lib/email/send.tsx` — `sendWelcomeEmail({to,name})` (`"use server"`-callable): reads single `email_config` row → soft-skip when disabled/keyless/no fromEmail → decrypt key (`L2-DB-16`) → `render(<WelcomeEmail/>)` → `resend.emails.send({html})`. Returns `SendResult` (`{sent:true,id}` | `{sent:false,reason:"not_configured"}` | `{sent:false,reason:"error"}`); never throws. Satisfies `L2-EMAIL-11`, `L2-EMAIL-13`.
 - `apps/web/app/_lib/email/welcome-email.tsx` — react-email `WelcomeEmail` component; GitHub-style (neutral grays, system font, bordered white card, single green CTA to `/backflip/login`). Inline styles only. Satisfies `L2-EMAIL-12`.
-- **Consumer:** `users/_actions.ts` `createUser` calls `sendWelcomeEmail` after insert (best-effort; see [[auth]]).
+- **Consumer:** `POST /api/backflip/users` route handler calls `sendWelcomeEmail` after insert (best-effort; see [[auth]]).
 
 ## App URL
 - CTA link base = `APP_URL ?? AUTH_URL ?? NEXTAUTH_URL ?? http://localhost:3070`, `+ /backflip/login`.
