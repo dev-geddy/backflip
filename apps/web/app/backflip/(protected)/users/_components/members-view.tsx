@@ -111,6 +111,11 @@ export function MembersView({
             setMobileDetail(false)
           }}
           onBack={() => setMobileDetail(false)}
+          onRemoved={() => {
+            setSelectedId(null)
+            setMode("overview")
+            setMobileDetail(false)
+          }}
         />
       </div>
 
