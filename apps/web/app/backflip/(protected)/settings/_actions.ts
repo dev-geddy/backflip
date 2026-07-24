@@ -6,6 +6,7 @@ import { aiConfig, db, emailConfig, encryptSecret } from "@workspace/db"
 import { ne } from "drizzle-orm"
 
 import { auth } from "@/app/_lib/auth"
+import { canAccessSettings } from "@/app/_lib/auth/permissions"
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 type Provider = (typeof PROVIDERS)[number]
@@ -17,7 +18,9 @@ export async function saveAiConfig(
   formData: FormData
 ): Promise<SaveState> {
   const session = await auth()
-  if (!session?.user) return { ok: false, message: "Unauthorized" }
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
 
   const provider = String(formData.get("provider") ?? "")
   if (!PROVIDERS.includes(provider as Provider)) {
@@ -64,7 +67,9 @@ export async function saveEmailConfig(
   formData: FormData
 ): Promise<SaveState> {
   const session = await auth()
-  if (!session?.user) return { ok: false, message: "Unauthorized" }
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
 
   const str = (k: string) => String(formData.get(k) ?? "").trim() || null
   const set: Record<string, unknown> = {
