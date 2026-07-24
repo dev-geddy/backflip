@@ -7,6 +7,8 @@
  * - `owner`    — can do everything.
  * - `admin`    — operator; cannot touch system settings, cannot edit users.
  * - `teammate` — own account area + admin dashboard only.
+ *
+ * @spec L2-AUTH-19, L2-AUTH-21
  */
 
 export const ROLES = ["owner", "admin", "teammate"] as const

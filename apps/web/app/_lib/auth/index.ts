@@ -23,6 +23,8 @@ import "./types"
  *
  * Session strategy is JWT (required by the Credentials provider). The Drizzle
  * adapter persists OAuth accounts. Runs on the Node runtime (uses `pg`).
+ *
+ * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {

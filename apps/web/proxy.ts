@@ -8,8 +8,10 @@ import { NextResponse, type NextRequest } from "next/server"
  * Edge-safe: reads the Auth.js JWT via `getToken` (no db / node deps here).
  * - Unauthenticated request to a protected /backflip path → redirect to login
  *   with the original path in `from`.
- * - Authenticated request to the login page → redirect to the dashboard.
- * The login route is otherwise public.
+ * - Login + recovery routes are public (the "already signed-in → dashboard"
+ *   redirect is validity-aware, so it lives on the login page, not here).
+ *
+ * @spec L2-AUTH-01
  */
 
 const LOGIN_PATH = "/backflip/login"
