@@ -8,7 +8,7 @@ export const JUMP_GROUPS: {
     heading: "Pages",
     items: [
       { label: "Overview", href: "/backflip", keywords: "dashboard home" },
-      { label: "Users", href: "/backflip/users", keywords: "members people team" },
+      { label: "Members", href: "/backflip/users", keywords: "users people team" },
       {
         label: "Account",
         href: "/backflip/account",

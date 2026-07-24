@@ -19,7 +19,7 @@ import {
 import {
   RiDashboardLine,
   RiGroupLine,
-  RiStackLine,
+  RiCheckboxMultipleBlankLine,
   RiShapesLine,
   RiUserLine,
 } from "@remixicon/react"
@@ -54,7 +54,7 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
     pinBottom: true,
     items: [
       {
-        title: "Users",
+        title: "Members",
         url: "/backflip/users",
         icon: RiGroupLine,
         capability: "users.view",
@@ -68,7 +68,7 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
       {
         title: "Integrations",
         url: "/backflip/settings",
-        icon: RiStackLine,
+        icon: RiCheckboxMultipleBlankLine,
         capability: "settings",
       },
     ],

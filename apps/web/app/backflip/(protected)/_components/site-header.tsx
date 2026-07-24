@@ -11,7 +11,7 @@ import { HeaderSearch } from "./header-search"
 /** Route → breadcrumb trail (design shows a parent · page crumb on sub-pages). */
 const CRUMBS: { match: (p: string) => boolean; trail: string[] }[] = [
   { match: (p) => p === "/backflip", trail: ["Overview"] },
-  { match: (p) => p.startsWith("/backflip/users"), trail: ["Users"] },
+  { match: (p) => p.startsWith("/backflip/users"), trail: ["Members"] },
   {
     match: (p) => p.startsWith("/backflip/account"),
     trail: ["Settings", "My account"],
