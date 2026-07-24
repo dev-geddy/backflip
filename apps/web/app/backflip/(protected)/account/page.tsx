@@ -1,30 +1,23 @@
 import { accounts, db, users } from "@workspace/db"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card } from "@workspace/ui/components/card"
+import { Separator } from "@workspace/ui/components/separator"
 import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { ROLE_LABELS } from "@/app/_lib/auth/permissions"
+import { AccountEmailSection } from "./_components/email-section"
+import { PasswordSection } from "./_components/password-section"
+import { ProfileSection } from "./_components/profile-section"
 
 /** OAuth provider id → display label. */
 const PROVIDER_LABELS: Record<string, string> = { google: "Google" }
 
-function Row({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2 text-sm">
-      <dt className="font-medium">{label}</dt>
-      <dd className="text-muted-foreground">
-        {value ? value : <span className="italic">not set</span>}
-      </dd>
-    </div>
-  )
-}
-
 /**
  * /backflip/account — the signed-in user's own area (all roles, capability
- * `account`). Read-only summary of profile + login methods. The summary →
- * click-to-edit flow (mirroring settings) is the planned next iteration; see
- * docs/notes/auth.md "Planned — Account page". Profile photo is out of scope.
+ * `account`). Self-service Profile (name), Email (verified change), and
+ * Password (change/set) sections, plus a read-only Login methods summary.
+ * The `passwordHash` is read only to derive a boolean — never sent to client.
  */
 export default async function AccountPage() {
   const sessionUser = await requireCapability("account")
@@ -35,7 +28,6 @@ export default async function AccountPage() {
       email: users.email,
       role: users.role,
       passwordHash: users.passwordHash,
-      createdAt: users.createdAt,
     })
     .from(users)
     .where(eq(users.id, sessionUser.id))
@@ -61,14 +53,16 @@ export default async function AccountPage() {
               <Badge variant="secondary">{ROLE_LABELS[row.role]}</Badge>
             ) : null}
           </div>
-          <dl className="flex flex-col divide-y">
-            <Row label="Name" value={row?.name ?? null} />
-            <Row label="Email" value={row?.email ?? null} />
-            <Row
-              label="Role"
-              value={row?.role ? ROLE_LABELS[row.role] : null}
-            />
-          </dl>
+          <ProfileSection name={row?.name ?? null} />
+          <Separator />
+          <AccountEmailSection email={row?.email ?? ""} />
+        </section>
+      </Card>
+
+      <Card className="p-6">
+        <section className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Password</h2>
+          <PasswordSection hasPassword={Boolean(row?.passwordHash)} />
         </section>
       </Card>
 

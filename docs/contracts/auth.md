@@ -10,13 +10,17 @@
 Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login route, and the role-based authorization model (capabilities).
 
 ## Interfaces
-- `L2-AUTH-01` — `proxy(request)` — edge gate on `/backflip/:path*`. Reads Auth.js JWT via `getToken`. Unauth → redirect `/backflip/login?from=<path>`; authed on `/backflip/login` → redirect `/backflip`. Login route otherwise public. (`apps/web/proxy.ts`)
+- `L2-AUTH-01` — `proxy(request)` — edge gate on `/backflip/:path*`. Reads Auth.js JWT via `getToken`. Unauth → redirect `/backflip/login?from=<path>`; authed on `/backflip/login` → redirect `/backflip`. Public auth routes bypass the gate: `/backflip/login` and the recovery routes `/backflip/forgot-password`, `/backflip/reset-password`. (`apps/web/proxy.ts`)
 - `L2-AUTH-19` — `@/app/_lib/auth/permissions` — pure, client-safe authorization model: `Role` (`owner|admin|teammate`), `ROLES`, `ROLE_LABELS`, `Capability`, `can(role, capability)`, helpers `canViewUsers`/`canEditUsers`/`canAccessSettings`. Single source of truth for grants.
 - `L2-AUTH-20` — `@/app/_lib/auth/guard` → `requireCapability(capability)` — server-only route guard. Unauth → `/backflip/login`; authed but lacking capability → `/backflip`. Returns the session user.
 - `L2-AUTH-02` — `@/app/_lib/auth` → `{ handlers, auth, signIn, signOut }` — Auth.js v5 (NextAuth) instance. Node runtime (uses `pg`).
 - `L2-AUTH-03` — Route `/api/auth/[...nextauth]` — Auth.js handlers (sign-in/out, callbacks, session, csrf, providers). `runtime = "nodejs"`.
 - `L2-AUTH-04` — Route `/backflip/login` — public login page: credentials form + Google button.
 - `L2-AUTH-05` — Providers: **Credentials** (email + password) and **Google** (OAuth, `allowDangerousEmailAccountLinking`).
+
+- `L2-AUTH-27` — Self-service account (`/backflip/account`, capability `account`, all roles). Server actions in `account/_actions.ts`, ALWAYS scoped to `session.user.id` (never a client id): `saveProfile` (name); `changePassword` (verifies current bcrypt when a hash exists, else sets a first password; min-8 + confirm; → password-changed email); `requestEmailChange` (validates + checks availability, mints an `email_change` token, sends a verify link to the NEW address — the email is NOT changed yet; requires configured email); `confirmEmailChange(token)` (consumes the token, must match the session user, swaps the address, notifies the OLD address). Verify link target: `/backflip/account/verify-email` (protected). Uses `L2-EMAIL-16`, `L2-AUTH-29`, `L2-DB-20`.
+- `L2-AUTH-28` — Password recovery (public, `apps/web/app/backflip/(auth)`). `requestPasswordReset` mints a `password_reset` token if the email exists and emails a reset link, but ALWAYS returns a generic success (no user enumeration). `resetPassword` validates the token (min-8 + confirm), sets `passwordHash`, sends a password-changed notice. Pages: `/backflip/forgot-password`, `/backflip/reset-password?token=…`. Uses `L2-EMAIL-16`, `L2-AUTH-29`, `L2-DB-20`.
+- `L2-AUTH-29` — Token helpers `createUserToken({userId,type,newEmail?})` / `consumeUserToken({rawToken,type})` (`apps/web/app/_lib/auth/tokens.ts`). Single live token per (user,type) — minting invalidates prior ones. 60-minute TTL. Only the hash is stored (`L2-DB-21`); consume checks type + not-expired + not-consumed, then marks consumed (single use).
 
 ## Schemas
 - `L2-AUTH-06` — Session = Auth.js JWT (encrypted cookie). Strategy `jwt` (required by Credentials). Payload exposes `user.id`, `user.email`, `user.name`, `user.role`.
@@ -30,6 +34,8 @@ Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login rou
 - `L2-AUTH-21` — Capability grants: **owner** = all (`dashboard`, `account`, `users.view`, `users.edit`, `settings`); **admin** = `dashboard`, `account`, `users.view`; **teammate** = `dashboard`, `account`. Owner is the superset.
 - `L2-AUTH-22` — Authorization is enforced server-side (route guards via `requireCapability`, per-action capability checks, and per-endpoint checks), never UI-only. Hidden nav items / buttons are cosmetic. Guarded: `/backflip/users` (`users.view`) + `updateUser` (`users.edit`) + `POST /api/backflip/users` (`users.edit`); `/backflip/settings` + `saveAiConfig`/`saveEmailConfig` (`settings`).
 - `L2-AUTH-25` — `POST /api/backflip/users` route handler (owner, `users.edit`; `runtime="nodejs"`) — JSON body `{name?, email, role, password?}`. Inserts a `user` row; optional password → `passwordHash` null means Google-only sign-in (email must be pre-registered per `L2-AUTH-10/11`). On success a welcome email is sent best-effort (`L2-EMAIL-11`); an unconfigured provider or send failure never changes the outcome. Status: 201 created · 400 validation · 401 unauth · 403 forbidden · 409 duplicate email. (`apps/web/app/api/backflip/users/route.ts`)
+- `L2-AUTH-30` — Email change is verification-gated: the `user.email` only changes after the token sent to the NEW address is confirmed by the same signed-in user; the OLD address is notified on completion. A direct `updateUser` email edit by an owner (`L2-AUTH-22`) is the admin exception and is NOT verified.
+- `L2-AUTH-31` — Recovery tokens (`password_reset`, `email_change`) are single-use + 60-min TTL (`L2-AUTH-29`). Forgot-password responds identically whether or not the account exists (no enumeration).
 - `L2-AUTH-23` — Self-lockout guard: an owner cannot change their own role (enforced in `updateUser`).
 
 ## Errors
@@ -44,6 +50,7 @@ Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login rou
 - `L2-AUTH-18` — Google sign-in with a pre-registered email yields a session; unknown email is rejected.
 - `L2-AUTH-24` — teammate visiting `/backflip/users` or `/backflip/settings` → redirect `/backflip`; admin visiting `/backflip/settings` → redirect. Owner reaches both; only owner sees Edit / Add user on users and can save settings.
 - `L2-AUTH-26` — Owner adds a user via the Add user dialog → the row appears in the list; a non-owner never sees the control and `POST /api/backflip/users` rejects a non-owner call with 403 (`L2-AUTH-25`).
+- `L2-AUTH-32` — A user changes their password on `/backflip/account` (current verified) → sign-in works with the new password + a password-changed email is sent. Requesting an email change sends a verify link to the new address; only after confirming does sign-in use the new email and the old address get notified. Forgot-password → reset link → new password works, and an unknown email returns the same generic response.
 
 ## Constrained L3
 - `/docs/notes/auth.md`

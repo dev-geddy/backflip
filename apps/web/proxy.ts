@@ -15,8 +15,22 @@ import { NextResponse, type NextRequest } from "next/server"
 const LOGIN_PATH = "/backflip/login"
 const HOME_PATH = "/backflip"
 
+/**
+ * Public auth routes within `/backflip` — reachable without a session. Login
+ * bounces authed users to the dashboard; the password-recovery routes are
+ * always public (a logged-out click on an emailed link must work).
+ */
+const RECOVERY_PATHS = new Set([
+  "/backflip/forgot-password",
+  "/backflip/reset-password",
+])
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (RECOVERY_PATHS.has(pathname)) {
+    return NextResponse.next()
+  }
 
   const token = await getToken({
     req: request,
