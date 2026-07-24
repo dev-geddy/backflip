@@ -110,7 +110,7 @@ export default async function AccountPage() {
       </div>
 
       {/* Security rail */}
-      <div className="w-full flex-none overflow-y-auto border-t bg-muted/30 p-6 lg:w-80 lg:border-t-0 lg:border-l">
+      <div className="w-full flex-none overflow-y-auto border-t bg-muted/50 p-6 lg:w-80 lg:border-t-0 lg:border-l">
         <AccountRail emailVerified={emailVerified} loginMethods={loginMethods} />
       </div>
     </div>

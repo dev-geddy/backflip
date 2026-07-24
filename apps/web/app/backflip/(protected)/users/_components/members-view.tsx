@@ -114,7 +114,7 @@ export function MembersView({
         />
       </div>
 
-      <div className="hidden min-h-0 w-[300px] flex-none flex-col overflow-y-auto border-l p-4 xl:flex">
+      <div className="hidden min-h-0 w-[300px] flex-none flex-col overflow-y-auto border-l bg-muted/50 p-4 xl:flex">
         <MemberRail member={selected} counts={counts} />
       </div>
     </div>
