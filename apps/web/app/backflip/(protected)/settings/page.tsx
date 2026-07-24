@@ -15,6 +15,8 @@ const PROVIDERS = ["anthropic", "openai", "google"] as const
  * /backflip/settings — admin settings. Flat sections separated by rules:
  * AI integration (per provider), Email (Resend).
  * Secrets are never sent to the client; only whether a key is set.
+ *
+ * @spec L2-AI-01, L2-EMAIL-01
  */
 export default async function SettingsPage() {
   await requireCapability("settings")
