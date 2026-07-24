@@ -20,7 +20,7 @@ Protected `/backflip/*` surface restyled to a flat, hairline aesthetic (imported
 - `section-cards.tsx` — flat stat cards: `SectionLabel` + big `tabular-nums` value + optional unit / emerald·red delta / slim progress bar / emerald status dot + muted caption. No `Card`/`Badge` chrome.
 - `site-header.tsx` — breadcrumb title reduced to `text-sm font-medium`.
 - `account/page.tsx` — design "My account": `PageHeading` + profile summary card + bordered "Account details" list (`border-t` hairline rows wrapping Profile/Email/Password sections) + Login methods card. Section summary rows reshaped to `w-32` muted label | value | trailing button; email shows mono value + emerald "Verified" pill; password shows masked dots. Edit forms unchanged (functionality preserved).
-- `settings/page.tsx` — `PageHeading` + `SectionLabel`'d bordered cards (AI / Email). `@spec L2-AI-01, L2-EMAIL-01` unchanged.
+- `settings/page.tsx` — Integrations master-detail (see "Integrations page"). `@spec L2-AI-01, L2-EMAIL-01` unchanged.
 - Sidebar (`app-sidebar`, `nav-*`) intentionally **not** restyled — logo top / user-menu bottom positioning + functionality kept per request; fonts inherit theme.
 - Menu unchanged: Dashboard/Users/Account/Settings (no items added).
 - Green pills use `emerald-*` utilities (only non-token color; light+dark variants). Everything else theme tokens.
@@ -43,6 +43,17 @@ Protected `/backflip/*` surface restyled to a flat, hairline aesthetic (imported
   - Password: `changePassword` unchanged + a **client-only strength meter** (`strength()` heuristic: length + char-class → 4-seg bar) + show-passwords toggle.
 - `_components/account-rail.tsx` — Account security card (Email Verified/Unverified from real state, Sign-in method badges) + static "Why verify twice?" info card.
 - Omitted (no backend): Two-factor, last sign-in, session/device list, danger-zone/deactivate.
+
+## Integrations page — design 2a master-detail (L2-UI-03; ai + email domains UI)
+`/backflip/settings` (owner-only) ported to a master-detail of the two **real** integrations. **Real-data-only**, actions/encryption unchanged; keys stay masked (no Reveal).
+- `settings/page.tsx` — same `aiConfig`/`emailConfig` fetch + `ProviderConfig[]`/`EmailConfig` shapes; renders `IntegrationsView`.
+- `_components/integrations-view.tsx` (client shell) — 3-col: list (2 rows: "AI providers · N connected", "Email · Resend", status dots) + detail + `xl:` rail; `mobileDetail` stack < lg.
+- `ai-integration.tsx` — custom provider tabs (Anthropic/OpenAI/Google, status dot = enabled/configured/off) + status badges + reused `ProviderForm` (`key`ed per provider → `saveAiConfig`) + read-only Available-models list from exported `MODELS` (selected `cfg.model` badged Default).
+- `email-integration.tsx` — Connected badge + reused `EmailConfigForm` → `saveEmailConfig`.
+- `integrations-rail.tsx` — About service + docs link + "keys encrypted at rest" note.
+- `ai-config-form.tsx` — now exports `MODELS` + `ProviderForm`; removed the `AiConfigForm` Tabs wrapper. `email-config-form.tsx` unchanged.
+- Removed: `ai-section.tsx`, `email-section.tsx` (view/edit-toggle wrappers superseded).
+- Omitted (no backend): Reveal key, Analytics/PostHog, usage metrics, sending-domain verification, org-id/base-url.
 
 ## Form-element sizing (house tweak, padding only)
 Form primitives get +2px padding + grown heights over base-mira defaults — **font sizes unchanged**: `button` (size + icon variants), `input`, `textarea`, `native-select`, `select` trigger. Arbitrary px (`px-[10px]`, `py-[4px]`, `h-8`) where no clean Tailwind step. No theme-level text-scale bump (reverted). `cursor: pointer` on buttons is a base-layer rule. Re-`shadcn add` would overwrite these.

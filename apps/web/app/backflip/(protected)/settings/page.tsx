@@ -2,19 +2,18 @@ import { aiConfig, db, emailConfig } from "@workspace/db"
 import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
-import { PageHeading, SectionLabel } from "../_components/page-heading"
-import { AiSection } from "./_components/ai-section"
 import { type ProviderConfig } from "./_components/ai-config-form"
 import { type EmailConfig } from "./_components/email-config-form"
-import { EmailSection } from "./_components/email-section"
+import { IntegrationsView } from "./_components/integrations-view"
 import { keyPreview } from "./_lib/mask"
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 
 /**
- * /backflip/settings — admin settings. Flat sections separated by rules:
- * AI integration (per provider), Email (Resend).
- * Secrets are never sent to the client; only whether a key is set.
+ * /backflip/settings — admin Integrations (owner only). Master-detail over the
+ * two real integrations: AI providers (per provider) and Email (Resend).
+ * Secrets are never sent to the client; only whether a key is set + its masked
+ * preview.
  *
  * @spec L2-AI-01, L2-EMAIL-01
  */
@@ -24,7 +23,7 @@ export default async function SettingsPage() {
   const rows = await db.select().from(aiConfig)
   const byProvider = new Map(rows.map((r) => [r.provider, r]))
 
-  const initial: ProviderConfig[] = PROVIDERS.map((provider) => {
+  const ai: ProviderConfig[] = PROVIDERS.map((provider) => {
     const r = byProvider.get(provider)
     return {
       provider,
@@ -47,26 +46,5 @@ export default async function SettingsPage() {
     keyPreview: keyPreview(emailRow?.apiKeyEnc),
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-      <PageHeading
-        title="Settings"
-        description="Configure platform integrations."
-      />
-
-      <section className="flex flex-col gap-3">
-        <SectionLabel>AI integration</SectionLabel>
-        <div className="rounded-xl border bg-card p-6">
-          <AiSection initial={initial} />
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <SectionLabel>Email</SectionLabel>
-        <div className="rounded-xl border bg-card p-6">
-          <EmailSection initial={email} />
-        </div>
-      </section>
-    </div>
-  )
+  return <IntegrationsView ai={ai} email={email} />
 }
