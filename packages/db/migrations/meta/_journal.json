@@ -15,6 +15,13 @@
       "when": 1784848244400,
       "tag": "0001_smooth_sersi",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784876569709,
+      "tag": "0002_luxuriant_groot",
+      "breakpoints": true
     }
   ]
 }
