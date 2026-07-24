@@ -30,6 +30,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-CON-02` — `/backflip/*` requires a valid session; only the admin login route is public within scope.
 - `L1-CON-03` — Foundation ships baseline + guidelines; features stay generic/extensible, not project-specific. [NEEDS HUMAN CONFIRMATION]
 - `L1-CON-04` — Three-level doc system maintained with every code change (see project CLAUDE.md).
+- `L1-CON-05` — Credentials (email + password) login may be disabled per-deployment for Google-only sign-in. The toggle is honored only when Google is configured, so at least one sign-in method always remains. Refines `L1-CON-01` (both methods are still supported; a deployment may turn one off).
 
 ## Stack + rationale
 - `L1-STACK-01` — Next.js 16 (App Router) — unified SSR/RSC + API routes for both surfaces.

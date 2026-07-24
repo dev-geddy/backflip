@@ -14,7 +14,13 @@ import { requestEmailChange } from "../_actions"
  * only swapped once that link is confirmed — so we keep the pending message
  * visible on success rather than collapsing immediately.
  */
-export function AccountEmailSection({ email }: { email: string }) {
+export function AccountEmailSection({
+  email,
+  hasPassword,
+}: {
+  email: string
+  hasPassword: boolean
+}) {
   const [editing, setEditing] = useState(false)
   const [state, action, pending] = useActionState(requestEmailChange, null)
 
@@ -49,6 +55,23 @@ export function AccountEmailSection({ email }: { email: string }) {
           change until you open it.
         </FieldDescription>
       </Field>
+      {hasPassword ? (
+        <Field>
+          <FieldLabel htmlFor="email-current-password">
+            Current password
+          </FieldLabel>
+          <Input
+            id="email-current-password"
+            name="currentPassword"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+          <FieldDescription>
+            Confirm it’s you before changing your sign-in email.
+          </FieldDescription>
+        </Field>
+      ) : null}
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Sending…" : "Send confirmation"}

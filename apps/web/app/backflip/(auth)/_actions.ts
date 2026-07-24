@@ -2,10 +2,15 @@
 
 import bcrypt from "bcryptjs"
 import { db, users } from "@workspace/db"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 import { isCredentialsEnabled } from "@/app/_lib/auth/config"
-import { consumeUserToken, createUserToken } from "@/app/_lib/auth/tokens"
+import {
+  consumeUserToken,
+  countRecentTokens,
+  createUserToken,
+  RATE_LIMIT,
+} from "@/app/_lib/auth/tokens"
 import {
   appUrl,
   sendPasswordChangedEmail,
@@ -41,13 +46,21 @@ export async function requestPasswordReset(
     .where(eq(users.email, email))
 
   if (user) {
-    const raw = await createUserToken({
+    // Per-account rate limit — silently skip past the cap (no signal to caller).
+    const recent = await countRecentTokens({
       userId: user.id,
       type: "password_reset",
+      withinMinutes: RATE_LIMIT.windowMinutes,
     })
-    const resetUrl = `${appUrl()}/backflip/reset-password?token=${encodeURIComponent(raw)}`
-    // Best-effort; failure is not surfaced (would leak account existence).
-    await sendPasswordResetEmail({ to: email, name: user.name, resetUrl })
+    if (recent < RATE_LIMIT.max) {
+      const raw = await createUserToken({
+        userId: user.id,
+        type: "password_reset",
+      })
+      const resetUrl = `${appUrl()}/backflip/reset-password?token=${encodeURIComponent(raw)}`
+      // Best-effort; failure is not surfaced (would leak account existence).
+      await sendPasswordResetEmail({ to: email, name: user.name, resetUrl })
+    }
   }
 
   return {
@@ -88,9 +101,10 @@ export async function resetPassword(
   }
 
   const passwordHash = await bcrypt.hash(next, 12)
+  // Bump tokenVersion → invalidate all existing sessions (force re-login).
   await db
     .update(users)
-    .set({ passwordHash })
+    .set({ passwordHash, tokenVersion: sql`${users.tokenVersion} + 1` })
     .where(eq(users.id, consumed.userId))
 
   const [u] = await db
