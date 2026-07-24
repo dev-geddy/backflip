@@ -31,7 +31,9 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - `nav-user.tsx` — footer chip now shows role (was email); dropdown (Account / Log out) unchanged.
 - `site-header.tsx` (client) — `usePathname` breadcrumb trail (e.g. Settings / My account), `SidebarTrigger`, right-aligned Docs link + avatar.
 - Removed: `nav-main.tsx`, `nav-secondary.tsx` (nav inlined into `app-sidebar`).
-- Content proportions tuned to design: master-detail list columns `lg:w-[22rem]` (~372px), rails ~300–320px, `h-14` panel headers.
+- Nav labels renamed to design: **Overview** (was Dashboard) + **Integrations** (was Settings; icon `RiStackLine`). Routes/capabilities unchanged (`/backflip`, `/backflip/settings`, caps `dashboard`/`settings`). Menu item type `text-[13px]`, group labels `text-[11px]` to match a1.
+- **Full-bleed content:** shell (`layout.tsx`) drops all outer padding/gap — content area is edge-to-edge on a `bg-muted/40` canvas. Master-detail pages (`MembersView`, `IntegrationsView`) are now a **single flush `bg-card` region** (list `lg:w-[372px] lg:border-r` | detail `flex-1` | rail `w-[300px] xl:border-l p-4`), no rounded cards/gaps. Padded pages own their padding: dashboard + `account` wrap in `p-4 md:p-6` (account stays `max-w-5xl` centered).
+- `header-search.tsx` — quick-jump (design 5A): a search button + `⌘K` `CommandDialog` (cmdk) listing Pages/Actions → `router.push`. Mounted in `site-header` right cluster.
 
 ## Members page — design 1A master-detail (L2-UI-03; auth domain UI)
 `/backflip/users` ported from a flat card list to a 3-column master/detail (design "Flat Admin" 1A). **Layout-faithful, real-data-only** — no schema/action changes; unsupported design chrome omitted.

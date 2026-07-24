@@ -6,9 +6,11 @@ import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
+import { HeaderSearch } from "./header-search"
+
 /** Route → breadcrumb trail (design shows a parent · page crumb on sub-pages). */
 const CRUMBS: { match: (p: string) => boolean; trail: string[] }[] = [
-  { match: (p) => p === "/backflip", trail: ["Dashboard"] },
+  { match: (p) => p === "/backflip", trail: ["Overview"] },
   { match: (p) => p.startsWith("/backflip/users"), trail: ["Users"] },
   {
     match: (p) => p.startsWith("/backflip/account"),
@@ -57,11 +59,12 @@ export function SiteHeader({
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
+          <HeaderSearch />
           <a
             href="https://github.com/dev-geddy/backflip#readme"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
           >
             Docs
           </a>

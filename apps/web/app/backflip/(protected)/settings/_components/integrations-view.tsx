@@ -79,11 +79,11 @@ export function IntegrationsView({
   }
 
   return (
-    <div className="flex h-full min-h-0 gap-4">
+    <div className="flex h-full min-h-0 bg-card">
       {/* List */}
       <div
         className={cn(
-          "min-h-0 w-full flex-col overflow-hidden rounded-xl border bg-card lg:flex lg:w-[22rem] lg:flex-none",
+          "min-h-0 w-full flex-col overflow-hidden lg:flex lg:w-[372px] lg:flex-none lg:border-r",
           mobileDetail ? "hidden" : "flex"
         )}
       >
@@ -125,7 +125,7 @@ export function IntegrationsView({
       {/* Detail */}
       <div
         className={cn(
-          "min-h-0 flex-1 flex-col overflow-y-auto rounded-xl border bg-card lg:flex",
+          "min-h-0 flex-1 flex-col overflow-y-auto lg:flex",
           mobileDetail ? "flex" : "hidden"
         )}
       >
@@ -145,7 +145,7 @@ export function IntegrationsView({
       </div>
 
       {/* Rail */}
-      <div className="hidden min-h-0 w-72 flex-none flex-col overflow-y-auto xl:flex">
+      <div className="hidden min-h-0 w-[300px] flex-none flex-col overflow-y-auto border-l p-4 xl:flex">
         <IntegrationsRail selection={selection} />
       </div>
     </div>
