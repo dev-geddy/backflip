@@ -1,11 +1,16 @@
 import { accounts, db, users } from "@workspace/db"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
-import { Card } from "@workspace/ui/components/card"
-import { Separator } from "@workspace/ui/components/separator"
 import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { ROLE_LABELS } from "@/app/_lib/auth/permissions"
+import { PageHeading, SectionLabel } from "../_components/page-heading"
+import { AccountRail } from "./_components/account-rail"
 import { AccountEmailSection } from "./_components/email-section"
 import { PasswordSection } from "./_components/password-section"
 import { ProfileSection } from "./_components/profile-section"
@@ -13,11 +18,15 @@ import { ProfileSection } from "./_components/profile-section"
 /** OAuth provider id → display label. */
 const PROVIDER_LABELS: Record<string, string> = { google: "Google" }
 
+function initials(value: string) {
+  return value.slice(0, 2).toUpperCase()
+}
+
 /**
  * /backflip/account — the signed-in user's own area (all roles, capability
- * `account`). Self-service Profile (name), Email (verified change), and
- * Password (change/set) sections, plus a read-only Login methods summary.
- * The `passwordHash` is read only to derive a boolean — never sent to client.
+ * `account`). Two-column: self-service Profile / Email / Password details on
+ * the left, a security context rail on the right. The `passwordHash` is read
+ * only to derive a boolean — never sent to client.
  */
 export default async function AccountPage() {
   const sessionUser = await requireCapability("account")
@@ -26,7 +35,9 @@ export default async function AccountPage() {
     .select({
       name: users.name,
       email: users.email,
+      image: users.image,
       role: users.role,
+      emailVerified: users.emailVerified,
       passwordHash: users.passwordHash,
     })
     .from(users)
@@ -43,50 +54,65 @@ export default async function AccountPage() {
     loginMethods.push(PROVIDER_LABELS[provider] ?? provider)
   }
 
+  const label = row?.name || row?.email || "Account"
+  const emailVerified = Boolean(row?.emailVerified)
+
   return (
-    <div className="flex w-full flex-col gap-6">
-      <Card className="p-6">
-        <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Profile</h2>
+    <div className="flex h-full min-h-0 flex-col bg-card lg:flex-row">
+      {/* Main */}
+      <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex max-w-[680px] flex-col gap-6 p-6 lg:p-8">
+          <PageHeading
+            title="My account"
+            description="Your personal profile and sign-in credentials."
+          />
+          {/* Profile summary */}
+          <div className="flex items-center gap-4 rounded-xl border bg-card p-4">
+            <Avatar className="size-13 rounded-full">
+              {row?.image ? <AvatarImage src={row.image} alt={label} /> : null}
+              <AvatarFallback className="rounded-full text-base">
+                {initials(label)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-base font-semibold">
+                {row?.name || "Unnamed"}
+              </div>
+              <div className="truncate font-mono text-xs text-muted-foreground">
+                {row?.email}
+              </div>
+            </div>
             {row?.role ? (
               <Badge variant="secondary">{ROLE_LABELS[row.role]}</Badge>
             ) : null}
           </div>
-          <ProfileSection name={row?.name ?? null} />
-          <Separator />
-          <AccountEmailSection
-            email={row?.email ?? ""}
-            hasPassword={Boolean(row?.passwordHash)}
-          />
-        </section>
-      </Card>
 
-      <Card className="p-6">
-        <section className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Password</h2>
-          <PasswordSection hasPassword={Boolean(row?.passwordHash)} />
-        </section>
-      </Card>
-
-      <Card className="p-6">
-        <section className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Login methods</h2>
-          {loginMethods.length ? (
-            <div className="flex flex-wrap gap-2">
-              {loginMethods.map((m) => (
-                <Badge key={m} variant="outline">
-                  {m}
-                </Badge>
-              ))}
+          {/* Account details — one bordered list, hairline row dividers */}
+          <div className="flex flex-col gap-3">
+            <SectionLabel>Account details</SectionLabel>
+            <div className="rounded-xl border bg-card">
+              <div className="p-4">
+                <ProfileSection name={row?.name ?? null} />
+              </div>
+              <div className="border-t p-4">
+                <AccountEmailSection
+                  email={row?.email ?? ""}
+                  emailVerified={emailVerified}
+                  hasPassword={Boolean(row?.passwordHash)}
+                />
+              </div>
+              <div className="border-t p-4">
+                <PasswordSection hasPassword={Boolean(row?.passwordHash)} />
+              </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No login method on file.
-            </p>
-          )}
-        </section>
-      </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Security rail */}
+      <div className="w-full flex-none overflow-y-auto border-t bg-muted/50 p-6 lg:w-80 lg:border-t-0 lg:border-l">
+        <AccountRail emailVerified={emailVerified} loginMethods={loginMethods} />
+      </div>
     </div>
   )
 }

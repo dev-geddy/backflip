@@ -42,7 +42,7 @@ export function NavUser({ user }: { user: SessionUser }) {
             render={
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               />
             }
           >
@@ -54,7 +54,9 @@ export function NavUser({ user }: { user: SessionUser }) {
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{label}</span>
-              <span className="truncate text-xs">{user.email}</span>
+              <span className="truncate text-xs text-muted-foreground capitalize">
+                {user.role ?? "Member"}
+              </span>
             </div>
             <RiMore2Line className="ml-auto size-4" />
           </DropdownMenuTrigger>
