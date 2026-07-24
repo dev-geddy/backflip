@@ -9,6 +9,10 @@
 ## Owns
 <what this context owns. 1 line>
 
+> Flat template below fits small/medium contracts. If it outgrows it, group by
+> `## <concern>` sections instead (kind-tag each item _(iface|schema|inv|err|accept)_);
+> IDs stay permanent. Code cites these IDs via `@spec` JSDoc tags (see the skill).
+
 ## Interfaces
 - `L2-<DOM>-01` — <signature — desc>
 - `L2-<DOM>-02` — <...>

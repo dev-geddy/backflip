@@ -8,6 +8,13 @@ import { eq } from "drizzle-orm"
 import { auth } from "@/app/_lib/auth"
 import { canEditUsers, isRole, type Role } from "@/app/_lib/auth/permissions"
 
+/**
+ * Admin user-management actions. (User creation lives in the REST endpoint
+ * `POST /api/backflip/users` — `L2-AUTH-25`.)
+ *
+ * @spec L2-AUTH-22, L2-AUTH-23
+ */
+
 export type SaveState = { ok: boolean; message: string } | null
 
 function isUniqueViolation(e: unknown) {
