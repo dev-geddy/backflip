@@ -8,7 +8,7 @@
 - `packages/db/src/client.ts` — `db = drizzle(process.env.DATABASE_URL!, { schema })` (node-postgres). Satisfies `L2-DB-01`.
 - `packages/db/src/index.ts` — barrel: `export * from schema` + `db`. Satisfies `L2-DB-02`, `L2-DB-09`.
 - `packages/db/src/load-env.ts` — loads root `.env` + `.env.local` (root = 3 up from src). Imported first by standalone scripts (seed, drizzle.config).
-- `packages/db/src/seed/owner.ts` — `init-owner`. Reads `ADMIN_EMAIL`/`ADMIN_PASSWORD`, bcrypt(12), upsert on email, role `owner`. Satisfies `L2-DB-04`.
+- `packages/db/src/seed/owner.ts` — `init-owner`. Reads `ADMIN_EMAIL` (required) + `ADMIN_PASSWORD` (optional). With a password → bcrypt(12) hash; without → `passwordHash` null (Google-only owner). Upsert on email, role `owner`; on re-run without a password, the existing hash is preserved (not overwritten). Satisfies `L2-DB-04`.
 - `packages/db/drizzle.config.ts` — dialect postgresql, schema `src/schema.ts`, out `migrations/`. Imports `load-env`.
 - `packages/db/src/crypto.ts` — `encryptSecret`/`decryptSecret` (AES-256-GCM, key = sha256(`ENCRYPTION_KEY`)) + `generateToken()` (32-byte base64url) / `hashToken(raw)` (sha256 hex) for one-time link tokens. Satisfies `L2-DB-16`, `L2-DB-19`.
 - `packages/db/src/index.ts` — also re-exports `generateToken`/`hashToken` alongside encrypt/decrypt.

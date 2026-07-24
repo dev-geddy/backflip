@@ -3,14 +3,16 @@
 > L3 = how / volatile. AI writes free. Cites L2 IDs up. Matches code as-is.
 
 ## File map
-- `apps/web/app/_lib/auth/index.ts` — NextAuth(v5) config. Adapter `DrizzleAdapter(db)`, `session.strategy=jwt`, providers Google + Credentials, callbacks `signIn`/`jwt`/`session`. Exports `handlers, auth, signIn, signOut`. Satisfies `L2-AUTH-02`, `L2-AUTH-05`, `L2-AUTH-09`, `L2-AUTH-10`, `L2-AUTH-11`.
+- `apps/web/app/_lib/auth/index.ts` — NextAuth(v5) config. Adapter `DrizzleAdapter(db)`, `session.strategy=jwt`, callbacks `signIn`/`jwt`/`session`. Providers built conditionally: Google only when `isGoogleConfigured()`, Credentials only when `isCredentialsEnabled()`. Exports `handlers, auth, signIn, signOut`. Satisfies `L2-AUTH-02`, `L2-AUTH-05`, `L2-AUTH-09`, `L2-AUTH-10`, `L2-AUTH-11`, `L2-AUTH-33`.
+- `apps/web/app/_lib/auth/config.ts` — server-only auth-mode flags: `isGoogleConfigured()` (both `AUTH_GOOGLE_ID`+`AUTH_GOOGLE_SECRET` set), `isCredentialsEnabled()` (`AUTH_CREDENTIALS_ENABLED=false` disables password login, but ONLY when Google is configured — fail-safe against lockout). Read in the Auth.js config, login page, and recovery actions; never a client component. Satisfies `L2-AUTH-33`.
 - `apps/web/app/_lib/auth/types.ts` — module augmentation: `session.user.id`/`role` (`role` typed `Role`), JWT `id`/`role`.
 - `apps/web/app/_lib/auth/permissions.ts` — pure/client-safe RBAC: `Role`, `ROLES`, `ROLE_LABELS`, `Capability`, capability map, `can()` + `canViewUsers`/`canEditUsers`/`canAccessSettings`. Satisfies `L2-AUTH-19`, `L2-AUTH-21`. Imported by server guards AND client UI (nav, edit gating) — keep it free of server-only imports.
 - `apps/web/app/_lib/auth/guard.ts` — `requireCapability(cap)` server guard (`auth()` → redirect). Satisfies `L2-AUTH-20`, `L2-AUTH-22`.
 - `apps/web/app/api/auth/[...nextauth]/route.ts` — `export { GET, POST } = handlers`; `runtime = "nodejs"`. Satisfies `L2-AUTH-03`.
 - `apps/web/proxy.ts` — edge gate via `getToken`; `RECOVERY_PATHS` (forgot/reset-password) bypass the gate as public. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
 - `apps/web/app/backflip/(auth)/login/page.tsx` — login page (server; reads `from`, open-redirect guarded). Satisfies `L2-AUTH-04`.
-- `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Credentials via `signIn("credentials", {redirect:false})`; Google button via `signIn("google")`.
+- `apps/web/app/backflip/(auth)/login/page.tsx` passes `credentialsEnabled`/`googleEnabled` (from `config.ts`) to the form.
+- `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Renders by mode: both → Google button + separator + credentials form + "Forgot password?" link; Google-only (`!credentialsEnabled`) → Google button alone; credentials-only (`!googleEnabled`) → form alone. Credentials via `signIn("credentials", {redirect:false})`; Google via `signIn("google")`. Satisfies `L2-AUTH-33`.
 - `apps/web/app/backflip/(protected)/layout.tsx` — authed shell (server; `auth()` → user). SidebarProvider + AppSidebar + SidebarInset + header.
 - `apps/web/app/backflip/(protected)/_components/` — `app-sidebar` (nav items carry a `capability`, filtered by role via `can()`; Account item added), `nav-main`, `nav-secondary`, `site-header`, `nav-user` (Account item → `/backflip/account`; dropdown → `signOut`), `section-cards`, `dashboard-chart`, `recent-table`, `types` (`SessionUser.role: Role`).
 - `apps/web/app/backflip/(protected)/page.tsx` — dashboard: cards + chart + table.
@@ -40,7 +42,7 @@
 - `account/verify-email/page.tsx` + `_components/verify-email-confirm.tsx` — target of the verify link (protected). Button (not auto-run, avoids prefetch consuming the token) calls `confirmEmailChange`. Satisfies `L2-AUTH-27`.
 
 ## Password recovery (`(auth)`, public)
-- `(auth)/_actions.ts`:
+- `(auth)/_actions.ts` (both short-circuit with "Password sign-in is disabled" when `!isCredentialsEnabled()`):
   - `requestPasswordReset` — mint `password_reset` token if the email exists, `sendPasswordResetEmail`; ALWAYS returns a generic success (no user enumeration). Satisfies `L2-AUTH-28`.
   - `resetPassword` — validate token (min-8 + confirm), set `passwordHash`, `sendPasswordChangedEmail`. Satisfies `L2-AUTH-28`.
 - `(auth)/forgot-password/page.tsx` + form — public request page.
@@ -51,7 +53,8 @@
 
 ## Implementation notes
 - **Credentials → JWT**: Credentials provider forces `jwt` session strategy; adapter still used to persist Google accounts.
-- **Google pre-registration**: `signIn` callback returns false unless `db` has a `user` with that email → no OAuth self-signup. `allowDangerousEmailAccountLinking: true` links Google to the seeded user by email (emails pre-registered/trusted).
+- **Google pre-registration**: `signIn` callback returns false unless `db` has a `user` with that email → no OAuth self-signup. `allowDangerousEmailAccountLinking: true` links Google to the seeded user by email (emails pre-registered/trusted). The seeded owner is pre-registered, so Google sign-in works for them by default — including when `ADMIN_PASSWORD` was omitted (Google-only owner, see [[db]] `init-owner`).
+- **Google-only mode**: `AUTH_CREDENTIALS_ENABLED=false` drops the Credentials provider and the password form (and blocks the recovery actions). Fail-safe: honored only when Google is configured, so credentials stay on otherwise — a deployment can't be left with no sign-in method (`L2-AUTH-33`).
 - **Env loading**: Next runs in `apps/web`, so it won't read root `.env*` on its own. `dev` script uses `dotenv -e ../../.env -e ../../.env.local` to inject root env (needed by edge proxy + node route). Docker app gets env via compose `env_file`.
 - **Edge/node split**: proxy stays edge-safe (`getToken`, no db). Full auth (adapter + bcrypt + pg) is node-only, used by the route handler.
 - `packages/typescript-config/nextjs.json` sets `declaration:false` — fixes next-auth v5 TS2742 ("inferred type cannot be named") under `noEmit`.

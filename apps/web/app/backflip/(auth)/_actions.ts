@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import { db, users } from "@workspace/db"
 import { eq } from "drizzle-orm"
 
+import { isCredentialsEnabled } from "@/app/_lib/auth/config"
 import { consumeUserToken, createUserToken } from "@/app/_lib/auth/tokens"
 import {
   appUrl,
@@ -12,6 +13,9 @@ import {
 } from "@/app/_lib/email/send"
 
 export type SaveState = { ok: boolean; message: string } | null
+
+const PASSWORD_LOGIN_DISABLED =
+  "Password sign-in is disabled — use Google to sign in."
 
 /**
  * Forgot-password: mint a `password_reset` token for the email (if it exists)
@@ -22,6 +26,10 @@ export async function requestPasswordReset(
   _prev: SaveState,
   formData: FormData
 ): Promise<SaveState> {
+  if (!isCredentialsEnabled()) {
+    return { ok: false, message: PASSWORD_LOGIN_DISABLED }
+  }
+
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase()
@@ -56,6 +64,10 @@ export async function resetPassword(
   _prev: SaveState,
   formData: FormData
 ): Promise<SaveState> {
+  if (!isCredentialsEnabled()) {
+    return { ok: false, message: PASSWORD_LOGIN_DISABLED }
+  }
+
   const token = String(formData.get("token") ?? "")
   const next = String(formData.get("newPassword") ?? "")
   const confirm = String(formData.get("confirmPassword") ?? "")

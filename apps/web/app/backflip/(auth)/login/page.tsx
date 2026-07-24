@@ -1,3 +1,4 @@
+import { isCredentialsEnabled, isGoogleConfigured } from "@/app/_lib/auth/config"
 import { LoginForm } from "./_components/login-form"
 
 /**
@@ -22,7 +23,11 @@ export default async function LoginPage({
           </div>
           backflip
         </div>
-        <LoginForm callbackUrl={callbackUrl} />
+        <LoginForm
+          callbackUrl={callbackUrl}
+          credentialsEnabled={isCredentialsEnabled()}
+          googleEnabled={isGoogleConfigured()}
+        />
       </div>
     </div>
   )
