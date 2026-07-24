@@ -54,7 +54,9 @@ export function NavUser({ user }: { user: SessionUser }) {
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{label}</span>
-              <span className="truncate text-xs">{user.email}</span>
+              <span className="truncate text-xs text-muted-foreground capitalize">
+                {user.role ?? "Member"}
+              </span>
             </div>
             <RiMore2Line className="ml-auto size-4" />
           </DropdownMenuTrigger>

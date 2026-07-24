@@ -18,12 +18,20 @@
 Protected `/backflip/*` surface restyled to a flat, hairline aesthetic (imported from claude.ai/design "Flat Admin"). **Theme tokens unchanged** — already flat-neutral; radius already matches (cards `rounded-xl` ≈ 11px, controls ≈ 7.6px). Restyle is component/layout only.
 - Shared primitives: `(protected)/_components/page-heading.tsx` — `PageHeading` (large tracking-tight title + muted subtitle + optional trailing `action`) and `SectionLabel` (uppercase `text-xs` micro-label). Layout-scoped (`L1-ARCH-08`).
 - `section-cards.tsx` — flat stat cards: `SectionLabel` + big `tabular-nums` value + optional unit / emerald·red delta / slim progress bar / emerald status dot + muted caption. No `Card`/`Badge` chrome.
-- `site-header.tsx` — breadcrumb title reduced to `text-sm font-medium`.
+- `site-header.tsx` — see "Admin chrome (design-matched)".
 - `account/page.tsx` — design "My account": `PageHeading` + profile summary card + bordered "Account details" list (`border-t` hairline rows wrapping Profile/Email/Password sections) + Login methods card. Section summary rows reshaped to `w-32` muted label | value | trailing button; email shows mono value + emerald "Verified" pill; password shows masked dots. Edit forms unchanged (functionality preserved).
 - `settings/page.tsx` — Integrations master-detail (see "Integrations page"). `@spec L2-AI-01, L2-EMAIL-01` unchanged.
-- Sidebar (`app-sidebar`, `nav-*`) intentionally **not** restyled — logo top / user-menu bottom positioning + functionality kept per request; fonts inherit theme.
 - Menu unchanged: Dashboard/Users/Account/Settings (no items added).
 - Green pills use `emerald-*` utilities (only non-token color; light+dark variants). Everything else theme tokens.
+
+## Admin chrome (design-matched) — L2-UI-03
+Sidebar + header + shell now match the Flat Admin design layout (a later pass superseded the earlier "sidebar not restyled" note). Menu items/routes unchanged (Dashboard/Users/Account/Settings).
+- `(protected)/layout.tsx` — sidebar switched from `variant="inset"` (floating) to **flush** (default `variant="sidebar"`, border-right); `--sidebar-width: 15.5rem`, `--header-height: 3.5rem`; content area on a soft `bg-muted/40` canvas so white panels/cards pop; passes `userName`/`userInitials` to the header.
+- `app-sidebar.tsx` (client) — dark rounded **logo square** (`RiShapesLine`) + "Backflip" / "Admin console" subtitle; nav split into design's labeled groups **Platform** (Dashboard, Users) + **Settings** (Account, Settings) via `SidebarGroupLabel`; **active** state from `usePathname` (`isActive`, exact for `/backflip`, prefix otherwise); groups filtered by `can(role, cap)`.
+- `nav-user.tsx` — footer chip now shows role (was email); dropdown (Account / Log out) unchanged.
+- `site-header.tsx` (client) — `usePathname` breadcrumb trail (e.g. Settings / My account), `SidebarTrigger`, right-aligned Docs link + avatar.
+- Removed: `nav-main.tsx`, `nav-secondary.tsx` (nav inlined into `app-sidebar`).
+- Content proportions tuned to design: master-detail list columns `lg:w-[22rem]` (~372px), rails ~300–320px, `h-14` panel headers.
 
 ## Members page — design 1A master-detail (L2-UI-03; auth domain UI)
 `/backflip/users` ported from a flat card list to a 3-column master/detail (design "Flat Admin" 1A). **Layout-faithful, real-data-only** — no schema/action changes; unsupported design chrome omitted.

@@ -8,9 +8,14 @@ import { AppSidebar } from "./_components/app-sidebar"
 import { SiteHeader } from "./_components/site-header"
 import type { SessionUser } from "./_components/types"
 
+function initials(nameOrEmail: string) {
+  return nameOrEmail.slice(0, 2).toUpperCase()
+}
+
 /**
- * Authenticated /backflip shell (dashboard-01 layout): inset sidebar + site
- * header. The proxy already gates this subtree; `auth()` provides the user.
+ * Authenticated /backflip shell (Flat Admin design): a flush left sidebar
+ * (248px) against a soft canvas, with a 56px header. The proxy already gates
+ * this subtree; `auth()` provides the user.
  */
 export default async function ProtectedLayout({
   children,
@@ -31,15 +36,18 @@ export default async function ProtectedLayout({
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
+          "--sidebar-width": "15.5rem",
+          "--header-height": "3.5rem",
         } as CSSProperties
       }
     >
-      <AppSidebar variant="inset" user={user} />
+      <AppSidebar user={user} />
       <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+        <SiteHeader
+          userName={user.name}
+          userInitials={initials(user.name || user.email)}
+        />
+        <div className="flex flex-1 flex-col gap-4 bg-muted/40 p-4 md:gap-6 md:p-6">
           {children}
         </div>
       </SidebarInset>
