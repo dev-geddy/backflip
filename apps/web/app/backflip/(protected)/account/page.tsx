@@ -55,7 +55,10 @@ export default async function AccountPage() {
           </div>
           <ProfileSection name={row?.name ?? null} />
           <Separator />
-          <AccountEmailSection email={row?.email ?? ""} />
+          <AccountEmailSection
+            email={row?.email ?? ""}
+            hasPassword={Boolean(row?.passwordHash)}
+          />
         </section>
       </Card>
 

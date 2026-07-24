@@ -31,6 +31,8 @@ export const users = pgTable("user", {
   image: text("image"),
   passwordHash: text("passwordHash"),
   role: userRole("role").notNull().default("teammate"),
+  // Bumped on password/email change to invalidate all existing JWT sessions.
+  tokenVersion: integer("tokenVersion").notNull().default(0),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
 })
 

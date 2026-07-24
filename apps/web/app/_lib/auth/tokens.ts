@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm"
+import { and, eq, gte, isNull } from "drizzle-orm"
 
 import { db, generateToken, hashToken, userTokens } from "@workspace/db"
 
@@ -83,3 +83,30 @@ export async function consumeUserToken(params: {
 
   return { userId: row.userId, newEmail: row.newEmail }
 }
+
+/**
+ * How many tokens of `type` were minted for `userId` within the last
+ * `withinMinutes`. Counts by `createdAt` (invalidated/consumed rows still
+ * count) — used to rate-limit reset/email-change requests per account.
+ */
+export async function countRecentTokens(params: {
+  userId: string
+  type: UserTokenType
+  withinMinutes: number
+}): Promise<number> {
+  const cutoff = new Date(Date.now() - params.withinMinutes * 60_000)
+  const rows = await db
+    .select({ id: userTokens.id })
+    .from(userTokens)
+    .where(
+      and(
+        eq(userTokens.userId, params.userId),
+        eq(userTokens.type, params.type),
+        gte(userTokens.createdAt, cutoff)
+      )
+    )
+  return rows.length
+}
+
+/** Per-account request cap and window for recovery flows. */
+export const RATE_LIMIT = { max: 3, windowMinutes: 15 } as const

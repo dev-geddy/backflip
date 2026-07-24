@@ -66,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 name: user.name,
                 image: user.image,
                 role: user.role,
+                tokenVersion: user.tokenVersion,
               }
             },
           }),
@@ -84,13 +85,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return Boolean(existing)
     },
     jwt: async ({ token, user }) => {
+      // Sign-in: stamp identity + the current token version into the JWT.
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.tokenVersion = user.tokenVersion ?? 0
+        token.invalid = false
+        return token
+      }
+      // Subsequent requests: revalidate against the DB so a password/email
+      // change (which bumps tokenVersion) forces re-login everywhere.
+      if (token.id) {
+        const current = await db.query.users.findFirst({
+          where: eq(users.id, token.id),
+          columns: { role: true, tokenVersion: true },
+        })
+        if (!current || (current.tokenVersion ?? 0) !== (token.tokenVersion ?? 0)) {
+          token.invalid = true
+        } else {
+          token.role = current.role
+        }
       }
       return token
     },
     session: async ({ session, token }) => {
+      // Revoked/stale JWT → drop identity so guards treat it as unauthenticated.
+      if (token.invalid) {
+        session.user = undefined as unknown as typeof session.user
+        return session
+      }
       if (token.id) session.user.id = token.id
       if (token.role) session.user.role = token.role
       return session

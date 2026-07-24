@@ -19,7 +19,8 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 
 ## Schemas
 - `L2-DB-05` — `user_role` enum: `owner` | `admin` | `teammate`. (Renamed `member`→`teammate` in migration `0002`; capability semantics owned by the `auth` domain.)
-- `L2-DB-06` — `user` table: `id` (uuid text pk), `name`, `email` (unique, not null), `emailVerified`, `image`, `passwordHash` (bcrypt, null = OAuth-only), `role` (default `teammate`), `createdAt`.
+- `L2-DB-06` — `user` table: `id` (uuid text pk), `name`, `email` (unique, not null), `emailVerified`, `image`, `passwordHash` (bcrypt, null = OAuth-only), `role` (default `teammate`), `tokenVersion` (int, default 0), `createdAt`.
+- `L2-DB-22` — `user.tokenVersion` — monotonic session-revocation counter. Embedded in the JWT and revalidated per request; bumped on password change, password reset, and confirmed email change to invalidate existing sessions. Owned by the `auth` domain (`L2-AUTH-36`).
 - `L2-DB-07` — Auth.js adapter tables: `account`, `session`, `verificationToken` (standard Auth.js Drizzle shape).
 - `L2-DB-08` — Migrations: drizzle-kit generated SQL in `packages/db/migrations/`, committed. Dialect postgresql. Applied via `drizzle-kit migrate` (`db:migrate`).
 - `L2-DB-17` — `ai_config` table (one row per `ai_provider` enum: anthropic|openai|google): `provider` (unique), `model`, `apiKeyEnc` (AES), `baseUrl`, `temperature` (default 0.7), `enabled`, `isDefault`, `updatedAt`. Owned by the `ai` domain.
@@ -37,7 +38,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-13` — `init-owner` without `ADMIN_EMAIL` → throws (define in `.env.local`). `ADMIN_PASSWORD` is optional (omit → Google-only owner).
 
 ## Acceptance
-- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`.
+- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`.
 - `L2-DB-15` — `init-owner` yields a `user` row: email from `.env.local`, role `owner`. `passwordHash` non-null when `ADMIN_PASSWORD` is set, else null (Google-only owner). Re-run updates, no duplicate.
 
 ## Constrained L3

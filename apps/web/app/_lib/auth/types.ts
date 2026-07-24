@@ -9,6 +9,7 @@ declare module "next-auth" {
   }
   interface User {
     role?: Role
+    tokenVersion?: number
   }
 }
 
@@ -16,5 +17,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id?: string
     role?: Role
+    tokenVersion?: number
+    /** Set when a revalidation finds the session no longer valid. */
+    invalid?: boolean
   }
 }
