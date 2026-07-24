@@ -8,7 +8,7 @@
 - `apps/web/app/_lib/auth/permissions.ts` — pure/client-safe RBAC: `Role`, `ROLES`, `ROLE_LABELS`, `Capability`, capability map, `can()` + `canViewUsers`/`canEditUsers`/`canAccessSettings`. Satisfies `L2-AUTH-19`, `L2-AUTH-21`. Imported by server guards AND client UI (nav, edit gating) — keep it free of server-only imports.
 - `apps/web/app/_lib/auth/guard.ts` — `requireCapability(cap)` server guard (`auth()` → redirect). Satisfies `L2-AUTH-20`, `L2-AUTH-22`.
 - `apps/web/app/api/auth/[...nextauth]/route.ts` — `export { GET, POST } = handlers`; `runtime = "nodejs"`. Satisfies `L2-AUTH-03`.
-- `apps/web/proxy.ts` — edge gate via `getToken`. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
+- `apps/web/proxy.ts` — edge gate via `getToken`; `RECOVERY_PATHS` (forgot/reset-password) bypass the gate as public. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
 - `apps/web/app/backflip/(auth)/login/page.tsx` — login page (server; reads `from`, open-redirect guarded). Satisfies `L2-AUTH-04`.
 - `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Credentials via `signIn("credentials", {redirect:false})`; Google button via `signIn("google")`.
 - `apps/web/app/backflip/(protected)/layout.tsx` — authed shell (server; `auth()` → user). SidebarProvider + AppSidebar + SidebarInset + header.
@@ -27,12 +27,27 @@
 - Grants: owner = all; admin = dashboard + account + users.view (read-only users, no settings); teammate = dashboard + account only. See `L2-AUTH-21`.
 - Server-side is authoritative (`L2-AUTH-22`): hiding UI is cosmetic; `requireCapability` (pages) + `can*` checks (actions) do the enforcing. The edge `proxy` still gates the whole `/backflip/*` subtree for authentication; capability checks are per-route inside it.
 
-## Account page (`/backflip/account`)
-- **Built (this iteration):** read-only summary — `apps/web/app/backflip/(protected)/account/page.tsx`, server, `requireCapability("account")` (all roles). Profile card (name/email/role) + Login methods (Password / linked providers). It's teammate's home surface, so it must exist for the role model to be coherent. No hash sent to client.
-- **Planned (next iteration):** the summary → click-to-edit flow mirroring settings (`settings/_components/*-section.tsx`): each section = Badge + `dl` summary with an Edit button swapping to an inline `useActionState` form.
-  - Sections: **Profile** (name, email — email editable but is the unique login identity), **Security** (password state → change-password form, bcrypt), **Login methods** (read-only).
-  - Server actions `account/_actions.ts` (`saveProfile`, `changePassword`), scoped to the acting user only (never a client-supplied userId). Profile photo out of scope.
-  - Docs at build time: decide new L2 `account` domain vs. extend `auth` (self-service profile); propose then.
+## Account page (`/backflip/account`) — self-service (built)
+- `account/page.tsx` — server, `requireCapability("account")` (all roles). Cards: **Profile** (name + verified email change), **Password**, **Login methods** (read-only). `passwordHash` read only to derive a boolean; never sent to client.
+- `account/_components/profile-section.tsx` — name, `useActionState(saveProfile)`, summary ↔ inline form.
+- `account/_components/email-section.tsx` (`AccountEmailSection`) — request email change via `requestEmailChange`; keeps the pending "verification sent" message visible (address not yet changed).
+- `account/_components/password-section.tsx` — change/set password via `changePassword`; toast on success.
+- `account/_actions.ts` (self-scoped — always `session.user.id`, never a client id):
+  - `saveProfile` — update name.
+  - `changePassword` — verify current bcrypt when a hash exists (OAuth-only users may set a first password), min-8 + confirm, then `sendPasswordChangedEmail`.
+  - `requestEmailChange` — validate + availability, mint `email_change` token (`newEmail`), `sendEmailChangeVerification` to the NEW address. Requires configured email (else "configure email first"). Does NOT change the address.
+  - `confirmEmailChange(token)` — consume token, re-check availability, must match session user, swap `email`, `sendEmailChangedNotice` to the OLD address.
+- `account/verify-email/page.tsx` + `_components/verify-email-confirm.tsx` — target of the verify link (protected). Button (not auto-run, avoids prefetch consuming the token) calls `confirmEmailChange`. Satisfies `L2-AUTH-27`.
+
+## Password recovery (`(auth)`, public)
+- `(auth)/_actions.ts`:
+  - `requestPasswordReset` — mint `password_reset` token if the email exists, `sendPasswordResetEmail`; ALWAYS returns a generic success (no user enumeration). Satisfies `L2-AUTH-28`.
+  - `resetPassword` — validate token (min-8 + confirm), set `passwordHash`, `sendPasswordChangedEmail`. Satisfies `L2-AUTH-28`.
+- `(auth)/forgot-password/page.tsx` + form — public request page.
+- `(auth)/reset-password/page.tsx` + form — public set-new-password page (token from query).
+- `proxy.ts` — `RECOVERY_PATHS` (`/backflip/forgot-password`, `/backflip/reset-password`) bypass the auth gate (public). Satisfies `L2-AUTH-01`.
+- `login/_components/login-form.tsx` — "Forgot password?" link next to the password field.
+- `apps/web/app/_lib/auth/tokens.ts` — `createUserToken({userId,type,newEmail?})` (invalidates prior same-type tokens, stores `hashToken`, TTL 60m) + `consumeUserToken({rawToken,type})` (hash-lookup, checks type/expiry/consumed, marks consumed). Satisfies `L2-AUTH-29`.
 
 ## Implementation notes
 - **Credentials → JWT**: Credentials provider forces `jwt` session strategy; adapter still used to persist Google accounts.

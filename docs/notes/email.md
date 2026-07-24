@@ -9,21 +9,21 @@
 - `settings/_lib/mask.ts` — shared with `ai`; `keyPreview` decrypts + masks the stored key (`L2-DB-16`). Satisfies `L2-EMAIL-06`.
 - `settings/_actions.ts` — `saveEmailConfig` (`"use server"`): auth-gate → upsert on `provider` → encrypt key if provided → `revalidatePath`. Satisfies `L2-EMAIL-02`, `L2-EMAIL-06/07`.
 - `packages/db` — `email_config` table + `encryptSecret`/`decryptSecret` (`L2-DB-16/18`).
-- `apps/web/app/_lib/email/send.tsx` — `sendWelcomeEmail({to,name})` (`"use server"`-callable): reads single `email_config` row → soft-skip when disabled/keyless/no fromEmail → decrypt key (`L2-DB-16`) → `render(<WelcomeEmail/>)` → `resend.emails.send({html})`. Returns `SendResult` (`{sent:true,id}` | `{sent:false,reason:"not_configured"}` | `{sent:false,reason:"error"}`); never throws. Satisfies `L2-EMAIL-11`, `L2-EMAIL-13`.
-- `apps/web/app/_lib/email/welcome-email.tsx` — react-email `WelcomeEmail` component; GitHub-style (neutral grays, system font, bordered white card, single green CTA to `/backflip/login`). Inline styles only. Satisfies `L2-EMAIL-12`.
-- **Consumer:** `POST /api/backflip/users` route handler calls `sendWelcomeEmail` after insert (best-effort; see [[auth]]).
+- `apps/web/app/_lib/email/send.tsx` — send layer. Private `send(build)` core: reads single `email_config` row → soft-skip when disabled/keyless/no fromEmail → decrypt key (`L2-DB-16`) → `render(react)` → `resend.emails.send({html})`. Returns `SendResult` (`{sent:true,id}` | `{sent:false,reason:"not_configured"}` | `{sent:false,reason:"error"}`); never throws. Public: `sendWelcomeEmail`, `sendPasswordResetEmail`, `sendPasswordChangedEmail`, `sendEmailChangeVerification`, `sendEmailChangedNotice`, plus `appUrl()` (link base). Satisfies `L2-EMAIL-11`, `L2-EMAIL-13`, `L2-EMAIL-16`.
+- `apps/web/app/_lib/email/layout.tsx` — shared GitHub-style shell: `EmailShell` (Html/Head/Preview/card/header/footer), `PrimaryButton` (green CTA), `FallbackUrl`, + exported text/link styles. Inline styles only. All templates compose it. Satisfies `L2-EMAIL-12`.
+- `apps/web/app/_lib/email/*-email.tsx` — react-email templates: `welcome-email` (new user → login), `password-reset-email` (reset link), `password-changed-email` (security notice), `email-change-verify-email` (confirm link → NEW address), `email-changed-email` (heads-up → OLD address). Satisfies `L2-EMAIL-12`, `L2-EMAIL-16`.
+- **Consumers:** `POST /api/backflip/users` → welcome (see [[auth]]); account actions `changePassword`/`requestEmailChange`/`confirmEmailChange` → password-changed / verify / email-changed; `(auth)` actions `requestPasswordReset`/`resetPassword` → reset / password-changed. All best-effort.
 
 ## App URL
 - CTA link base = `APP_URL ?? AUTH_URL ?? NEXTAUTH_URL ?? http://localhost:3070`, `+ /backflip/login`.
 
 ## State
 - Sending lands: `resend@6` + `@react-email/components@1` installed in `web`.
-- Welcome email sent on user creation (owner adds a user). Config still admin-managed in Settings → Email.
-- Not-configured is non-fatal: user creation succeeds; action returns an info message. (`L2-EMAIL-13`)
-- Nav: Settings → `/backflip/settings`, Email section (after AI section, separated by rule).
-- Verified: typecheck + lint clean; migration `0001_smooth_sersi.sql` applied (email_config created).
+- Five transactional emails: welcome, password-reset, password-changed, email-change-verify, email-changed. All share `layout.tsx` (GitHub style).
+- Not-configured is non-fatal everywhere EXCEPT it blocks the two flows that *require* delivery to function: `requestEmailChange` and (implicitly) password reset — those surface a "configure email first" message. (`L2-EMAIL-13`)
+- Config still admin-managed in Settings → Email.
+- Verified: typecheck + lint clean; full build passes; all 5 templates render (previewed).
 
 ## TODO
 - "Send test email" action — deferred.
-- `react-email` preview/dev tooling — not wired; templates are code-only for now.
-- Broaden beyond welcome (invites, password reset) — reuse the `send.tsx` pattern.
+- `react-email` preview/dev tooling — not wired; templates are code-only (rendered ad hoc for review).
