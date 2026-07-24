@@ -19,12 +19,12 @@ export function ProfileSection({ name }: { name: string | null }) {
 
   if (!editing) {
     return (
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-sm">
-          <span className="font-medium">Name</span>
-          <span className="ml-3 text-muted-foreground">
-            {name || <span className="italic">not set</span>}
-          </span>
+      <div className="flex items-center gap-4">
+        <div className="w-32 flex-none text-sm text-muted-foreground">
+          Full name
+        </div>
+        <div className="min-w-0 flex-1 truncate text-sm">
+          {name || <span className="text-muted-foreground italic">not set</span>}
         </div>
         <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
           Edit
