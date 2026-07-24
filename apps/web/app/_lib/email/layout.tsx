@@ -17,6 +17,8 @@ import {
  * font stack, a bordered white card on a soft canvas. Templates supply a
  * heading, a preview line, body content, and an optional footer note. Inline
  * styles only — the only styling email clients reliably honor.
+ *
+ * @spec L2-EMAIL-12
  */
 export function EmailShell({
   heading,

@@ -10,6 +10,13 @@ import { PasswordResetEmail } from "./password-reset-email"
 import { WelcomeEmail } from "./welcome-email"
 
 /**
+ * Transactional email send layer: one soft-failing Resend core + per-event
+ * send functions. Templates live in the sibling `*-email.tsx` files.
+ *
+ * @spec L2-EMAIL-11, L2-EMAIL-13, L2-EMAIL-16
+ */
+
+/**
  * Result of a send attempt. `not_configured` is a soft outcome (never an error):
  * Resend is disabled, keyless, or missing a from-address. Callers treat it as a
  * non-fatal info state — sending is optional infrastructure. (`L2-EMAIL-13`)

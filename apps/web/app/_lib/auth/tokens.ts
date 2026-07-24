@@ -2,6 +2,12 @@ import { and, eq, gte, isNull } from "drizzle-orm"
 
 import { db, generateToken, hashToken, userTokens } from "@workspace/db"
 
+/**
+ * Single-use, time-boxed tokens for recovery flows + per-account rate limiting.
+ *
+ * @spec L2-AUTH-29, L2-AUTH-37
+ */
+
 export type UserTokenType = "password_reset" | "email_change"
 
 /** Default lifetimes (minutes) for one-time tokens. */
