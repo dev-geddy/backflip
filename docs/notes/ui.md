@@ -10,10 +10,21 @@
 - `apps/web/app/layout.tsx` — mounts ThemeProvider + TooltipProvider + Toaster. Satisfies `L2-UI-04`, `L2-UI-09`.
 - `apps/web/app/page.tsx` — public marketing homepage (RSC/SSR). Composes `_components/`: `SiteHeader`, `Hero`, `FeatureGrid`, `HowItWorks`, `WordmarkBand`, `SiteFooter`. Sets page `metadata`. Satisfies `L2-UI-11` (proposed).
 - `apps/web/app/_components/*` — homepage sections (app-scoped, `L1-ARCH-07/08`): `site-header.tsx` (`"use client"` — sticky nav + wordmark + theme toggle via `useTheme`, links use `Button render={<a/>}`), `hero.tsx` (headline + CTAs over CSS stripe texture, no image), `feature-grid.tsx` (5 `Card`s from `FEATURES`, remixicon icons), `how-it-works.tsx` (3-step band on `bg-muted`), `wordmark-band.tsx` (oversized `text-muted-foreground/20` accent), `site-footer.tsx`. Theme tokens only, no hex. Icons remixicon only.
-- `apps/web/app/backflip/(protected)/users/page.tsx` — admin user list (RSC). Selects display fields from `users` (no hash), newest first; renders `UsersTable`. Sidebar `Users` links here.
-- `apps/web/app/backflip/(protected)/users/_components/users-table.tsx` — Documents-style `Card` + `Table`: avatar+name, email, role `Badge` (owner/admin/member → default/secondary/outline), joined date.
+- `apps/web/app/backflip/(protected)/users/page.tsx` — admin user list (RSC). Selects display fields from `users` (no hash), newest first; renders `UsersList`. Sidebar `Users` links here.
+- `apps/web/app/backflip/(protected)/users/_components/users-list.tsx` — flat details card: `PageHeading` (title + `AddUserDialog` action) over a bordered `divide-y` list; each row avatar + name + mono email + role line + role `Badge` + `EditUserDialog` (owner only).
 - `apps/web/app/ui-samples/page.tsx` — component demo (`UISamplesPage`, heading "UI Samples"), dashboard/masonry layout reproducing the `base-mira` create-preview; exercises ~50 components (item, field, input-group, native-select, toggle-group, chart/recharts, empty, spinner, progress, calendar, radio, table, tabs, accordion, …). `d` = dark toggle. Satisfies `L2-UI-05`, `L2-UI-12`. Note: uncontrolled `defaultValue` passed to base-ui ToggleGroup/Slider must be stable module-scope refs (base-ui warns on identity change per render).
 - `apps/web/next.config.ts` — `transpilePackages: ["@workspace/ui"]`. Satisfies `L2-UI-10`.
+
+## Admin flat restyle ("Flat Admin" design) — L2-UI-03
+Protected `/backflip/*` surface restyled to a flat, hairline aesthetic (imported from claude.ai/design "Flat Admin"). **Theme tokens unchanged** — already flat-neutral; radius already matches (cards `rounded-xl` ≈ 11px, controls ≈ 7.6px). Restyle is component/layout only.
+- Shared primitives: `(protected)/_components/page-heading.tsx` — `PageHeading` (large tracking-tight title + muted subtitle + optional trailing `action`) and `SectionLabel` (uppercase `text-xs` micro-label). Layout-scoped (`L1-ARCH-08`).
+- `section-cards.tsx` — flat stat cards: `SectionLabel` + big `tabular-nums` value + optional unit / emerald·red delta / slim progress bar / emerald status dot + muted caption. No `Card`/`Badge` chrome.
+- `site-header.tsx` — breadcrumb title reduced to `text-sm font-medium`.
+- `account/page.tsx` — design "My account": `PageHeading` + profile summary card + bordered "Account details" list (`border-t` hairline rows wrapping Profile/Email/Password sections) + Login methods card. Section summary rows reshaped to `w-32` muted label | value | trailing button; email shows mono value + emerald "Verified" pill; password shows masked dots. Edit forms unchanged (functionality preserved).
+- `settings/page.tsx` — `PageHeading` + `SectionLabel`'d bordered cards (AI / Email). `@spec L2-AI-01, L2-EMAIL-01` unchanged.
+- Sidebar (`app-sidebar`, `nav-*`) intentionally **not** restyled — logo top / user-menu bottom positioning + functionality kept per request; fonts inherit theme.
+- Menu unchanged: Dashboard/Users/Account/Settings (no items added).
+- Green pills use `emerald-*` utilities (only non-token color; light+dark variants). Everything else theme tokens.
 
 ## Form-element sizing (house tweak, padding only)
 Form primitives get +2px padding + grown heights over base-mira defaults — **font sizes unchanged**: `button` (size + icon variants), `input`, `textarea`, `native-select`, `select` trigger. Arbitrary px (`px-[10px]`, `py-[4px]`, `h-8`) where no clean Tailwind step. No theme-level text-scale bump (reverted). `cursor: pointer` on buttons is a base-layer rule. Re-`shadcn add` would overwrite these.
@@ -57,7 +68,7 @@ Hook: `src/hooks/use-mobile.ts` (sidebar).
 - `@source` globs in globals.css were one level short (`../../../apps` → `packages/apps`, nonexistent). Tailwind never scanned `apps/web`, so app-level utility classes (page layout on `/ui-samples`) weren't generated → page rendered unstyled vs shadcn preview. Corrected to `../../../../` (repo root).
 
 ## TODO
-- Admin chrome (sidebar/topbar) once auth lands — will consume these components.
+- _(none)_ — admin chrome (sidebar/topbar) landed; flat-restyled (see "Admin flat restyle").
 
 ## ADR
 _(none yet)_

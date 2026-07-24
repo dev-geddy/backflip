@@ -4,7 +4,6 @@ import { useActionState, useEffect, useState } from "react"
 
 import { toast } from "sonner"
 
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
@@ -29,12 +28,19 @@ export function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
 
   if (!editing) {
     return (
-      <div className="flex items-center justify-between gap-4">
-        {hasPassword ? (
-          <Badge variant="secondary">Password set</Badge>
-        ) : (
-          <Badge variant="outline">No password</Badge>
-        )}
+      <div className="flex items-center gap-4">
+        <div className="w-32 flex-none text-sm text-muted-foreground">
+          Password
+        </div>
+        <div className="min-w-0 flex-1 text-sm">
+          {hasPassword ? (
+            <span className="tracking-widest text-muted-foreground">
+              ••••••••••
+            </span>
+          ) : (
+            <span className="text-muted-foreground italic">not set</span>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
           {hasPassword ? "Change password" : "Set password"}
         </Button>

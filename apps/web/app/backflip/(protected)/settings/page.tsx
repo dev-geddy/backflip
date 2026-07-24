@@ -1,8 +1,8 @@
 import { aiConfig, db, emailConfig } from "@workspace/db"
-import { Card } from "@workspace/ui/components/card"
 import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
+import { PageHeading, SectionLabel } from "../_components/page-heading"
 import { AiSection } from "./_components/ai-section"
 import { type ProviderConfig } from "./_components/ai-config-form"
 import { type EmailConfig } from "./_components/email-config-form"
@@ -48,20 +48,25 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <Card className="p-6">
-        <section className="flex flex-col gap-6">
-          <h2 className="text-lg font-semibold">AI integration</h2>
-          <AiSection initial={initial} />
-        </section>
-      </Card>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+      <PageHeading
+        title="Settings"
+        description="Configure platform integrations."
+      />
 
-      <Card className="p-6">
-        <section className="flex flex-col gap-6">
-          <h2 className="text-lg font-semibold">Email</h2>
+      <section className="flex flex-col gap-3">
+        <SectionLabel>AI integration</SectionLabel>
+        <div className="rounded-xl border bg-card p-6">
+          <AiSection initial={initial} />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <SectionLabel>Email</SectionLabel>
+        <div className="rounded-xl border bg-card p-6">
           <EmailSection initial={email} />
-        </section>
-      </Card>
+        </div>
+      </section>
     </div>
   )
 }

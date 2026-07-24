@@ -26,10 +26,16 @@ export function AccountEmailSection({
 
   if (!editing) {
     return (
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-sm">
-          <span className="font-medium">Email</span>
-          <span className="ml-3 font-mono text-muted-foreground">{email}</span>
+      <div className="flex items-center gap-4">
+        <div className="w-32 flex-none text-sm text-muted-foreground">
+          Email address
+        </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="truncate font-mono text-sm">{email}</span>
+          <span className="inline-flex flex-none items-center gap-1.5 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            Verified
+          </span>
         </div>
         <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
           Change email
