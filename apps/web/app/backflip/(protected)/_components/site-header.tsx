@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation"
 
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
-import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
 import { HeaderSearch } from "./header-search"
@@ -40,10 +39,7 @@ export function SiteHeader({
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b">
       <div className="flex w-full items-center gap-2 px-4 lg:px-5">
         <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-1 self-center data-vertical:h-4"
-        />
+        <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border" />
         <nav className="flex items-center gap-1.5 text-sm">
           {trail.map((c, i) => {
             const last = i === trail.length - 1

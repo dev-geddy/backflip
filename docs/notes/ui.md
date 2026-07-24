@@ -34,7 +34,7 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - Nav labels renamed to design: **Overview** (was Dashboard) + **Integrations** (was Settings; icon `RiCheckboxMultipleBlankLine`). Routes/capabilities unchanged (`/backflip`, `/backflip/settings`, caps `dashboard`/`settings`). Menu item type `text-[13px]`, group labels `text-[11px]` to match a1.
 - **Full-bleed content:** shell (`layout.tsx`) drops all outer padding/gap — content area is edge-to-edge on a `bg-muted/40` canvas. Master-detail pages (`MembersView`, `IntegrationsView`) are now a **single flush `bg-card` region** (list `lg:w-[372px] lg:border-r` | detail `flex-1` | rail `w-[300px] xl:border-l p-4`), no rounded cards/gaps. Padded pages own their padding: dashboard + `account` wrap in `p-4 md:p-6` (account stays `max-w-5xl` centered).
 - `header-search.tsx` + `overview-jump.tsx` — quick-jump: `⌘K` `CommandDialog` (cmdk) over shared `jump-targets.ts` (`JUMP_GROUPS`) → `router.push`. Compact button in `site-header`; large field on Overview.
-- Sidebar `collapsible="icon"` (was offcanvas) → contracted = 60px icon rail (design 1B); `--sidebar-width-icon: 3.5rem`; logo/user buttons get `group-data-[collapsible=icon]:p-0!` so tile/avatar fit. Header vertical `Separator` uses `self-center data-vertical:h-4` (base-mira Separator is `data-vertical:self-stretch` — the `data-[orientation=vertical]` class never matched).
+- Sidebar `collapsible="icon"` (was offcanvas) → contracted = 60px icon rail (design 1B); `--sidebar-width-icon: 3.5rem`; logo/user buttons get `group-data-[collapsible=icon]:p-0!` so tile/avatar fit. Header divider is a plain `h-4 w-px bg-border` span (base-mira `Separator` forces `data-vertical:self-stretch`, so it stretched/misaligned — a fixed span centered by the header's `items-center` is reliable).
 
 ## Overview page — design 5A (L2-UI-03)
 `/backflip` rebuilt from generic stat-cards/chart/table to the 5A home. **Real data only.**
@@ -65,10 +65,10 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 `/backflip/settings` (owner-only) ported to a master-detail of the two **real** integrations. **Real-data-only**, actions/encryption unchanged; keys stay masked (no Reveal).
 - `settings/page.tsx` — same `aiConfig`/`emailConfig` fetch + `ProviderConfig[]`/`EmailConfig` shapes; renders `IntegrationsView`.
 - `_components/integrations-view.tsx` (client shell) — 3-col: list (2 rows: "AI providers · N connected", "Email · Resend", status dots) + detail + `xl:` rail; `mobileDetail` stack < lg.
-- `ai-integration.tsx` — custom provider tabs (Anthropic/OpenAI/Google, status dot = enabled/configured/off) + status badges + reused `ProviderForm` (`key`ed per provider → `saveAiConfig`) + read-only Available-models list from exported `MODELS` (selected `cfg.model` badged Default).
+- `ai-integration.tsx` — provider tabs (Anthropic/OpenAI/Google, status dot) + `ProviderPane` (`key`ed per provider): design-2a header (logo tile · `PACKAGE` mono badge · connected status · **Enabled** toggle) over credentials (masked key) + Default-model select + "Set as default" toggle + Save (`saveAiConfig`), then Available-models list. Models list is static (`MODELS`) pending L2-AI live-models approval.
 - `email-integration.tsx` — Connected badge + reused `EmailConfigForm` → `saveEmailConfig`.
 - `integrations-rail.tsx` — About service + docs link + "keys encrypted at rest" note.
-- `ai-config-form.tsx` — now exports `MODELS` + `ProviderForm`; removed the `AiConfigForm` Tabs wrapper. `email-config-form.tsx` unchanged.
+- `ai-config-form.tsx` — plain module (no client): exports `ProviderConfig`, `LABEL`, `PACKAGE`, `MODELS`. `ProviderForm`/`AiConfigForm` removed (form inlined as `ProviderPane`). `email-config-form.tsx` unchanged.
 - Removed: `ai-section.tsx`, `email-section.tsx` (view/edit-toggle wrappers superseded).
 - Omitted (no backend): Reveal key, Analytics/PostHog, usage metrics, sending-domain verification, org-id/base-url.
 
