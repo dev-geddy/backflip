@@ -1,17 +1,33 @@
 "use client"
 
-import { useActionState, useEffect, useRef, useState } from "react"
+import { useActionState, useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
-import { RiArrowLeftLine } from "@remixicon/react"
+import { RiArrowLeftLine, RiDeleteBinLine, RiMore2Line } from "@remixicon/react"
 import { toast } from "sonner"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import {
   Field,
   FieldDescription,
@@ -28,7 +44,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ROLE_LABELS, ROLES, type Role } from "@/app/_lib/auth/permissions"
-import { updateUser } from "../_actions"
+import { deleteUser, updateUser } from "../_actions"
 import type { DetailMode } from "./members-view"
 import type { Member } from "./types"
 
@@ -65,6 +81,7 @@ export function MemberDetail({
   onCreated,
   onCancelNew,
   onBack,
+  onRemoved,
 }: {
   member: Member | null
   mode: DetailMode
@@ -76,6 +93,7 @@ export function MemberDetail({
   onCreated: () => void
   onCancelNew: () => void
   onBack: () => void
+  onRemoved: () => void
 }) {
   const backBar = (
     <button
@@ -143,9 +161,12 @@ export function MemberDetail({
           </div>
         </div>
         {canEdit && mode === "overview" ? (
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            Edit
-          </Button>
+          <HeaderActions
+            member={member}
+            isSelf={isSelf}
+            onEdit={onEdit}
+            onRemoved={onRemoved}
+          />
         ) : null}
       </div>
 
@@ -161,6 +182,100 @@ export function MemberDetail({
           <Overview member={member} />
         )}
       </div>
+    </div>
+  )
+}
+
+/* ---------------------------- Header actions ----------------------------- */
+
+function HeaderActions({
+  member,
+  isSelf,
+  onEdit,
+  onRemoved,
+}: {
+  member: Member
+  isSelf: boolean
+  onEdit: () => void
+  onRemoved: () => void
+}) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [removing, startRemove] = useTransition()
+  const label = member.name || member.email
+
+  function handleRemove() {
+    startRemove(async () => {
+      const res = await deleteUser(member.id)
+      if (res?.ok) {
+        toast.success(res.message)
+        setConfirmOpen(false)
+        onRemoved()
+      } else {
+        toast.error(res?.message ?? "Couldn't remove user.")
+      }
+    })
+  }
+
+  return (
+    <div className="flex flex-none items-center gap-2">
+      <Button variant="outline" size="sm" onClick={onEdit}>
+        Edit
+      </Button>
+      {/* Removing yourself / the last owner is blocked server-side too. */}
+      {!isSelf ? (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8"
+                  aria-label="More actions"
+                />
+              }
+            >
+              <RiMore2Line className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <RiDeleteBinLine />
+                Remove user
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove {label}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes their account and revokes access —
+                  including any linked sign-in methods. This can’t be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={removing}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleRemove()
+                  }}
+                  disabled={removing}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                >
+                  {removing ? "Removing…" : "Remove user"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      ) : null}
     </div>
   )
 }
