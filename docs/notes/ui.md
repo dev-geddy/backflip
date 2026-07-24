@@ -27,13 +27,20 @@ Protected `/backflip/*` surface restyled to a flat, hairline aesthetic (imported
 ## Admin chrome (design-matched) — L2-UI-03
 Sidebar + header + shell now match the Flat Admin design layout (a later pass superseded the earlier "sidebar not restyled" note). Menu items/routes unchanged (Dashboard/Users/Account/Settings).
 - `(protected)/layout.tsx` — sidebar switched from `variant="inset"` (floating) to **flush** (default `variant="sidebar"`, border-right); `--sidebar-width: 15.5rem`, `--header-height: 3.5rem`; content area on a soft `bg-muted/40` canvas so white panels/cards pop; passes `userName`/`userInitials` to the header.
-- `app-sidebar.tsx` (client) — dark rounded **logo square** (`RiShapesLine`) + "Backflip" / "Admin console" subtitle; nav split into design's labeled groups **Platform** (Dashboard, Users) + **Settings** (Account, Settings) via `SidebarGroupLabel`; **active** state from `usePathname` (`isActive`, exact for `/backflip`, prefix otherwise); groups filtered by `can(role, cap)`.
+- `app-sidebar.tsx` (client) — dark rounded **logo square** (`RiShapesLine`) + "Backflip" / "Admin console" subtitle; nav split into labeled groups **Platform** (Overview) + **Settings** (Users, Account, Integrations) via `SidebarGroupLabel`; the Settings group is `mt-auto` (pinned to the bottom, above the user footer, which has `border-t border-sidebar-border`); **active** state from `usePathname` (`isActive`, exact for `/backflip`, prefix otherwise); groups filtered by `can(role, cap)`.
 - `nav-user.tsx` — footer chip now shows role (was email); dropdown (Account / Log out) unchanged.
 - `site-header.tsx` (client) — `usePathname` breadcrumb trail (e.g. Settings / My account), `SidebarTrigger`, right-aligned Docs link + avatar.
 - Removed: `nav-main.tsx`, `nav-secondary.tsx` (nav inlined into `app-sidebar`).
 - Nav labels renamed to design: **Overview** (was Dashboard) + **Integrations** (was Settings; icon `RiStackLine`). Routes/capabilities unchanged (`/backflip`, `/backflip/settings`, caps `dashboard`/`settings`). Menu item type `text-[13px]`, group labels `text-[11px]` to match a1.
 - **Full-bleed content:** shell (`layout.tsx`) drops all outer padding/gap — content area is edge-to-edge on a `bg-muted/40` canvas. Master-detail pages (`MembersView`, `IntegrationsView`) are now a **single flush `bg-card` region** (list `lg:w-[372px] lg:border-r` | detail `flex-1` | rail `w-[300px] xl:border-l p-4`), no rounded cards/gaps. Padded pages own their padding: dashboard + `account` wrap in `p-4 md:p-6` (account stays `max-w-5xl` centered).
-- `header-search.tsx` — quick-jump (design 5A): a search button + `⌘K` `CommandDialog` (cmdk) listing Pages/Actions → `router.push`. Mounted in `site-header` right cluster.
+- `header-search.tsx` + `overview-jump.tsx` — quick-jump: `⌘K` `CommandDialog` (cmdk) over shared `jump-targets.ts` (`JUMP_GROUPS`) → `router.push`. Compact button in `site-header`; large field on Overview.
+- Sidebar `collapsible="icon"` (was offcanvas) → contracted = 60px icon rail (design 1B); `--sidebar-width-icon: 3.5rem`; logo/user buttons get `group-data-[collapsible=icon]:p-0!` so tile/avatar fit. Header vertical `Separator` uses `self-center data-vertical:h-4` (base-mira Separator is `data-vertical:self-stretch` — the `data-[orientation=vertical]` class never matched).
+
+## Overview page — design 5A (L2-UI-03)
+`/backflip` rebuilt from generic stat-cards/chart/table to the 5A home. **Real data only.**
+- `page.tsx` (RSC) — greeting (`Welcome back, {firstName}`, real date) + `OverviewJump` + 3 real stat cards (Members total/active/pending, Integrations enabled + health dot, Pending) + 2 info cards: **Finish setting up** (4 real steps derived from name/user-count/ai/email config) + **Recent members** (newest 4 from `users`). Full-bleed white (`bg-card`, `max-w-[900px]` centered).
+- Removed: `section-cards.tsx`, `dashboard-chart.tsx`, `recent-table.tsx`.
+- `_components/overview-jump.tsx` — large quick-jump field opening the shared command palette.
 
 ## Members page — design 1A master-detail (L2-UI-03; auth domain UI)
 `/backflip/users` ported from a flat card list to a 3-column master/detail (design "Flat Admin" 1A). **Layout-faithful, real-data-only** — no schema/action changes; unsupported design chrome omitted.
@@ -47,7 +54,7 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 
 ## Account page — design 4a (L2-UI-03; auth domain UI)
 `/backflip/account` ported to the "My account" 2-column: details left, security rail right. **Real-data-only**, actions unchanged.
-- `account/page.tsx` — also selects `emailVerified`; passes it + `loginMethods` to the rail and the email pill. `max-w-5xl`, `lg:flex-row` details + `lg:w-80` rail.
+- `account/page.tsx` — also selects `emailVerified`. Full-bleed 4a layout: white `bg-card` main (`max-w-[680px]` content, `p-6 lg:p-8`) + a `w-80` right rail with `border-l bg-muted/30` (stacks under main < lg with `border-t`). Passes `emailVerified` + `loginMethods` to rail + email pill.
 - `_components/profile|password|email-section.tsx` — summary→edit switched from swap to **inline-expand** (row stays; form drops below on `bg-muted/40`).
   - Email: 2-step `Stepper` (Details → Verify). Step 1 = real `requestEmailChange` (new email + current-password step-up when `hasPassword`); on `state.ok` → step 2 amber "check your inbox" (link-based, deferred swap). **No 6-digit codes.** Verified pill driven by real `emailVerified`.
   - Password: `changePassword` unchanged + a **client-only strength meter** (`strength()` heuristic: length + char-class → 4-seg bar) + show-passwords toggle.

@@ -42,7 +42,7 @@ export function SiteHeader({
         <SidebarTrigger className="-ml-1" />
         <Separator
           orientation="vertical"
-          className="mx-1 data-[orientation=vertical]:h-4"
+          className="mx-1 self-center data-vertical:h-4"
         />
         <nav className="flex items-center gap-1.5 text-sm">
           {trail.map((c, i) => {

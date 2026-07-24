@@ -37,6 +37,7 @@ export default async function ProtectedLayout({
       style={
         {
           "--sidebar-width": "15.5rem",
+          "--sidebar-width-icon": "3.5rem",
           "--header-height": "3.5rem",
         } as CSSProperties
       }
