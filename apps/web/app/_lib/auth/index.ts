@@ -12,6 +12,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 
+import { isCredentialsEnabled, isGoogleConfigured } from "./config"
 import "./types"
 
 /**
@@ -34,35 +35,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   pages: { signIn: "/backflip/login" },
   providers: [
-    Google({ allowDangerousEmailAccountLinking: true }),
-    Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      authorize: async (creds) => {
-        const email = typeof creds?.email === "string" ? creds.email : ""
-        const password =
-          typeof creds?.password === "string" ? creds.password : ""
-        if (!email || !password) return null
+    // Google only when configured; Credentials unless disabled (Google-only mode).
+    ...(isGoogleConfigured()
+      ? [Google({ allowDangerousEmailAccountLinking: true })]
+      : []),
+    ...(isCredentialsEnabled()
+      ? [
+          Credentials({
+            credentials: {
+              email: { label: "Email", type: "email" },
+              password: { label: "Password", type: "password" },
+            },
+            authorize: async (creds) => {
+              const email = typeof creds?.email === "string" ? creds.email : ""
+              const password =
+                typeof creds?.password === "string" ? creds.password : ""
+              if (!email || !password) return null
 
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, email),
-        })
-        if (!user?.passwordHash) return null
+              const user = await db.query.users.findFirst({
+                where: eq(users.email, email),
+              })
+              if (!user?.passwordHash) return null
 
-        const ok = await bcrypt.compare(password, user.passwordHash)
-        if (!ok) return null
+              const ok = await bcrypt.compare(password, user.passwordHash)
+              if (!ok) return null
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        }
-      },
-    }),
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                image: user.image,
+                role: user.role,
+              }
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     // Google: reject unless a user with that email already exists.
