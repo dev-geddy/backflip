@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { RiArrowLeftLine, RiGoogleFill } from "@remixicon/react"
+import { RiArrowLeftLine } from "@remixicon/react"
 import { toast } from "sonner"
 
 import {
@@ -11,7 +11,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   Field,
@@ -43,6 +42,18 @@ function initials(value: string) {
   return value.slice(0, 2).toUpperCase()
 }
 
+/** Small Google "G" mark (design 1a sign-in badge). */
+function GoogleMark() {
+  return (
+    <span
+      title="Signs in with Google"
+      className="inline-flex size-[18px] flex-none items-center justify-center rounded-full border bg-background text-[10px] font-bold text-[#4285f4]"
+    >
+      G
+    </span>
+  )
+}
+
 export function MemberDetail({
   member,
   mode,
@@ -66,7 +77,6 @@ export function MemberDetail({
   onCancelNew: () => void
   onBack: () => void
 }) {
-  // Mobile back bar (hidden on lg where both columns show).
   const backBar = (
     <button
       type="button"
@@ -106,7 +116,7 @@ export function MemberDetail({
         <div className="min-w-0 flex-1">
           {backBar}
           <div className="flex items-center gap-3">
-            <Avatar className="size-12 rounded-full">
+            <Avatar className="size-13 rounded-full">
               {member.image ? (
                 <AvatarImage src={member.image} alt={label} />
               ) : null}
@@ -126,7 +136,7 @@ export function MemberDetail({
                   )}
                 />
                 {member.status === "active" ? "Active" : "Pending"}
-                <span>·</span>
+                <span className="text-muted-foreground/50">·</span>
                 {ROLE_LABELS[member.role]}
               </div>
             </div>
@@ -160,16 +170,21 @@ export function MemberDetail({
 function DefRow({
   label,
   children,
+  last,
 }: {
   label: string
   children: React.ReactNode
+  last?: boolean
 }) {
   return (
-    <div className="flex items-start gap-4 py-3">
-      <div className="w-32 flex-none text-xs font-medium text-muted-foreground">
-        {label}
-      </div>
-      <div className="min-w-0 flex-1 text-sm">{children}</div>
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 py-2.5 text-[13px]",
+        !last && "border-b"
+      )}
+    >
+      <span className="flex-none text-muted-foreground">{label}</span>
+      <span className="min-w-0 truncate text-right">{children}</span>
     </div>
   )
 }
@@ -179,37 +194,39 @@ function Overview({ member }: { member: Member }) {
     ? member.loginMethods.join(", ")
     : "No sign-in method"
   return (
-    <div className="divide-y">
-      <DefRow label="Member ID">
-        <span className="font-mono text-xs">{member.id}</span>
-      </DefRow>
-      <DefRow label="Email">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm">{member.email}</span>
-          {member.emailVerified ? (
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Verified
-            </span>
-          ) : (
-            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              Unverified
-            </span>
-          )}
-        </div>
-      </DefRow>
-      <DefRow label="Role">
-        <Badge variant="secondary">{ROLE_LABELS[member.role]}</Badge>
-      </DefRow>
-      <DefRow label="Sign-in method">
-        <span className="inline-flex items-center gap-1.5">
-          {member.usesGoogle ? <RiGoogleFill className="size-4" /> : null}
-          {methods}
-        </span>
-      </DefRow>
-      <DefRow label="Date added">{member.joined}</DefRow>
+    <div className="max-w-xl">
+      <SectionTitle>Overview</SectionTitle>
+      <div className="mt-2">
+        <DefRow label="Member ID">
+          <span className="font-mono text-xs">{member.id}</span>
+        </DefRow>
+        <DefRow label="Email">
+          <span className="inline-flex items-center gap-2">
+            {member.email}
+            {member.emailVerified ? (
+              <span className="text-xs font-semibold text-emerald-600">
+                Verified
+              </span>
+            ) : null}
+          </span>
+        </DefRow>
+        <DefRow label="Role">{ROLE_LABELS[member.role]}</DefRow>
+        <DefRow label="Sign-in method">
+          <span className="inline-flex items-center gap-2">
+            {member.usesGoogle ? <GoogleMark /> : null}
+            {methods}
+          </span>
+        </DefRow>
+        <DefRow label="Date added" last>
+          {member.joined}
+        </DefRow>
+      </div>
     </div>
   )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="text-[13px] font-semibold">{children}</div>
 }
 
 /* ------------------------------ Edit member ------------------------------ */
@@ -232,59 +249,67 @@ function EditMemberForm({
   }, [state, onSaved])
 
   return (
-    <form action={action} className="flex max-w-md flex-col gap-4">
+    <form action={action} className="max-w-xl">
       <input type="hidden" name="id" value={member.id} />
+      <SectionTitle>Edit member</SectionTitle>
+      <div className="mt-0.5 text-xs text-muted-foreground">
+        Update profile and access. Changes apply immediately.
+      </div>
 
-      <Field>
-        <FieldLabel htmlFor="member-name">Full name</FieldLabel>
-        <Input
-          id="member-name"
-          name="name"
-          autoComplete="off"
-          placeholder="No name set"
-          defaultValue={member.name ?? ""}
-        />
-      </Field>
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field>
+          <FieldLabel htmlFor="member-name">Full name</FieldLabel>
+          <Input
+            id="member-name"
+            name="name"
+            autoComplete="off"
+            placeholder="No name set"
+            defaultValue={member.name ?? ""}
+          />
+        </Field>
 
-      <Field>
-        <FieldLabel htmlFor="member-email">Email</FieldLabel>
-        <Input
-          id="member-email"
-          name="email"
-          type="email"
-          autoComplete="off"
-          required
-          defaultValue={member.email}
-        />
-      </Field>
+        <Field>
+          <FieldLabel htmlFor="member-email">Email address</FieldLabel>
+          <Input
+            id="member-email"
+            name="email"
+            type="email"
+            autoComplete="off"
+            required
+            defaultValue={member.email}
+          />
+        </Field>
 
-      <Field>
-        <FieldLabel htmlFor="member-role">Role</FieldLabel>
-        {/* Disabled inputs don't submit; when self-editing, carry the
-            unchanged role via a hidden field so the action still gets it. */}
-        {isSelf ? <input type="hidden" name="role" value={member.role} /> : null}
-        <Select
-          name={isSelf ? undefined : "role"}
-          defaultValue={member.role}
-          disabled={isSelf}
-        >
-          <SelectTrigger id="member-role" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLES.map((r) => (
-              <SelectItem key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {isSelf ? (
-          <FieldDescription>You can’t change your own role.</FieldDescription>
-        ) : null}
-      </Field>
+        <Field className="sm:col-span-2">
+          <FieldLabel htmlFor="member-role">Role</FieldLabel>
+          {/* Disabled inputs don't submit; when self-editing, carry the
+              unchanged role via a hidden field so the action still gets it. */}
+          {isSelf ? (
+            <input type="hidden" name="role" value={member.role} />
+          ) : null}
+          <Select
+            name={isSelf ? undefined : "role"}
+            defaultValue={member.role}
+            disabled={isSelf}
+          >
+            <SelectTrigger id="member-role" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isSelf ? (
+            <FieldDescription>You can’t change your own role.</FieldDescription>
+          ) : null}
+        </Field>
+      </div>
 
-      <div className="flex items-center gap-3">
+      <div className="mt-5 flex items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save changes"}
         </Button>
