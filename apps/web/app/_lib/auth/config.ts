@@ -2,6 +2,8 @@
  * Auth-mode flags derived from environment. Server-only (reads non-public env);
  * import from server components / actions / the Auth.js config, never a client
  * component. Pass the resolved booleans to client UI as props instead.
+ *
+ * @spec L2-AUTH-33
  */
 
 /** Google OAuth is usable when both client id and secret are present. */

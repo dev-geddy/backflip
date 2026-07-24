@@ -9,6 +9,8 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core"
 
+/** @spec L2-DB-05, L2-DB-06, L2-DB-07, L2-DB-17, L2-DB-18, L2-DB-20, L2-DB-22 */
+
 /**
  * Platform roles. `owner` = top-level admin (seeded); can do everything.
  * `admin` = operator, cannot edit system settings. `teammate` = own account
