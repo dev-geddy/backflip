@@ -16,6 +16,7 @@ import {
   ROLE_LABELS,
   type Role,
 } from "@/app/_lib/auth/permissions"
+import { AddUserDialog } from "./add-user-dialog"
 import { EditUserDialog } from "./edit-user-dialog"
 
 export type UserRow = {
@@ -50,9 +51,12 @@ export function UsersList({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Users</CardTitle>
-        <CardDescription>Everyone with platform access</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <CardTitle>Users</CardTitle>
+          <CardDescription>Everyone with platform access</CardDescription>
+        </div>
+        {editable ? <AddUserDialog /> : null}
       </CardHeader>
       <CardContent>
         <ul className="flex flex-col divide-y">
