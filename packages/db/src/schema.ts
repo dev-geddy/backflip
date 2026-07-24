@@ -31,6 +31,8 @@ export const users = pgTable("user", {
   image: text("image"),
   passwordHash: text("passwordHash"),
   role: userRole("role").notNull().default("teammate"),
+  // Bumped on password/email change to invalidate all existing JWT sessions.
+  tokenVersion: integer("tokenVersion").notNull().default(0),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
 })
 
@@ -76,6 +78,35 @@ export const verificationTokens = pgTable(
   },
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
 )
+
+/**
+ * Short-lived, single-use tokens for self-service account flows:
+ * - `password_reset` — forgot-password: proves control of the email.
+ * - `email_change` — confirms a new email before it replaces the old one
+ *   (`newEmail` holds the pending address).
+ * Only the SHA-256 hash of the token is stored (`tokenHash`); the raw token
+ * lives only in the emailed link. Rows are consumed (`consumedAt`) on use and
+ * expire (`expiresAt`).
+ */
+export const userTokenType = pgEnum("user_token_type", [
+  "password_reset",
+  "email_change",
+])
+
+export const userTokens = pgTable("user_token", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: userTokenType("type").notNull(),
+  tokenHash: text("tokenHash").notNull().unique(),
+  newEmail: text("newEmail"),
+  expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+  consumedAt: timestamp("consumedAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+})
 
 /** AI providers supported by the integration config. */
 export const aiProvider = pgEnum("ai_provider", ["anthropic", "openai", "google"])
