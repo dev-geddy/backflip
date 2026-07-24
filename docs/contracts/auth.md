@@ -28,7 +28,8 @@ Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login rou
 - `L2-AUTH-10` — Google sign-in succeeds only if a `user` row with that email already exists (enforced in `signIn` callback). No self-registration via OAuth.
 - `L2-AUTH-11` — Google callback links to the existing user by verified email (pre-registered emails are trusted).
 - `L2-AUTH-21` — Capability grants: **owner** = all (`dashboard`, `account`, `users.view`, `users.edit`, `settings`); **admin** = `dashboard`, `account`, `users.view`; **teammate** = `dashboard`, `account`. Owner is the superset.
-- `L2-AUTH-22` — Authorization is enforced server-side (route guards via `requireCapability`, plus per-action capability checks), never UI-only. Hidden nav items / buttons are cosmetic. Guarded: `/backflip/users` (`users.view`) + `updateUser` (`users.edit`); `/backflip/settings` + `saveAiConfig`/`saveEmailConfig` (`settings`).
+- `L2-AUTH-22` — Authorization is enforced server-side (route guards via `requireCapability`, plus per-action capability checks), never UI-only. Hidden nav items / buttons are cosmetic. Guarded: `/backflip/users` (`users.view`) + `updateUser`/`createUser` (`users.edit`); `/backflip/settings` + `saveAiConfig`/`saveEmailConfig` (`settings`).
+- `L2-AUTH-25` — `createUser` (owner, `users.edit`) inserts a `user` row (name, email, role, optional bcrypt password). Optional password → `passwordHash` null means Google-only sign-in (email must be pre-registered per `L2-AUTH-10/11`). Duplicate email → friendly error, no insert. On success a welcome email is sent best-effort (`L2-EMAIL-11`); an unconfigured provider or send failure never blocks creation.
 - `L2-AUTH-23` — Self-lockout guard: an owner cannot change their own role (enforced in `updateUser`).
 
 ## Errors
@@ -41,7 +42,8 @@ Admin auth for `/backflip/*`: Auth.js config, providers, session gate, login rou
 - `L2-AUTH-16` — Unauth request to any `/backflip/*` (non-login) redirects to `/backflip/login`.
 - `L2-AUTH-17` — Valid credentials → session with `user.role`; protected page reachable.
 - `L2-AUTH-18` — Google sign-in with a pre-registered email yields a session; unknown email is rejected.
-- `L2-AUTH-24` — teammate visiting `/backflip/users` or `/backflip/settings` → redirect `/backflip`; admin visiting `/backflip/settings` → redirect. Owner reaches both; only owner sees Edit on users and can save settings.
+- `L2-AUTH-24` — teammate visiting `/backflip/users` or `/backflip/settings` → redirect `/backflip`; admin visiting `/backflip/settings` → redirect. Owner reaches both; only owner sees Edit / Add user on users and can save settings.
+- `L2-AUTH-26` — Owner adds a user via the Add user dialog → the row appears in the list; a non-owner never sees the control and `createUser` rejects a non-owner call server-side (`L2-AUTH-25`).
 
 ## Constrained L3
 - `/docs/notes/auth.md`
