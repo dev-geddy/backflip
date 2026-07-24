@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation"
+
+import { auth } from "@/app/_lib/auth"
 import { isCredentialsEnabled, isGoogleConfigured } from "@/app/_lib/auth/config"
 import { LoginForm } from "./_components/login-form"
 
@@ -11,6 +14,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ from?: string }>
 }) {
+  // Already signed in (validity-aware — a revoked token reads as no session)
+  // → skip the login page. Kept here (node) since the edge can't check it.
+  const session = await auth()
+  if (session?.user) redirect("/backflip")
+
   const { from } = await searchParams
   const callbackUrl = from?.startsWith("/backflip") ? from : "/backflip"
 
