@@ -39,6 +39,8 @@ The link between code and its contract is a **greppable `@spec` tag**, not prose
 - Format: `@spec L2-AUTH-27, L2-AUTH-30` on its own line inside the module's top (or primary export's) JSDoc.
 - Navigate both ways: `grep "@spec L2-AUTH-27"` (spec→code); grep the ID in `/docs/contracts` (code→spec). No need to read a whole contract.
 - Adding/moving a feature → add/update its `@spec`. Removing → remove it.
+- **Non-TS owners** (yaml, Dockerfile, css, .env) use the file's native comment syntax with the same token: `# @spec L2-INF-04`, `/* @spec L2-UI-03 */`. **JSON is exempt** (no comments) — `package.json` / `components.json` etc. map via L3 file map only.
+- **Don't force a tag** on library-wide sets (e.g. every `packages/ui` component for one ID) or on pure invariant/error/acceptance IDs — tag the module that owns the interface/logic; the rest are reachable from there + L3.
 
 ## Contract shape
 - Small L2: the flat template (Owns / Interfaces / Schemas / Invariants / Errors / Acceptance).

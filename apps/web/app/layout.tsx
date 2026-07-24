@@ -18,6 +18,12 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+/**
+ * Root layout: global CSS + fonts + theme/tooltip/toast providers (overlay
+ * components require these mounted here).
+ *
+ * @spec L2-UI-04, L2-UI-09
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -5,6 +5,8 @@ import {
   randomBytes,
 } from "node:crypto"
 
+/** @spec L2-DB-16, L2-DB-19 */
+
 /**
  * Symmetric encryption for secrets at rest (e.g. AI provider API keys).
  * AES-256-GCM. The 32-byte key is derived (sha256) from `ENCRYPTION_KEY`

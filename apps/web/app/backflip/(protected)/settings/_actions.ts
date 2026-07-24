@@ -8,6 +8,13 @@ import { ne } from "drizzle-orm"
 import { auth } from "@/app/_lib/auth"
 import { canAccessSettings } from "@/app/_lib/auth/permissions"
 
+/**
+ * Admin settings actions — AI + Email provider config (upsert, key encryption,
+ * single-default enforcement). Both `settings`-gated.
+ *
+ * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07
+ */
+
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 type Provider = (typeof PROVIDERS)[number]
 
