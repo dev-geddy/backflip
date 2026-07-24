@@ -58,15 +58,14 @@ export default async function AccountPage() {
   const emailVerified = Boolean(row?.emailVerified)
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
-      <PageHeading
-        title="My account"
-        description="Your personal profile and sign-in credentials."
-      />
-
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        {/* Details */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
+    <div className="flex h-full min-h-0 flex-col bg-card lg:flex-row">
+      {/* Main */}
+      <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex max-w-[680px] flex-col gap-6 p-6 lg:p-8">
+          <PageHeading
+            title="My account"
+            description="Your personal profile and sign-in credentials."
+          />
           {/* Profile summary */}
           <div className="flex items-center gap-4 rounded-xl border bg-card p-4">
             <Avatar className="size-13 rounded-full">
@@ -108,14 +107,11 @@ export default async function AccountPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Security rail */}
-        <div className="w-full lg:w-80 lg:flex-none">
-          <AccountRail
-            emailVerified={emailVerified}
-            loginMethods={loginMethods}
-          />
-        </div>
+      {/* Security rail */}
+      <div className="w-full flex-none overflow-y-auto border-t bg-muted/30 p-6 lg:w-80 lg:border-t-0 lg:border-l">
+        <AccountRail emailVerified={emailVerified} loginMethods={loginMethods} />
       </div>
     </div>
   )

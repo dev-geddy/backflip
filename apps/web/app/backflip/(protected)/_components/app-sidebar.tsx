@@ -35,8 +35,9 @@ type NavItem = {
   capability: Capability
 }
 
-/** Nav grouped into design's labeled sections; each item declares its capability. */
-const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+/** Nav grouped into design's labeled sections; each item declares its
+ *  capability. The Settings group is pinned to the bottom (above the user). */
+const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
   {
     label: "Platform",
     items: [
@@ -46,17 +47,18 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         icon: RiDashboardLine,
         capability: "dashboard",
       },
+    ],
+  },
+  {
+    label: "Settings",
+    pinBottom: true,
+    items: [
       {
         title: "Users",
         url: "/backflip/users",
         icon: RiGroupLine,
         capability: "users.view",
       },
-    ],
-  },
-  {
-    label: "Settings",
-    items: [
       {
         title: "Account",
         url: "/backflip/account",
@@ -89,14 +91,14 @@ export function AppSidebar({
   })).filter((g) => g.items.length > 0)
 
   return (
-    <Sidebar {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               render={<Link href="/backflip" />}
-              className="gap-2.5"
+              className="gap-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
             >
               <div className="flex aspect-square size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <RiShapesLine className="size-4" />
@@ -114,7 +116,10 @@ export function AppSidebar({
 
       <SidebarContent>
         {groups.map((group) => (
-          <SidebarGroup key={group.label}>
+          <SidebarGroup
+            key={group.label}
+            className={group.pinBottom ? "mt-auto" : undefined}
+          >
             <SidebarGroupLabel className="text-[11px] uppercase tracking-wide">
               {group.label}
             </SidebarGroupLabel>
@@ -139,7 +144,7 @@ export function AppSidebar({
         ))}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border">
         <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
