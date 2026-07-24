@@ -17,6 +17,12 @@ import {
   sendPasswordResetEmail,
 } from "@/app/_lib/email/send"
 
+/**
+ * Public password-recovery actions (forgot / reset).
+ *
+ * @spec L2-AUTH-28, L2-AUTH-36, L2-AUTH-37
+ */
+
 export type SaveState = { ok: boolean; message: string } | null
 
 const PASSWORD_LOGIN_DISABLED =

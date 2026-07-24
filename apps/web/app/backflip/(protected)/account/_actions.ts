@@ -20,6 +20,13 @@ import {
   sendPasswordChangedEmail,
 } from "@/app/_lib/email/send"
 
+/**
+ * Self-service account actions (`/backflip/account`). All self-scoped to the
+ * signed-in user; never a client-supplied id.
+ *
+ * @spec L2-AUTH-27, L2-AUTH-30, L2-AUTH-36, L2-AUTH-37
+ */
+
 export type SaveState = { ok: boolean; message: string } | null
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
