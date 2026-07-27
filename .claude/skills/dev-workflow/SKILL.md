@@ -27,7 +27,7 @@ How to operate the backflip monorepo. Terse. Exact commands.
 ## Run the app
 - Dev (web app): `corepack yarn workspace web dev` → **port 3070**.
 - All workspaces dev (turbo): `corepack yarn dev`.
-- Prod: `corepack yarn workspace web build` then `corepack yarn workspace web start`.
+- Prod: `corepack yarn workspace web build` then `corepack yarn workspace web start`. Works but warns (`output: "standalone"`); prod-parity run is `node apps/web/.next/standalone/apps/web/server.js` (needs `.next/static` copied into the bundle — see `apps/web/Dockerfile`). Real prod = pm2 on the droplet (`digitalocean-devops` skill).
 
 ## Docker + database
 - **Preferred dev flow: app local, db in Docker.** Run app via `corepack yarn dev` (port 3070, hot reload); run only postgres in Docker.
