@@ -61,7 +61,7 @@ export default async function AccountPage() {
     <div className="flex h-full min-h-0 flex-col bg-card lg:flex-row">
       {/* Main */}
       <div className="min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-[680px] flex-col gap-6 p-6 lg:p-8">
+        <div className="mx-auto flex w-full max-w-[680px] min-w-0 flex-col gap-6 p-6 lg:p-8">
           <PageHeading
             title="My account"
             description="Your personal profile and sign-in credentials."
@@ -109,8 +109,9 @@ export default async function AccountPage() {
         </div>
       </div>
 
-      {/* Security rail */}
-      <div className="w-full flex-none overflow-y-auto border-t bg-muted/50 p-6 lg:w-80 lg:border-t-0 lg:border-l">
+      {/* Security rail — narrower at lg so the main column keeps room; widens
+          again once there is space. `min-w-0` lets its own content shrink. */}
+      <div className="w-full min-w-0 flex-none overflow-y-auto border-t bg-muted/50 p-6 lg:w-64 lg:border-t-0 lg:border-l xl:w-80">
         <AccountRail emailVerified={emailVerified} loginMethods={loginMethods} />
       </div>
     </div>
