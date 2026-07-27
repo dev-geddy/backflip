@@ -13,7 +13,7 @@ Local dev infrastructure: Docker Compose services (app, postgres), ports, env/cr
 - `L2-INF-01` — `docker compose up` → app + db. App host **3071** → container 3070. (`docker-compose.yml`)
 - `L2-INF-02` — `docker compose up db` → postgres only (preferred dev: db in Docker, app run locally).
 - `L2-INF-03` — App local dev port **3070** (`corepack yarn dev`); local prod `corepack yarn workspace web start` also 3070.
-- `L2-INF-04` — App Docker image — Next standalone build (`output: "standalone"`), runner ships only the bundle, `node apps/web/server.js` on container 3070. (`apps/web/Dockerfile`, context = repo root) **[PROPOSED AMENDMENT — was `next build` + `next start`; awaiting approval]**
+- `L2-INF-04` — App Docker image — Next standalone build (`output: "standalone"`), runner ships only the bundle, `node apps/web/server.js` on container 3070. (`apps/web/Dockerfile`, context = repo root)
 
 ## Schemas
 - `L2-INF-05` — Postgres service: image `postgres:17-alpine`, host port `${POSTGRES_PORT:-5544}` → 5432, volume `backflip_pgdata`, healthcheck `pg_isready`.

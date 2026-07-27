@@ -2,7 +2,6 @@
 
 > L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
 > Style: terse. One fact per line.
-> **STATUS: PROPOSED AMENDMENTS — pm2/standalone runtime (user-requested). Changed: 02, 04, 05, 06, 07; new: 15, 16. Awaiting approval.**
 
 > **Implements L1:** `L1-ARCH-06`, `L1-STACK-07`, `L1-STACK-08`, `L1-STACK-09`
 > **Depends on L2:** `infra` (shares the Next standalone build per `L2-INF-04`), `db` (migrations)
