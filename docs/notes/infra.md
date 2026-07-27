@@ -15,7 +15,7 @@
 - Preferred dev: app local (3070) + db in Docker. Full-docker (app 3071) is the alt run path.
 - App Docker = prod build, no hot reload (local is the dev driver).
 - `DATABASE_URL` consumed by `@workspace/db` (app + seed).
-- `next start` no longer used in prod paths — prod runs the standalone server (`node apps/web/server.js`), on the droplet via pm2.
+- `next start` no longer used in prod paths — prod runs the standalone server (`node apps/web/server.js`), on the droplet via pm2. `corepack yarn workspace web start` still serves (verified) but warns about `output: "standalone"`; kept for quick local checks.
 
 ## Env loading (monorepo)
 - Three root env files, by lifecycle: `.env` (db/infra, runtime), `.env.local` (Auth.js runtime secrets), `.env.init` (one-off owner seed — `ADMIN_*`). Next runs in `apps/web` so it won't read root env by itself.
