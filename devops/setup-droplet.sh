@@ -9,7 +9,8 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 usage() {
   cat <<'USAGE'
-Provision an empty Ubuntu droplet: packages, Docker, firewall, app dir.
+Provision an empty Ubuntu droplet: packages, swap, Docker (db only), Node 20 +
+pm2 (app runtime), native Caddy, firewall, app dirs.
 
 Usage:
   ./devops/setup-droplet.sh -h <host> -i <path-to-ssh-key> [-u user] [-p port]
@@ -59,8 +60,21 @@ echo "--> apt-get update"
 \$SUDO apt-get update -y
 
 echo "--> base packages"
-\$SUDO apt-get install -y --no-install-recommends ca-certificates curl git ufw rsync
+\$SUDO apt-get install -y --no-install-recommends ca-certificates curl git ufw rsync gnupg
 
+# Swap. Next builds run on the droplet and OOM on small ones without it.
+if [ -z "\$(swapon --show)" ]; then
+  echo "--> creating 2G swapfile"
+  \$SUDO fallocate -l 2G /swapfile || \$SUDO dd if=/dev/zero of=/swapfile bs=1M count=2048
+  \$SUDO chmod 600 /swapfile
+  \$SUDO mkswap /swapfile
+  \$SUDO swapon /swapfile
+  grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' | \$SUDO tee -a /etc/fstab >/dev/null
+else
+  echo "--> swap already active, skipping"
+fi
+
+# Docker runs the database only; the app itself runs on the host under pm2.
 if command -v docker >/dev/null 2>&1; then
   echo "--> docker already installed, skipping"
 else
@@ -78,6 +92,51 @@ fi
 echo "--> enabling docker"
 \$SUDO systemctl enable --now docker
 
+node_major=0
+if command -v node >/dev/null 2>&1; then
+  node_major="\$(node -v | sed 's/^v//' | cut -d. -f1)"
+fi
+if [ "\$node_major" -lt 20 ]; then
+  echo "--> installing node 20"
+  curl -fsSL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
+  \$SUDO bash /tmp/nodesource_setup.sh
+  rm -f /tmp/nodesource_setup.sh
+  \$SUDO apt-get install -y nodejs
+else
+  echo "--> node \$(node -v) already installed, skipping"
+fi
+\$SUDO corepack enable
+
+if command -v pm2 >/dev/null 2>&1; then
+  echo "--> pm2 already installed, skipping"
+else
+  echo "--> installing pm2"
+  \$SUDO npm i -g pm2
+fi
+
+# Boot persistence: pm2 generates a pm2-<user> systemd unit. Root ssh user →
+# pm2-root; a non-root user gets its own unit + home.
+PM2_USER="\$(id -un)"
+PM2_HP="\${HOME:-/root}"
+if systemctl list-unit-files | grep -q "pm2-\$PM2_USER"; then
+  echo "--> pm2 startup unit present, skipping"
+else
+  echo "--> pm2 boot persistence (pm2-\$PM2_USER)"
+  \$SUDO env PATH="\$PATH" pm2 startup systemd -u "\$PM2_USER" --hp "\$PM2_HP"
+fi
+
+# Caddy runs natively (systemd), fronting the pm2 app on 127.0.0.1:3070.
+if command -v caddy >/dev/null 2>&1; then
+  echo "--> caddy already installed, skipping"
+else
+  echo "--> installing caddy (official apt repo)"
+  \$SUDO apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
+  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor | \$SUDO tee /usr/share/keyrings/caddy-stable-archive-keyring.gpg >/dev/null
+  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt | \$SUDO tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
+  \$SUDO apt-get update -y
+  \$SUDO apt-get install -y caddy
+fi
+
 echo "--> firewall"
 \$SUDO ufw allow OpenSSH
 \$SUDO ufw allow 80/tcp
@@ -85,13 +144,15 @@ echo "--> firewall"
 \$SUDO ufw allow 443/udp   # HTTP/3
 \$SUDO ufw --force enable
 
-echo "--> app dir $REMOTE_DIR"
-\$SUDO mkdir -p "$REMOTE_DIR"
-if [ -n "\$SUDO" ]; then \$SUDO chown "\$(id -u):\$(id -g)" "$REMOTE_DIR"; fi
+echo "--> app dirs $REMOTE_DIR"
+\$SUDO mkdir -p "$REMOTE_DIR" "$REMOTE_DIR/.releases"
+if [ -n "\$SUDO" ]; then \$SUDO chown -R "\$(id -u):\$(id -g)" "$REMOTE_DIR"; fi
 
 echo "--> versions"
 docker --version
-docker compose version
+node -v
+pm2 -v
+caddy version
 REMOTE
 
 ok "droplet provisioned"
