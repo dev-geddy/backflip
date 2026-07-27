@@ -4,6 +4,8 @@ A full-stack **platform foundation** for kicking off new projects fast — auth,
 
 Stack: Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · Drizzle + Postgres · Auth.js · Turborepo · yarn 4.
 
+![Backflip admin console — Integrations, with AI providers and email configured per workspace](./docs/assets/admin-integrations.png)
+
 > **Self-hosted starter.** You run this yourself and supply your own secrets. The values in `.env.example` are local-dev defaults only — generate real secrets before deploying anywhere (see [Security](#security)).
 
 ## Prerequisites
