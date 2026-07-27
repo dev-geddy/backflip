@@ -1,0 +1,45 @@
+# @spec L2-DEVOPS-08
+# Required secrets (Settings -> Secrets and variables -> Actions):
+#   DEPLOY_HOST       - droplet host/IP
+#   DEPLOY_SSH_KEY    - private SSH key, no passphrase
+#   DEPLOY_ENV        - optional, full contents of .env (first deploy / env changes only)
+#   DEPLOY_ENV_LOCAL  - optional, full contents of .env.local (first deploy / env changes only)
+name: Deploy
+
+on:
+  workflow_dispatch: {}
+  # push:
+  #   branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write SSH key
+        run: |
+          umask 077
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Build deploy args
+        run: |
+          ARGS=""
+          if [ -n "${{ secrets.DEPLOY_ENV }}" ]; then
+            printf '%s' "${{ secrets.DEPLOY_ENV }}" > env.deploy
+            ARGS="$ARGS --env env.deploy"
+          fi
+          if [ -n "${{ secrets.DEPLOY_ENV_LOCAL }}" ]; then
+            printf '%s' "${{ secrets.DEPLOY_ENV_LOCAL }}" > env.local.deploy
+            ARGS="$ARGS --env-local env.local.deploy"
+          fi
+          echo "ARGS=$ARGS" >> "$GITHUB_ENV"
+
+      - name: Deploy
+        run: ./devops/deploy.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem $ARGS
