@@ -15,7 +15,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-03` — Scripts (root): `corepack yarn db:generate | db:migrate | db:studio`, `corepack yarn init-owner`. Per-pkg: `db:push` too. Migrate/generate/studio via drizzle-kit.
 - `L2-DB-16` — `encryptSecret(plain)` / `decryptSecret(enc)` — AES-256-GCM over `ENCRYPTION_KEY` (sha256-derived). For secrets at rest (AI keys). Server-only. (`packages/db/src/crypto.ts`)
 - `L2-DB-19` — `generateToken()` / `hashToken(raw)` — one-time link tokens: `generateToken` returns a 32-byte base64url random string (the raw token, never stored); `hashToken` returns its sha256 hex (what is persisted + looked up). Server-only. (`packages/db/src/crypto.ts`)
-- `L2-DB-04` — `corepack yarn init-owner` — seeds/updates platform owner from `.env.init` (one-off file, loaded only by the seed via `load-init-env.ts`; never injected into the running app). `ADMIN_EMAIL` required; `ADMIN_PASSWORD` optional (omit → Google-only owner, `passwordHash` null; re-run without it preserves any existing hash). Role `owner`. Idempotent (upsert on email).
+- `L2-DB-04` — `corepack yarn init-owner` — seeds/updates platform owner from `.env.init` (one-off file, loaded inline by the seed script; never injected into the running app). `ADMIN_EMAIL` required; `ADMIN_PASSWORD` optional (omit → Google-only owner, `passwordHash` null; re-run without it preserves any existing hash). Role `owner`. Idempotent (upsert on email).
 
 ## Schemas
 - `L2-DB-05` — `user_role` enum: `owner` | `admin` | `teammate`. (Renamed `member`→`teammate` in migration `0002`; capability semantics owned by the `auth` domain.)
