@@ -10,7 +10,7 @@
 Production deployment: DigitalOcean droplet provisioning, deploy pipeline (local + CI), prod runtime (pm2 + db compose), TLS.
 
 ## Interfaces
-- `L2-DEVOPS-01` — `./devops/setup-droplet.sh -h <host> -i <ssh-key> [-u user] [-p port]` — one-time droplet provision (Docker for db, Node 20 + pm2, native Caddy, swap, ufw 22/80/443, `/opt/backflip`). Idempotent.
+- `L2-DEVOPS-01` — `./devops/setup-droplet.sh -h <host> -i <ssh-key> [-u user] [-p port]` — one-time droplet provision (Docker for db, Node 24 + pm2, native Caddy, swap, ufw 22/80/443, `/opt/backflip`). Idempotent. **[PROPOSED: Node 20 → 24 — awaiting approval]**
 - `L2-DEVOPS-02` — `./devops/deploy.sh -h <host> -i <ssh-key> [--env f] [--env-local f] [--skip-migrations]` — rsync → install → build → migrate → release switch → pm2 restart → Caddy reload → health check. Works identically from local and CI.
 - `L2-DEVOPS-08` — GitHub Actions deploy: `.github/workflows/deploy.yml`, `workflow_dispatch`. Secrets: `DEPLOY_HOST`, `DEPLOY_SSH_KEY`, optional `DEPLOY_ENV`, `DEPLOY_ENV_LOCAL`.
 - `L2-DEVOPS-09` — Drone deploy: `.drone.yml`, `promote` → `production`. Secrets: `deploy_host`, `deploy_ssh_key`, optional `deploy_env`, `deploy_env_local`.
