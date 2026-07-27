@@ -1,0 +1,65 @@
+# @spec L2-DEVOPS-04, L2-DEVOPS-05
+# Standalone production stack (NOT an overlay on the root docker-compose.yml).
+# Always run from /opt/backflip as:
+#   docker compose --project-directory . -f devops/compose.prod.yml <cmd>
+# `--project-directory .` makes the project dir the repo root, so every relative
+# path below (build context, env_file, Caddyfile) resolves against /opt/backflip
+# and compose reads /opt/backflip/.env for ${...} interpolation. Without it the
+# project dir would default to devops/ and all of those would break.
+name: backflip
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-backflip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-backflip}
+    # No published ports — the db is reachable only on the compose network.
+    volumes:
+      - backflip_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-backflip}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+      - .env.local
+    environment:
+      # Inside the compose network the db is `db:5432` (overrides env_file).
+      DATABASE_URL: postgres://${POSTGRES_USER:-backflip}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-backflip}
+    # No published ports — only Caddy talks to the app.
+    expose:
+      - "3070"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./devops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  backflip_pgdata:
+  caddy_data:
+  caddy_config:
