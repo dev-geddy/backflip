@@ -1,0 +1,39 @@
+# @spec L2-DEVOPS-09
+# Required Drone secrets:
+#   deploy_host       - droplet host/IP
+#   deploy_ssh_key    - private SSH key, no passphrase
+#   deploy_env        - optional, full contents of .env (first deploy / env changes only)
+#   deploy_env_local  - optional, full contents of .env.local (first deploy / env changes only)
+#
+# Manual trigger only: drone build promote <repo> <build> production
+kind: pipeline
+type: docker
+name: deploy
+
+trigger:
+  event:
+    - promote
+  target:
+    - production
+
+steps:
+  - name: deploy
+    image: alpine:3.21
+    environment:
+      DEPLOY_HOST:
+        from_secret: deploy_host
+      DEPLOY_SSH_KEY:
+        from_secret: deploy_ssh_key
+      DEPLOY_ENV:
+        from_secret: deploy_env
+      DEPLOY_ENV_LOCAL:
+        from_secret: deploy_env_local
+    commands:
+      - apk add --no-cache bash openssh-client rsync curl
+      - umask 077
+      - printf '%s\n' "$DEPLOY_SSH_KEY" > key.pem
+      - chmod 600 key.pem
+      - ARGS=""
+      - if test -n "$DEPLOY_ENV"; then printf '%s' "$DEPLOY_ENV" > env.deploy; ARGS="$ARGS --env env.deploy"; fi
+      - if test -n "$DEPLOY_ENV_LOCAL"; then printf '%s' "$DEPLOY_ENV_LOCAL" > env.local.deploy; ARGS="$ARGS --env-local env.local.deploy"; fi
+      - ./devops/deploy.sh -h "$DEPLOY_HOST" -i key.pem $ARGS

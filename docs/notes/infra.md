@@ -4,7 +4,7 @@
 
 ## File map
 - `docker-compose.yml` — services `db` + `app`. Satisfies `L2-INF-01`, `L2-INF-02`, `L2-INF-05`. `name: backflip`. Volume `backflip_pgdata`.
-- `apps/web/Dockerfile` — 3-stage (base → build → runner), context = repo root. `corepack enable`, `yarn install --immutable`, `yarn workspace web build`, runs `yarn workspace web start`. Satisfies `L2-INF-04`.
+- `apps/web/Dockerfile` — 3-stage (base → build → runner), context = repo root. Build stage: `corepack enable`, `yarn install --immutable`, `yarn workspace web build`. Runner ships only the Next standalone bundle, runs `node apps/web/server.js`. Satisfies `L2-INF-04`.
 - `.dockerignore` — excludes node_modules, `.next`, `.turbo`, `.git`, `.env*` (keeps `.env.example`).
 - `.env.example` — committed template. `.env` — gitignored, local creds. Satisfies `L2-INF-07`, `L2-INF-09`.
 - `apps/web/package.json` — `dev` = `next dev -p 3070`, `start` = `next start -p 3070`. Satisfies `L2-INF-03`.
@@ -15,6 +15,7 @@
 - Preferred dev: app local (3070) + db in Docker. Full-docker (app 3071) is the alt run path.
 - App Docker = prod build, no hot reload (local is the dev driver).
 - `DATABASE_URL` consumed by `@workspace/db` (app + seed).
+- `next start` no longer used in prod paths — prod runs the standalone server (`node apps/web/server.js`), on the droplet via pm2. `corepack yarn workspace web start` still serves (verified) but warns about `output: "standalone"`; kept for quick local checks.
 
 ## Env loading (monorepo)
 - Three root env files, by lifecycle: `.env` (db/infra, runtime), `.env.local` (Auth.js runtime secrets), `.env.init` (one-off owner seed — `ADMIN_*`). Next runs in `apps/web` so it won't read root env by itself.
@@ -29,5 +30,4 @@
 
 ## TODO
 - Wire a Postgres client / migrations when the data layer starts.
-- Optional: Next `output: "standalone"` for a leaner app image.
 - Optional: dev-mode app container with source mount if containerized hot reload is ever wanted.
