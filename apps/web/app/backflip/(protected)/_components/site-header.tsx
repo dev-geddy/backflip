@@ -40,7 +40,7 @@ export function SiteHeader({
       <div className="flex w-full items-center gap-2 px-4 lg:px-5">
         <SidebarTrigger className="-ml-1" />
         <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border" />
-        <nav className="flex items-center gap-1.5 text-sm">
+        <nav className="flex min-w-0 items-center gap-1.5 truncate text-sm">
           {trail.map((c, i) => {
             const last = i === trail.length - 1
             return (
@@ -54,7 +54,7 @@ export function SiteHeader({
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex min-w-0 shrink items-center gap-3">
           <HeaderSearch />
           <a
             href="https://github.com/dev-geddy/backflip#readme"

@@ -45,7 +45,7 @@ export function HeaderSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-8 w-40 items-center gap-2 rounded-md border px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 sm:w-56"
+        className="flex h-8 w-40 min-w-0 shrink items-center gap-2 rounded-md border px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 sm:w-56"
       >
         <RiSearchLine className="size-4" />
         <span className="flex-1 truncate text-left">Jump to…</span>
