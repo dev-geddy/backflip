@@ -44,8 +44,8 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - `corepack yarn db:generate` — generate SQL after schema edit. `db:migrate` — apply to docker db (drizzle-kit). `db:studio` — GUI. `db:push` (per-pkg) — quick dev sync.
 - Type-change gotcha: drizzle-kit generates `SET DATA TYPE` without a `USING` cast; for incompatible casts (text→integer) Postgres rejects it and `drizzle-kit migrate` fails quietly. Hand-add `USING <col>::<type>` to the SQL, or use `db:push` in dev.
 - Secrets at rest: `encryptSecret`/`decryptSecret` from `@workspace/db` (AES, `ENCRYPTION_KEY`). Used for AI provider keys.
-- `corepack yarn init-owner` — seed/refresh platform owner from `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), role `owner`.
-- Env: `DATABASE_URL` in `.env`; admin seed creds in `.env.local` (both gitignored). Needs db up (`docker compose up -d db`).
+- `corepack yarn init-owner` — seed/refresh platform owner from `.env.init` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), role `owner`.
+- Env: `DATABASE_URL` in `.env`; one-off admin seed creds in `.env.init` (read only by `init-owner`, never the app); runtime `AUTH_*` in `.env.local` (all gitignored). Needs db up (`docker compose up -d db`).
 - **DB discipline (do automatically):**
   - Schema edited (`packages/db/src/schema.ts`) → run `db:generate` then `db:migrate`. Commit the generated SQL. No schema change lands without its migration.
   - Seed data added/changed → run the matching seed (e.g. `init-owner`).

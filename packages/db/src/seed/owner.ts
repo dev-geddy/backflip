@@ -1,12 +1,19 @@
-import "../load-env"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 
 import bcrypt from "bcryptjs"
+import { config } from "dotenv"
 
-import { db } from "../client"
-import { users } from "../schema"
+// Load the one-off seed env FIRST: `.env` (db creds → DATABASE_URL) + `.env.init`
+// (admin seed: ADMIN_EMAIL/ADMIN_PASSWORD). Kept out of `.env.local` so the admin
+// password is never injected into the running app (dev + docker load only `.env`
+// + `.env.local`). Later files win; missing files are ignored.
+// Repo root = four levels up from packages/db/src/seed.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..")
+config({ path: [path.join(root, ".env"), path.join(root, ".env.init")] })
 
 /**
- * Seeds (or updates) the platform owner from `.env.local`:
+ * Seeds (or updates) the platform owner from `.env.init` (one-off, gitignored):
  *   ADMIN_EMAIL (required), ADMIN_PASSWORD (optional)
  *
  * `ADMIN_PASSWORD` is optional: omit it to seed a Google-only owner (no
@@ -18,11 +25,16 @@ import { users } from "../schema"
  * @spec L2-DB-04, L2-DB-15
  */
 async function main() {
+  // Imported dynamically (not at the top) so `config()` above runs before the
+  // db client evaluates — the client reads DATABASE_URL at module-eval time.
+  const { db } = await import("../client")
+  const { users } = await import("../schema")
+
   const email = process.env.ADMIN_EMAIL
   const password = process.env.ADMIN_PASSWORD
 
   if (!email) {
-    throw new Error("ADMIN_EMAIL must be set (define it in .env.local).")
+    throw new Error("ADMIN_EMAIL must be set (define it in .env.init).")
   }
 
   const passwordHash = password ? await bcrypt.hash(password, 12) : null

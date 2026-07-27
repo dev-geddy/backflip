@@ -7,8 +7,8 @@
 - `packages/db/src/schema.ts` — Drizzle schema. `user_role` enum (`owner|admin|teammate`) + `user` (incl. `tokenVersion`)/`account`/`session`/`verificationToken`; `ai_provider` enum + `ai_config`; `email_config`; `user_token_type` enum (`password_reset|email_change`) + `user_token`. Satisfies `L2-DB-05`, `L2-DB-06`, `L2-DB-07`, `L2-DB-17`, `L2-DB-18`, `L2-DB-20`, `L2-DB-22`.
 - `packages/db/src/client.ts` — `db = drizzle(process.env.DATABASE_URL!, { schema })` (node-postgres). Satisfies `L2-DB-01`.
 - `packages/db/src/index.ts` — barrel: `export * from schema` + `db`. Satisfies `L2-DB-02`, `L2-DB-09`.
-- `packages/db/src/load-env.ts` — loads root `.env` + `.env.local` (root = 3 up from src). Imported first by standalone scripts (seed, drizzle.config).
-- `packages/db/src/seed/owner.ts` — `init-owner`. Reads `ADMIN_EMAIL` (required) + `ADMIN_PASSWORD` (optional). With a password → bcrypt(12) hash; without → `passwordHash` null (Google-only owner). Upsert on email, role `owner`; on re-run without a password, the existing hash is preserved (not overwritten). Satisfies `L2-DB-04`.
+- `packages/db/src/load-env.ts` — loads root `.env` + `.env.local` (root = 3 up from src). Imported by drizzle.config. NOTE: the owner seed loads its own env inline (`.env` + `.env.init`), not `.env.local`.
+- `packages/db/src/seed/owner.ts` — `init-owner`. Self-contained: loads `.env` + `.env.init` via `dotenv` at the top (root = 4 up from src/seed), deliberately out of `.env.local` so `ADMIN_*` never reaches the running app. `db`/`users` are dynamically `import()`ed inside `main()` so `config()` runs before the db client reads `DATABASE_URL` at eval time. Reads `ADMIN_EMAIL` (required) + `ADMIN_PASSWORD` (optional). With a password → bcrypt(12) hash; without → `passwordHash` null (Google-only owner). Upsert on email, role `owner`; on re-run without a password, the existing hash is preserved (not overwritten). Satisfies `L2-DB-04`.
 - `packages/db/drizzle.config.ts` — dialect postgresql, schema `src/schema.ts`, out `migrations/`. Imports `load-env`.
 - `packages/db/src/crypto.ts` — `encryptSecret`/`decryptSecret` (AES-256-GCM, key = sha256(`ENCRYPTION_KEY`)) + `generateToken()` (32-byte base64url) / `hashToken(raw)` (sha256 hex) for one-time link tokens. Satisfies `L2-DB-16`, `L2-DB-19`.
 - `packages/db/src/index.ts` — also re-exports `generateToken`/`hashToken` alongside encrypt/decrypt.
@@ -25,7 +25,7 @@
 - Column names kept Auth.js-exact (camelCase, quoted in pg): `passwordHash`, `emailVerified`, `providerAccountId`, etc. Query with double-quotes in raw SQL.
 - `account.expires_at` typed `integer` (required by `@auth/drizzle-adapter` types).
 - `session`/`verificationToken` tables unused under JWT strategy; kept for adapter completeness.
-- Env: `DATABASE_URL` (localhost:5544) in `.env`; admin seed creds in `.env.local` (both gitignored).
+- Env: `DATABASE_URL` (localhost:5544) in `.env`; one-off admin seed creds in `.env.init` (loaded inline by the seed script, never the app). `.env.init.example` is the committed template. All `.env*` gitignored except the `*.example` files.
 
 ## user_token table (migration 0003)
 - Purpose-scoped one-time tokens for self-service flows: `password_reset`, `email_change` (holds pending `newEmail`). Store only `tokenHash` (sha256 of the raw token); raw lives only in the emailed link. `expiresAt` + `consumedAt` enforce single-use, time-boxed validity. Cascade-deletes with the user. Consumed by `apps/web/app/_lib/auth/tokens.ts`.
