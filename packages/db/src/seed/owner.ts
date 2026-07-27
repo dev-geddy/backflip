@@ -1,4 +1,4 @@
-import "../load-env"
+import "./load-init-env"
 
 import bcrypt from "bcryptjs"
 
@@ -6,7 +6,7 @@ import { db } from "../client"
 import { users } from "../schema"
 
 /**
- * Seeds (or updates) the platform owner from `.env.local`:
+ * Seeds (or updates) the platform owner from `.env.init` (one-off, gitignored):
  *   ADMIN_EMAIL (required), ADMIN_PASSWORD (optional)
  *
  * `ADMIN_PASSWORD` is optional: omit it to seed a Google-only owner (no
@@ -22,7 +22,7 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD
 
   if (!email) {
-    throw new Error("ADMIN_EMAIL must be set (define it in .env.local).")
+    throw new Error("ADMIN_EMAIL must be set (define it in .env.init).")
   }
 
   const passwordHash = password ? await bcrypt.hash(password, 12) : null

@@ -17,9 +17,10 @@
 - `DATABASE_URL` consumed by `@workspace/db` (app + seed).
 
 ## Env loading (monorepo)
-- Root `.env` + `.env.local` are the single source. Next runs in `apps/web` so it won't read root env by itself.
-- Local dev: `web` `dev` script uses `dotenv-cli` (`dotenv -e ../../.env -e ../../.env.local -- next dev`) to inject root env (needed by edge proxy + node routes).
-- Docker app: compose `env_file: [.env, .env.local]` injects env; `DATABASE_URL` overridden to `db:5432` via `environment:`.
+- Three root env files, by lifecycle: `.env` (db/infra, runtime), `.env.local` (Auth.js runtime secrets), `.env.init` (one-off owner seed — `ADMIN_*`). Next runs in `apps/web` so it won't read root env by itself.
+- Local dev: `web` `dev` script uses `dotenv-cli` (`dotenv -e ../../.env -e ../../.env.local -- next dev`) to inject root env (needed by edge proxy + node routes). `.env.init` is intentionally NOT loaded here — admin creds stay out of the app env.
+- Docker app: compose `env_file: [.env, .env.local]` injects env; `DATABASE_URL` overridden to `db:5432` via `environment:`. `.env.init` intentionally excluded (seed-only).
+- `.env.init` is read only by `corepack yarn init-owner` (via `packages/db/src/seed/load-init-env.ts`). Committed template: `.env.init.example`.
 - Postgres 5544 verified clear (existing pg containers on 5436/5437).
 
 ## Ports
