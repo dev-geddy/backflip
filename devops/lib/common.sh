@@ -67,7 +67,8 @@ remote_copy() {
 # (secrets live only on the droplet, artifacts are rebuilt there).
 # Excluded paths are also protected from --delete, so the droplet's own .env,
 # .env.local and .env.init survive every sync. The `*.pem` / `env*.deploy`
-# excludes keep CI-written keys and env payloads off the droplet.
+# excludes keep CI-written keys and env payloads off the droplet, and
+# `.releases` keeps the live release (served by pm2) out of rsync's reach.
 # Note: SSH_KEY paths with spaces aren't supported (rsync splits -e on spaces).
 sync_repo() {
   _ssh_ready
@@ -77,6 +78,7 @@ sync_repo() {
     --exclude 'node_modules' \
     --exclude '.next' \
     --exclude '.turbo' \
+    --exclude '.releases' \
     --exclude '.env' \
     --exclude '.env.local' \
     --exclude '.env.init' \

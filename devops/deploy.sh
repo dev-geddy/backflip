@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @spec L2-DEVOPS-02, L2-DEVOPS-07
+# @spec L2-DEVOPS-02, L2-DEVOPS-07, L2-DEVOPS-15
 # Deploy to the droplet. Runs the same way from a laptop or from CI —
 # CI configs are thin wrappers around this script, never copies of it.
 set -euo pipefail
@@ -10,7 +10,8 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 usage() {
   cat <<'USAGE'
-Deploy the app to a provisioned droplet: sync → build → migrate → up → health check.
+Deploy the app to a provisioned droplet: sync → install → build → migrate →
+release → pm2 restart → caddy reload → health check.
 
 Usage:
   ./devops/deploy.sh -h <host> -i <path-to-ssh-key> [-u user] [-p port]
@@ -86,18 +87,23 @@ ok "droplet env present"
 # --- sync ---
 sync_repo
 
-# --- build, migrate, up ---
-log "building + starting stack"
+# --- install, build, migrate, release ---
+# Failure isolation: the live app serves from .releases/current via pm2, and
+# nothing below touches it until the symlink switch. Deps, build and migrations
+# all run against the synced working tree, so any failure up to that point
+# leaves the previous release running untouched.
+log "building + releasing"
 remote_run 'bash -s' <<REMOTE
 set -euo pipefail
 cd "$REMOTE_DIR"
 
+echo "--> install deps"
+# Full install (not --production): the build and drizzle-kit need devDeps.
+corepack yarn install --immutable
+
 # --project-directory . → all relative paths in the compose file resolve against
 # $REMOTE_DIR, and compose reads $REMOTE_DIR/.env for interpolation.
 DC="docker compose --project-directory . -f devops/compose.prod.yml"
-
-echo "--> build app"
-\$DC build app
 
 echo "--> start db"
 \$DC up -d db
@@ -114,26 +120,72 @@ done
 [ "\$healthy" = "yes" ] || { echo "db did not become healthy within 60s" >&2; \$DC logs --tail 50 db >&2; exit 1; }
 echo "    db healthy"
 
+echo "--> build app"
+# Build before migrating: a build failure aborts before the schema moves, and
+# the old-app-on-new-schema window stays as short as possible.
+corepack yarn workspace web build
+
 if [ "$SKIP_MIGRATIONS" = "yes" ]; then
   echo "--> skipping migrations"
 else
   echo "--> migrations"
-  # --no-deps: db is already up. DATABASE_URL comes from the compose service
-  # env (db:5432), overriding the env_file value.
-  \$DC run --rm --no-deps app corepack yarn db:migrate
+  # Runs on the host. packages/db/src/load-env.ts reads $REMOTE_DIR/.env, whose
+  # DATABASE_URL points at the published 127.0.0.1 postgres port.
+  corepack yarn db:migrate
 fi
 
-echo "--> up"
-\$DC up -d
+echo "--> assembling release"
+# The standalone bundle mirrors the monorepo, so copying it wholesale gives
+# .releases/<ts>/apps/web/server.js + a minimal node_modules at the root.
+# Static assets and public/ are not traced into it and must be copied in.
+rel="$REMOTE_DIR/.releases/\$(date -u +%Y%m%d%H%M%S)"
+mkdir -p "\$rel"
+cp -a apps/web/.next/standalone/. "\$rel"/
+mkdir -p "\$rel/apps/web/.next"
+cp -a apps/web/.next/static "\$rel/apps/web/.next/static"
+if [ -d apps/web/public ]; then cp -a apps/web/public "\$rel/apps/web/public"; fi
 
-echo "--> pruning dangling images"
-docker image prune -f >/dev/null
+echo "--> switching current -> \$(basename "\$rel")"
+ln -sfn "\$rel" $REMOTE_DIR/.releases/current
+
+echo "--> pm2 restart"
+pm2 startOrRestart devops/pm2/ecosystem.config.cjs && pm2 save
+
+echo "--> caddy config"
+DOMAIN="\$(grep '^DOMAIN=' .env | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'")"
+[ -n "\$DOMAIN" ] || { echo "DOMAIN is not set in $REMOTE_DIR/.env" >&2; exit 1; }
+sed "s/__DOMAIN__/\$DOMAIN/" devops/Caddyfile > /etc/caddy/Caddyfile
+caddy validate --config /etc/caddy/Caddyfile
+systemctl reload caddy || systemctl restart caddy
+
+echo "--> pruning old releases (keep 3)"
+stale="\$(ls -1 $REMOTE_DIR/.releases | grep -v '^current\$' | sort | head -n -3 || true)"
+for old in \$stale; do rm -rf "$REMOTE_DIR/.releases/\$old"; done
 REMOTE
 
-ok "stack up"
+ok "release live"
 
 # --- health check ---
 log "health check"
+PM2_STATUS="$(remote_run 'bash -s' <<'REMOTE'
+set -uo pipefail
+pm2 jlist 2>/dev/null | node -e "
+let raw = ''
+process.stdin.on('data', (d) => (raw += d)).on('end', () => {
+  const app = JSON.parse(raw || '[]').find((a) => a.name === 'backflip')
+  process.stdout.write(app ? String(app.pm2_env.status) : 'missing')
+})
+"
+REMOTE
+)"
+
+if [ "$PM2_STATUS" != "online" ]; then
+  warn "pm2 reports backflip status: ${PM2_STATUS:-unknown}"
+  remote_run "pm2 logs backflip --lines 30 --nostream" || true
+  die "app process is not online"
+fi
+ok "pm2 online"
+
 CODE="$(remote_run 'bash -s' <<'REMOTE'
 set -uo pipefail
 code="000"
@@ -149,7 +201,7 @@ REMOTE
 # Any HTTP response means the stack is serving. Caddy answers :80 with a 308 to
 # https, so 3xx/4xx are expected — only "no response at all" is a failure.
 case "$CODE" in
-  000) die "no HTTP response on port 80. Check: docker compose --project-directory . -f devops/compose.prod.yml logs" ;;
+  000) die "no HTTP response on port 80. Check: pm2 logs backflip / systemctl status caddy" ;;
   2*)  ok "http $CODE" ;;
   *)   warn "http $CODE (expected — Caddy redirects :80 to https); stack is responding" ;;
 esac
@@ -162,8 +214,8 @@ $(ok "deploy complete")
   dir        $REMOTE_DIR
   migrations $([ "$SKIP_MIGRATIONS" = "yes" ] && echo skipped || echo applied)
 
-  Logs:    ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST 'cd $REMOTE_DIR && docker compose --project-directory . -f devops/compose.prod.yml logs -f'
-  Status:  ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST 'cd $REMOTE_DIR && docker compose --project-directory . -f devops/compose.prod.yml ps'
+  Logs:    ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST 'pm2 logs backflip'
+  Status:  ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST 'pm2 status; cd $REMOTE_DIR && docker compose --project-directory . -f devops/compose.prod.yml ps'
 
   Site is on https://<your DOMAIN> once DNS resolves to this droplet.
 DONE
