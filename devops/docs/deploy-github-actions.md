@@ -20,5 +20,5 @@ cat ~/.ssh/id_ed25519
 ## Run it
 **Actions** tab → **Deploy** workflow → **Run workflow**.
 
-## Auto-deploy on push to main
-The workflow only runs manually (`workflow_dispatch`) by default. To deploy on every push to `main`, uncomment the `push` trigger at the top of `.github/workflows/deploy.yml`.
+## Auto-deploy on push to master
+The workflow only runs manually (`workflow_dispatch`) by default. To deploy on every push to `master`, uncomment the `push` trigger at the top of `.github/workflows/deploy.yml`.
