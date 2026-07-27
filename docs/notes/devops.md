@@ -1,7 +1,6 @@
 # Notes (L3) — devops
 
 > L3 = how / volatile. AI writes free. Cites L2 IDs up. Matches code as-is.
-> Parent contract `/docs/contracts/devops.md` is **PROPOSED** (pending human approval).
 
 ## File map
 - `devops/setup-droplet.sh` — one-time provision: apt base pkgs, Docker via get.docker.com (skip if present), compose plugin, ufw (OpenSSH/80/443 tcp+udp), `/opt/backflip`. sudo fallback for non-root user. Satisfies `L2-DEVOPS-01`.

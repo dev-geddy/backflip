@@ -2,7 +2,6 @@
 
 > L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
 > Style: terse. One fact per line.
-> **STATUS: PROPOSED — new domain, awaiting human approval.** Also needs L1 "Governed domains" entry (`devops` → this file) — human edit.
 
 > **Implements L1:** `L1-ARCH-06`, `L1-STACK-07`, `L1-STACK-08`, `L1-STACK-09`
 > **Depends on L2:** `infra` (reuses `apps/web/Dockerfile` per `L2-INF-04`), `db` (migrations)
