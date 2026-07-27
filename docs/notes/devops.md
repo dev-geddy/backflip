@@ -1,7 +1,6 @@
 # Notes (L3) — devops
 
 > L3 = how / volatile. AI writes free. Cites L2 IDs up. Matches code as-is.
-> Parent contract carries proposed amendments (pm2/standalone) — pending approval.
 
 ## File map
 - `devops/setup-droplet.sh` — one-time provision: apt base pkgs, 2G swap (if none — Next build OOM guard), Docker via get.docker.com (db only), Node 20 (NodeSource) + corepack, pm2 (+systemd startup unit), native Caddy (official apt repo), ufw (OpenSSH/80/443 tcp+udp), `/opt/backflip` + `.releases`. sudo fallback. Satisfies `L2-DEVOPS-01`.
