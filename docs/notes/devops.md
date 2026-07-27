@@ -20,7 +20,7 @@
 - Build happens ON the droplet (rsync source, `build app`); no registry involved.
 - Migrations: root `db:migrate` → `drizzle-kit migrate`; `load-env.ts` dotenv never overrides process env, and `.dockerignore` excludes `.env*` from the image → in-container `DATABASE_URL` (db:5432) always wins.
 - CI = thin wrappers only; deploy logic exists once in `deploy.sh` (`L2-DEVOPS-03`).
-- Owner seed on prod: manual one-off (scp `.env.init` → `run --rm --no-deps app corepack yarn init-owner` → rm). Documented in `devops/docs/droplet-setup.md`.
+- Owner seed on prod: manual one-off (scp `.env.init` → `run --rm --no-deps -v /opt/backflip/.env.init:/repo/.env.init:ro app corepack yarn init-owner` → rm). Bind mount required — `.dockerignore` strips `.env*` from the image, so the host file is otherwise invisible in-container. Documented in `devops/docs/droplet-setup.md`.
 
 ## Deviations / notes
 - `sync_repo` doesn't support SSH key paths with spaces (rsync `-e` word-splitting).

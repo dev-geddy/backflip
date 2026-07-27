@@ -27,7 +27,7 @@ Pass both to the first `deploy.sh` run via `--env` / `--env-local` (see [deploy-
 Run once, after the first deploy, to create the admin user:
 ```bash
 scp -i <ssh-key> .env.init root@<host>:/opt/backflip/.env.init
-ssh -i <ssh-key> root@<host> 'cd /opt/backflip && docker compose --project-directory . -f devops/compose.prod.yml run --rm --no-deps app corepack yarn init-owner && rm .env.init'
+ssh -i <ssh-key> root@<host> 'cd /opt/backflip && docker compose --project-directory . -f devops/compose.prod.yml run --rm --no-deps -v /opt/backflip/.env.init:/repo/.env.init:ro app corepack yarn init-owner && rm .env.init'
 ```
 
 ## Troubleshooting
