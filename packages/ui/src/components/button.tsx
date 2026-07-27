@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -38,16 +39,33 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * Base UI's `nativeButton` defaults to `true`, meaning "the rendered element is
+ * a real <button>". Link-buttons (`render={<a />}` / `render={<Link />}`) break
+ * that promise and Base UI warns, since it costs native button semantics.
+ * Infer the correct value from the `render` element so call sites don't repeat
+ * it; an explicit `nativeButton` always wins. Function renders can't be
+ * inspected, so they keep the upstream default.
+ */
+function inferNativeButton(render: ButtonPrimitive.Props["render"]) {
+  if (!React.isValidElement(render)) return undefined
+  return render.type === "button"
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      nativeButton={nativeButton ?? inferNativeButton(render)}
       {...props}
     />
   )
