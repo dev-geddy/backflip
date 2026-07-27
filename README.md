@@ -70,6 +70,10 @@ in place. Re-seed anytime by recreating `.env.init` and rerunning `init-owner`.
 - **Full Docker** (app + db): `docker compose up --build` → app on `3071`.
 - More commands + conventions: `.claude/skills/dev-workflow`.
 
+## Deployment
+Deploy to a DigitalOcean droplet — from your machine, GitHub Actions, or Drone CI.
+See [devops.md](./devops.md).
+
 ## Security
 Before deploying, generate real secrets — never reuse the `.env.example` defaults:
 - `AUTH_SECRET` → `openssl rand -base64 33`
