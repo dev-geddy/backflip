@@ -1,0 +1,7 @@
+# @spec L2-DEVOPS-05
+# Auto-TLS via Let's Encrypt — Caddy provisions and renews the cert on its own.
+# Requires a DNS A record for $DOMAIN → the droplet IP, and ports 80/443 open.
+
+{$DOMAIN} {
+	reverse_proxy app:3070
+}
