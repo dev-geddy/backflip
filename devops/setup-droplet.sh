@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 usage() {
   cat <<'USAGE'
-Provision an empty Ubuntu droplet: packages, swap, Docker (db only), Node 20 +
+Provision an empty Ubuntu droplet: packages, swap, Docker (db only), Node 24 +
 pm2 (app runtime), native Caddy, firewall, app dirs.
 
 Usage:
@@ -96,9 +96,9 @@ node_major=0
 if command -v node >/dev/null 2>&1; then
   node_major="\$(node -v | sed 's/^v//' | cut -d. -f1)"
 fi
-if [ "\$node_major" -lt 20 ]; then
-  echo "--> installing node 20"
-  curl -fsSL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
+if [ "\$node_major" -lt 24 ]; then
+  echo "--> installing node 24"
+  curl -fsSL https://deb.nodesource.com/setup_24.x -o /tmp/nodesource_setup.sh
   \$SUDO bash /tmp/nodesource_setup.sh
   rm -f /tmp/nodesource_setup.sh
   \$SUDO apt-get install -y nodejs

@@ -5,7 +5,7 @@ One-time provisioning of a fresh droplet. Safe to re-run — idempotent.
 ## What it does
 - Installs base packages, adds 2G swap (if none present)
 - Installs Docker + the Compose plugin (db only)
-- Installs Node 20 (NodeSource) + corepack, pm2 (with systemd startup)
+- Installs Node 24 (NodeSource) + corepack, pm2 (with systemd startup)
 - Installs native Caddy (official apt repo)
 - Configures `ufw`: allows SSH, 80, 443 (TCP+UDP) (denies everything else)
 - Creates `/opt/backflip` and `/opt/backflip/.releases` (deploy target)

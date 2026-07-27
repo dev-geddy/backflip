@@ -2,7 +2,7 @@
 # Runner ships only the Next standalone bundle (`output: "standalone"`) —
 # `node apps/web/server.js`, not `next start`. Container port 3070 (compose maps host 3071).
 # @spec L2-INF-04
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 
@@ -11,7 +11,7 @@ COPY . .
 RUN corepack yarn install --immutable
 RUN corepack yarn workspace web build
 
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 ENV NODE_ENV=production
 ENV PORT=3070
 ENV HOSTNAME=0.0.0.0
