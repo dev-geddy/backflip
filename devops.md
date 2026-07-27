@@ -1,6 +1,6 @@
 # Deployment
 
-Deploy backflip to a DigitalOcean droplet with one script — from your machine, GitHub Actions, or Drone CI. Scripts live in `devops/`; one doc below per build setup.
+Deploy backflip to a DigitalOcean droplet with one script — from your machine, GitHub Actions, or Drone CI. App runs via pm2 (Next standalone build) on the host, Postgres in Docker, native Caddy for TLS. Scripts live in `devops/`; one doc below per build setup.
 
 ## Prerequisites
 - A DigitalOcean droplet (Ubuntu LTS), running, root SSH access
