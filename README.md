@@ -42,29 +42,25 @@ corepack yarn dev            # app → http://localhost:3070
   - changed `AUTH_*` (incl. Google) in `.env.local` → **restart `yarn dev`** (env loads at startup)
 - Google login is optional — add `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (redirect URI `http://localhost:3070/api/auth/callback/google`); works only for already-registered emails.
 
-## Production: seed the owner once, then remove it
+## Production: seed the owner once, then delete the secret
 The owner seed is a **one-off kickoff step**. Run it a single time against the prod
-database, then delete both the credentials file and the seed tooling so nothing
-admin-related ships or lingers in the deployed app.
+database, then delete the credentials file:
 
-**1. Run once** (migrations already applied, `.env` pointing at the prod db):
 ```bash
 cp .env.init.example .env.init   # then edit: real ADMIN_EMAIL + a strong ADMIN_PASSWORD
 corepack yarn init-owner         # creates the owner row — idempotent, safe to re-run
+rm .env.init                     # remove the secret once you can sign in
 ```
-Confirm you can sign in at `/backflip/login`, then tear it down.
 
-**2. Remove the file + script** (nothing here is needed at runtime):
-```bash
-rm .env.init                                       # the secret (gitignored — never committed)
+Deleting `.env.init` is all that's needed — the `ADMIN_PASSWORD` lives only there.
+The seed script isn't imported by the app, isn't in the build, and does nothing
+without `.env.init` (it throws on a missing `ADMIN_EMAIL`), so it's harmless to leave
+in place. Re-seed anytime by recreating `.env.init` and rerunning `init-owner`.
 
-# Delete the one-off seed tooling:
-git rm .env.init.example packages/db/src/seed/owner.ts
-```
-Then drop the `init-owner` script entry from **`package.json`** and
-**`packages/db/package.json`**, and commit. (The app never imports this code, so
-removing it is safe; prune the matching `L2-DB-04/13/15` doc lines if you keep docs
-in sync.) To seed another owner later, restore the two files from git history.
+> Optional cleanup: to drop the tooling entirely, `git rm .env.init.example
+> packages/db/src/seed/owner.ts`, remove the `init-owner` entry from `package.json`
+> + `packages/db/package.json`, and prune the `L2-DB-04/13/15` doc lines. Pure
+> hygiene — restore from git history to seed another owner later.
 
 ## Good to know
 - **Ports**: app `3070`, Postgres `5544` (change `POSTGRES_PORT` in `.env` if it clashes).
