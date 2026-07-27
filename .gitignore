@@ -48,6 +48,9 @@ yarn-error.log*
 # external reference repos (cloned for examples, not part of the project)
 .external-repos
 
+# local screenshot capture (playwright driver + generated PNGs)
+.screenshots
+
 # vercel
 .vercel
 

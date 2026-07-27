@@ -24,6 +24,8 @@ Shared design system: `packages/ui` component library, theme, and the `/ui-sampl
 - `L2-UI-08` — One theme source: `packages/ui`. No per-app component copies.
 - `L2-UI-09` — Overlay components (tooltip/toast) require their providers mounted in root layout.
 - `L2-UI-10` — Web app transpiles `@workspace/ui` (`next.config.ts transpilePackages`).
+- `L2-UI-14` — `Button` infers base-ui `nativeButton` from its `render` element: `<button>` → true, any other element → false. Explicit `nativeButton` overrides. Link-buttons (`render={<a/>}` / `render={<Link/>}`) need no extra prop.
+- `L2-UI-15` — Shell containers hosting page content are shrinkable (`min-w-0`), so page content never forces the shell wider than its slot.
 
 ## Errors
 - `L2-UI-11` — Component used without required provider → runtime context error. Mount provider in root layout.
@@ -31,6 +33,8 @@ Shared design system: `packages/ui` component library, theme, and the `/ui-sampl
 ## Acceptance
 - `L2-UI-12` — `/ui-samples` renders all components without error; dark toggle works.
 - `L2-UI-13` — Any app imports a component via `@workspace/ui/components/*` and it themes correctly.
+- `L2-UI-16` — No surface produces page-level horizontal scroll at ≥640px.
+- `L2-UI-17` — Public + admin surfaces load with zero console errors/warnings.
 
 ## Constrained L3
 - `/docs/notes/ui.md`
