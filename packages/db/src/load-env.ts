@@ -7,5 +7,5 @@ import { config } from "dotenv"
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..")
 
 // .env (db/infra creds) + .env.local (runtime Auth.js secrets). Later files win.
-// Used by drizzle.config; the owner seed uses load-init-env (`.env` + `.env.init`).
+// Used by drizzle.config; the owner seed loads its own env inline (`.env` + `.env.init`).
 config({ path: [path.join(root, ".env"), path.join(root, ".env.local")] })

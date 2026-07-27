@@ -59,9 +59,7 @@ Confirm you can sign in at `/backflip/login`, then tear it down.
 rm .env.init                                       # the secret (gitignored — never committed)
 
 # Delete the one-off seed tooling:
-git rm .env.init.example \
-       packages/db/src/seed/owner.ts \
-       packages/db/src/seed/load-init-env.ts
+git rm .env.init.example packages/db/src/seed/owner.ts
 ```
 Then drop the `init-owner` script entry from **`package.json`** and
 **`packages/db/package.json`**, and commit. (The app never imports this code, so
