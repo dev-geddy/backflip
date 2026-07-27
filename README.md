@@ -4,6 +4,8 @@ A full-stack **platform foundation** for kicking off new projects fast — auth,
 
 Stack: Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · Drizzle + Postgres · Auth.js · Turborepo · yarn 4.
 
+> **Self-hosted starter.** You run this yourself and supply your own secrets. The values in `.env.example` are local-dev defaults only — generate real secrets before deploying anywhere (see [Security](#security)).
+
 ## Prerequisites
 - **Docker Desktop** (running) — for Postgres
 - **Node ≥ 20** with **corepack** (pins `yarn@4.17.1` — always run `corepack yarn …`)
@@ -46,3 +48,14 @@ corepack yarn dev            # app → http://localhost:3070
 - **Admin dashboard UI** is built from shadcn blocks — browse and lift components/layouts from **https://ui.shadcn.com/blocks** (this project uses `login-03`, `dashboard-01`, `sidebar-08`).
 - **Full Docker** (app + db): `docker compose up --build` → app on `3071`.
 - More commands + conventions: `.claude/skills/dev-workflow`.
+
+## Security
+Before deploying, generate real secrets — never reuse the `.env.example` defaults:
+- `AUTH_SECRET` → `openssl rand -base64 33`
+- `ENCRYPTION_KEY` → `openssl rand -base64 32`
+- a strong `ADMIN_PASSWORD` and unique database credentials.
+
+To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
+
+## License
+[MIT](./LICENSE) © dev-geddy
