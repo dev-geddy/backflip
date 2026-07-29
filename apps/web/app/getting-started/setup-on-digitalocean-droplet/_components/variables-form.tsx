@@ -2,6 +2,7 @@
 
 import {
   RiArrowRightSLine,
+  RiCheckLine,
   RiEyeLine,
   RiEyeOffLine,
   RiRefreshLine,
@@ -55,6 +56,46 @@ const OPTIONAL: FieldSpec[] = [
   { key: "appName", label: "App name", placeholder: DEFAULT_APP_NAME },
   { key: "appPort", label: "App port", placeholder: DEFAULT_APP_PORT },
 ]
+
+const HOSTNAME_RE =
+  /^(?=.{1,253}$)[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i
+const IPV4_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isHost(value: string) {
+  const m = value.match(IPV4_RE)
+  if (m) return m.slice(1).every((octet) => Number(octet) <= 255)
+  return HOSTNAME_RE.test(value)
+}
+
+/**
+ * Per-field "looks right" checks — light validation for the green tick only.
+ * Nothing blocks: commands render either way, placeholders fill the gaps.
+ */
+const VALID: Record<keyof SetupVars, (value: string) => boolean> = {
+  host: isHost,
+  sshKey: (v) => /^(~\/|\.{0,2}\/|\/)\S+$/.test(v) && !v.endsWith(".pub"),
+  domain: (v) => HOSTNAME_RE.test(v) && v.includes("."),
+  certbotEmail: (v) => EMAIL_RE.test(v),
+  appName: (v) => /^[a-z0-9][a-z0-9-_]*$/i.test(v),
+  appPort: (v) => /^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 65535,
+  adminEmail: (v) => EMAIL_RE.test(v),
+  adminPassword: (v) => v.length >= 8,
+}
+
+/** Fixed-width slot left of every input: green tick when valid, else empty. */
+function ValidTick({ valid }: { valid: boolean }) {
+  return (
+    <span className="flex size-4 flex-none items-center justify-center self-center">
+      {valid ? (
+        <RiCheckLine
+          className="size-4 text-emerald-600 dark:text-emerald-400"
+          aria-label="Looks valid"
+        />
+      ) : null}
+    </span>
+  )
+}
 
 // Unambiguous alphabet (no 0/O, 1/l/I) — the operator may need to retype this.
 const PASSWORD_ALPHABET =
@@ -124,20 +165,24 @@ export function VariablesForm({
 
   function renderField(spec: FieldSpec) {
     const id = `var-${spec.key}`
+    const value = vars[spec.key]
     return (
       <Field key={spec.key}>
         <FieldLabel htmlFor={id}>{spec.label}</FieldLabel>
-        <Input
-          id={id}
-          name={spec.key}
-          type={spec.type ?? "text"}
-          autoComplete="off"
-          spellCheck={false}
-          value={vars[spec.key]}
-          placeholder={spec.placeholder}
-          onFocus={() => setFocused(spec.key)}
-          onChange={(event) => onChange(spec.key, event.target.value)}
-        />
+        <div className="flex gap-2">
+          <ValidTick valid={VALID[spec.key](value.trim())} />
+          <Input
+            id={id}
+            name={spec.key}
+            type={spec.type ?? "text"}
+            autoComplete="off"
+            spellCheck={false}
+            value={value}
+            placeholder={spec.placeholder}
+            onFocus={() => setFocused(spec.key)}
+            onChange={(event) => onChange(spec.key, event.target.value)}
+          />
+        </div>
       </Field>
     )
   }
@@ -169,23 +214,29 @@ export function VariablesForm({
             <GroupLabel>Owner account — step 6 only</GroupLabel>
             <Field>
               <FieldLabel htmlFor="var-adminEmail">Owner email</FieldLabel>
-              <Input
-                id="var-adminEmail"
-                name="adminEmail"
-                type="email"
-                autoComplete="off"
-                spellCheck={false}
-                value={vars.adminEmail}
-                placeholder="you@example.com"
-                onFocus={() => setFocused("adminEmail")}
-                onChange={(event) => onChange("adminEmail", event.target.value)}
-              />
+              <div className="flex gap-2">
+                <ValidTick valid={VALID.adminEmail(vars.adminEmail.trim())} />
+                <Input
+                  id="var-adminEmail"
+                  name="adminEmail"
+                  type="email"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={vars.adminEmail}
+                  placeholder="you@example.com"
+                  onFocus={() => setFocused("adminEmail")}
+                  onChange={(event) =>
+                    onChange("adminEmail", event.target.value)
+                  }
+                />
+              </div>
             </Field>
             <Field>
               <FieldLabel htmlFor="var-adminPassword">
                 Owner password
               </FieldLabel>
               <div className="flex gap-2">
+                <ValidTick valid={VALID.adminPassword(vars.adminPassword)} />
                 <Input
                   id="var-adminPassword"
                   name="adminPassword"
