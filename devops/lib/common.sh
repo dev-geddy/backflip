@@ -37,7 +37,16 @@ require_arg() {
 # Paths. REPO_ROOT = two levels up from this file (devops/lib → repo root).
 _COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(cd "$_COMMON_DIR/../.." && pwd)}"
-REMOTE_DIR="${REMOTE_DIR:-/opt/backflip}"
+# Instance identity: several instances can share one droplet, each with its own
+# name → its own dir (/opt/<name>), pm2 process, nginx site and port.
+# Scripts taking -n/--app-name re-derive REMOTE_DIR after parsing flags.
+APP_NAME="${APP_NAME:-backflip}"
+APP_PORT="${APP_PORT:-3070}"
+REMOTE_DIR="${REMOTE_DIR:-/opt/$APP_NAME}"
+# Dedicated app user: pm2 + the app run as this locked, no-ssh user; root does
+# only system work (packages, db, proxy). Created by the setup scripts.
+# Shared by all instances on a droplet (one pm2 daemon supervising all).
+APP_USER="${APP_USER:-backflip}"
 
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=accept-new)
 
@@ -70,10 +79,14 @@ remote_copy() {
 # excludes keep CI-written keys and env payloads off the droplet, and
 # `.releases` keeps the live release (served by pm2) out of rsync's reach.
 # Note: SSH_KEY paths with spaces aren't supported (rsync splits -e on spaces).
+# When syncing as root, files are chowned to $APP_USER so the app user can
+# install/build in the tree (a non-root SSH_USER is assumed to BE the app user).
 sync_repo() {
   _ssh_ready
+  local chown_flag=()
+  [ "$SSH_USER" = "root" ] && chown_flag=(--chown "$APP_USER:$APP_USER")
   log "syncing $REPO_ROOT → $SSH_USER@$HOST:$REMOTE_DIR"
-  rsync -az --delete \
+  rsync -az --delete "${chown_flag[@]}" \
     --exclude '.git' \
     --exclude 'node_modules' \
     --exclude '.next' \

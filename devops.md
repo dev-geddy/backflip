@@ -1,20 +1,28 @@
 # Deployment
 
-Deploy backflip to a DigitalOcean droplet with one script — from your machine, GitHub Actions, or Drone CI. App runs via pm2 (Next standalone build) on the host, Postgres in Docker, native Caddy for TLS. Scripts live in `devops/`; one doc below per build setup.
+Deploy backflip to a DigitalOcean droplet with a few scripts — from your machine, GitHub Actions, or Drone CI. App runs via pm2 (Next standalone build) on the host. Two droplet flavors:
+
+- **pm2 flavor** (preferred): nvm Node 24 + yarn 4, nginx reverse proxy + Let's Encrypt TLS, Postgres native or in Docker (separate db script)
+- **docker flavor**: apt Node 24, native Caddy for TLS, Postgres in Docker
+
+Scripts live in `devops/`; one doc below per build setup.
 
 ## Prerequisites
 - A DigitalOcean droplet (Ubuntu LTS), running, root SSH access
 - Your local SSH private key for that droplet
 - A domain with an A record pointing at the droplet's IP
 
-## Quick start
+## Quick start (pm2 flavor)
 ```bash
-cp devops/env/production.env.example .env.production             # fill in values
+./devops/setup-droplet-for-pm2.sh -h <host> -i <ssh-key> -d <domain> -m <letsencrypt-email>
+./devops/setup-droplet-db-native.sh -h <host> -i <ssh-key>        # prints DATABASE_URL
+cp devops/env/production.env.example .env.production              # fill in values
 cp devops/env/production.env.local.example .env.production.local  # fill in values
-./devops/setup-droplet.sh -h <host> -i <ssh-key>
-./devops/deploy.sh -h <host> -i <ssh-key> --env .env.production --env-local .env.production.local
+./devops/deploy-for-pm2.sh -h <host> -i <ssh-key> --env .env.production --env-local .env.production.local
 ```
 App is live at `https://<domain>`.
+
+Docker flavor: `setup-droplet-for-docker.sh` (no domain flag — Caddy reads `DOMAIN` from env at deploy) + `deploy-for-docker.sh`, same env files.
 
 ## Docs
 | Doc | Covers |

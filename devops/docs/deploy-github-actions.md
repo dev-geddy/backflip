@@ -1,6 +1,6 @@
 # Deploy via GitHub Actions
 
-Workflow: `.github/workflows/deploy.yml` — a thin wrapper over `devops/deploy.sh`.
+Workflow: `.github/workflows/deploy.yml` — a thin wrapper over `devops/deploy-for-docker.sh`.
 
 ## Secrets
 Set under **Settings → Secrets and variables → Actions**.

@@ -1,6 +1,6 @@
 # Deploy via Drone CI
 
-Pipeline: `.drone.yml` — a thin wrapper over `devops/deploy.sh`. Runs on promotion to `production`.
+Pipeline: `.drone.yml` — a thin wrapper over `devops/deploy-for-docker.sh`. Runs on promotion to `production`.
 
 ## Secrets
 | Secret | What | Required? |

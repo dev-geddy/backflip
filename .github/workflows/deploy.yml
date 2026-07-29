@@ -42,4 +42,4 @@ jobs:
           echo "ARGS=$ARGS" >> "$GITHUB_ENV"
 
       - name: Deploy
-        run: ./devops/deploy.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem $ARGS
+        run: ./devops/deploy-for-docker.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem $ARGS

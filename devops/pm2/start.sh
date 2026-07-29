@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # @spec L2-DEVOPS-15
-# pm2 entrypoint for the Next standalone server. Loads the droplet env, then
+# pm2 entrypoint for the Next standalone server. Loads the instance env, then
 # execs node so pm2 supervises the server process itself (no bash wrapper pid).
+# APP_DIR/APP_PORT come from the pm2 ecosystem (multi-instance: one droplet can
+# run several instances, each with its own dir + port).
 set -euo pipefail
 
+APP_DIR="${APP_DIR:-/opt/backflip}"
+
 set -a
-source /opt/backflip/.env
-source /opt/backflip/.env.local
+source "$APP_DIR/.env"
+source "$APP_DIR/.env.local"
 set +a
 
-export NODE_ENV=production PORT=3070 HOSTNAME=127.0.0.1   # loopback only — Caddy fronts it
+export NODE_ENV=production PORT="${APP_PORT:-3070}" HOSTNAME=127.0.0.1   # loopback only — the reverse proxy (nginx/Caddy) fronts it
 
-exec node /opt/backflip/.releases/current/apps/web/server.js
+exec node "$APP_DIR/.releases/current/apps/web/server.js"

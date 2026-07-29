@@ -1,16 +1,23 @@
 // @spec L2-DEVOPS-15
 // pm2 app definition. fork mode / 1 instance: a deploy restart is a brief blip,
-// which is accepted here. Env comes from start.sh, not from pm2.
+// which is accepted here. App env comes from start.sh; instance identity
+// (name/dir/port) from the deploy script's env, so several instances can share
+// one pm2 daemon — startOrRestart only ever touches the named app.
+const name = process.env.APP_NAME || "backflip"
+const dir = process.env.APP_DIR || `/opt/${name}`
+const port = process.env.APP_PORT || "3070"
+
 module.exports = {
   apps: [
     {
-      name: "backflip",
-      script: "/opt/backflip/devops/pm2/start.sh",
+      name,
+      script: `${dir}/devops/pm2/start.sh`,
       interpreter: "bash",
       exec_mode: "fork",
       instances: 1,
       autorestart: true,
       time: true,
+      env: { APP_DIR: dir, APP_PORT: port },
     },
   ],
 }

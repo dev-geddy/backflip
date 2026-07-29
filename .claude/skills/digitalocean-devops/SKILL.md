@@ -14,25 +14,33 @@ How this repo provisions and deploys to a DigitalOcean droplet. Terse. Do not
 load for general dev tasks — see `dev-workflow` for that.
 
 ## Layout
-- `devops/setup-droplet.sh` — one-time, idempotent droplet provisioning.
-- `devops/deploy.sh` — deploy/redeploy entrypoint.
-- `devops/lib/common.sh` — shared helpers sourced by both scripts.
-- `devops/compose.prod.yml` — prod stack: db only (Postgres, loopback `127.0.0.1:5432`).
+Two droplet flavors; matching setup + deploy script pairs.
+- `devops/setup-droplet-for-pm2.sh` — provision, pm2 flavor (preferred): nvm Node 24 + corepack yarn 4, pm2, nginx + certbot TLS (`-d <domain>` required, `-m <email>` recommended). No Docker.
+- `devops/setup-droplet-for-docker.sh` — provision, docker flavor: apt Node 24, pm2, native Caddy, Docker for db.
+- `devops/setup-droplet-db-native.sh` — db for pm2 flavor: native Postgres 17 (PGDG), loopback, creates role+db, prints `DATABASE_URL`.
+- `devops/setup-droplet-db-docker.sh` — db alternative: Docker engine only; db container starts on first deploy.
+- `devops/deploy-for-pm2.sh` / `devops/deploy-for-docker.sh` — deploy/redeploy entrypoints (same flags).
+- `devops/lib/common.sh` — shared helpers sourced by all scripts.
+- `devops/compose.prod.yml` — db-only compose (Postgres, loopback `127.0.0.1:5432`).
 - `devops/pm2/start.sh`, `devops/pm2/ecosystem.config.cjs` — pm2 entry/config for the app process (`backflip`).
-- `devops/Caddyfile` — native Caddy template (`__DOMAIN__` placeholder); deploy.sh renders it to `/etc/caddy/Caddyfile`.
+- `devops/Caddyfile` — Caddy template (`__DOMAIN__`); deploy-for-docker.sh renders it to `/etc/caddy/Caddyfile`.
+- `devops/nginx/backflip.conf` — nginx site template (`__DOMAIN__`); setup-droplet-for-pm2.sh renders it; certbot injects TLS.
 - `devops/env/*.example` — env templates (source for first deploy's `.env`/`.env.local`).
 - Docs: root `devops.md` (index) → `devops/docs/{droplet-setup,deploy-local,deploy-github-actions,deploy-drone}.md` (one per build setup).
-- CI: `.github/workflows/deploy.yml` (`workflow_dispatch`), `.drone.yml` (promote → production).
+- CI: `.github/workflows/deploy.yml` (`workflow_dispatch`), `.drone.yml` (promote → production) — call `deploy-for-docker.sh`.
 
 ## Key commands
-- Provision (once): `./devops/setup-droplet.sh -h <host> -i <ssh-key>`.
-- Deploy: `./devops/deploy.sh -h <host> -i <ssh-key> [--env <f> --env-local <f>] [--skip-migrations]`.
+- Provision pm2 flavor (once): `./devops/setup-droplet-for-pm2.sh -h <host> -i <ssh-key> -d <domain> -m <email>` then a db script.
+- Provision docker flavor (once): `./devops/setup-droplet-for-docker.sh -h <host> -i <ssh-key>`.
+- Deploy: `./devops/deploy-for-pm2.sh|deploy-for-docker.sh -h <host> -i <ssh-key> [--env <f> --env-local <f>] [--skip-migrations]`.
   - First deploy: pass `--env`/`--env-local`, filled from `devops/env/*.example`.
   - Later deploys: omit them — droplet env is never overwritten.
-  - Flow: rsync → `yarn install` → db up + health wait → `yarn workspace web build` (standalone) → drizzle migrate on host → copy to timestamped release dir + flip `current` symlink → `pm2 startOrRestart` → render + reload Caddy → health check.
+  - Flow: rsync → `yarn install` → db ready (native `pg_isready` or compose up + health wait) → `yarn workspace web build` (standalone) → drizzle migrate on host → copy to timestamped release dir + flip `current` symlink → `pm2 startOrRestart` → proxy (docker flavor: render + reload Caddy; pm2 flavor: nginx untouched) → health check.
+- Both setups harden the droplet: ssh key-only, fail2ban, unattended-upgrades.
+- pm2-flavor droplet, non-interactive ssh: `. .nvm/nvm.sh` before `pm2`/`corepack` commands.
 
 ## Conventions (preserve when extending)
-- All deploy logic lives in `devops/*.sh`. CI files (`deploy.yml`, `.drone.yml`) are thin wrappers that call `deploy.sh` — never duplicate logic in CI YAML.
+- All deploy logic lives in `devops/*.sh`. CI files (`deploy.yml`, `.drone.yml`) are thin wrappers that call a deploy script — never duplicate logic in CI YAML.
 - New CI provider = new thin wrapper script + new short doc in `devops/docs/`, linked from `devops.md`.
 - Docs stay short and actionable.
 - Droplet runtime env = `/opt/backflip/.env` + `.env.local`.

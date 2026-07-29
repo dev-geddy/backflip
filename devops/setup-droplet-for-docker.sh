@@ -9,11 +9,13 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 usage() {
   cat <<'USAGE'
-Provision an empty Ubuntu droplet: packages, swap, Docker (db only), Node 24 +
-pm2 (app runtime), native Caddy, firewall, app dirs.
+Provision an empty Ubuntu droplet — docker flavor: packages, swap, Docker
+(db only), Node 24 + pm2 (app runtime), native Caddy, firewall, security
+hardening (ssh key-only, fail2ban, unattended-upgrades), app dirs.
+Pairs with ./devops/deploy-for-docker.sh.
 
 Usage:
-  ./devops/setup-droplet.sh -h <host> -i <path-to-ssh-key> [-u user] [-p port]
+  ./devops/setup-droplet-for-docker.sh -h <host> -i <path-to-ssh-key> [-u user] [-p port]
 
   -h  droplet host or IP        (required)
   -i  ssh private key path      (required)
@@ -74,6 +76,15 @@ else
   echo "--> swap already active, skipping"
 fi
 
+# Dedicated app user: locked (no password, no ssh keys → no remote login),
+# owns /opt/backflip and runs pm2 + the app. Root stays for system work only.
+if id "$APP_USER" >/dev/null 2>&1; then
+  echo "--> user $APP_USER exists, skipping"
+else
+  echo "--> creating app user $APP_USER"
+  \$SUDO useradd -m -s /bin/bash "$APP_USER"
+fi
+
 # Docker runs the database only; the app itself runs on the host under pm2.
 if command -v docker >/dev/null 2>&1; then
   echo "--> docker already installed, skipping"
@@ -114,15 +125,14 @@ else
   \$SUDO npm i -g pm2
 fi
 
-# Boot persistence: pm2 generates a pm2-<user> systemd unit. Root ssh user →
-# pm2-root; a non-root user gets its own unit + home.
-PM2_USER="\$(id -un)"
-PM2_HP="\${HOME:-/root}"
-if systemctl list-unit-files | grep -q "pm2-\$PM2_USER"; then
+# Boot persistence: pm2-<app-user> systemd unit. Node is system-wide (apt),
+# so the unit's PATH needs no nvm handling here.
+APP_HOME="\$(getent passwd "$APP_USER" | cut -d: -f6)"
+if systemctl list-unit-files | grep -q "pm2-$APP_USER"; then
   echo "--> pm2 startup unit present, skipping"
 else
-  echo "--> pm2 boot persistence (pm2-\$PM2_USER)"
-  \$SUDO env PATH="\$PATH" pm2 startup systemd -u "\$PM2_USER" --hp "\$PM2_HP"
+  echo "--> pm2 boot persistence (pm2-$APP_USER)"
+  \$SUDO env PATH="\$PATH" pm2 startup systemd -u "$APP_USER" --hp "\$APP_HOME"
 fi
 
 # Caddy runs natively (systemd), fronting the pm2 app on 127.0.0.1:3070.
@@ -144,9 +154,51 @@ echo "--> firewall"
 \$SUDO ufw allow 443/udp   # HTTP/3
 \$SUDO ufw --force enable
 
-echo "--> app dirs $REMOTE_DIR"
+# SSH hardening: key-only auth. Drop-in wins over sshd_config and cloud-init
+# fragments (sshd_config.d is Include'd first). Validate before reload so a
+# bad config never kills the running sshd (existing session survives anyway).
+echo "--> ssh hardening (key-only auth)"
+\$SUDO tee /etc/ssh/sshd_config.d/99-backflip-hardening.conf >/dev/null <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin prohibit-password
+X11Forwarding no
+MaxAuthTries 4
+SSHD
+\$SUDO sshd -t
+\$SUDO systemctl reload ssh
+
+# fail2ban: ban IPs brute-forcing sshd. systemd backend — works without
+# rsyslog/auth.log (minimal cloud images).
+if command -v fail2ban-server >/dev/null 2>&1; then
+  echo "--> fail2ban already installed, skipping"
+else
+  echo "--> installing fail2ban"
+  \$SUDO apt-get install -y fail2ban
+fi
+\$SUDO tee /etc/fail2ban/jail.local >/dev/null <<'JAIL'
+[sshd]
+enabled = true
+backend = systemd
+maxretry = 5
+bantime = 1h
+findtime = 10m
+JAIL
+\$SUDO systemctl enable --now fail2ban
+\$SUDO systemctl restart fail2ban
+
+# Unattended security updates.
+echo "--> unattended-upgrades"
+\$SUDO apt-get install -y unattended-upgrades
+\$SUDO tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<'APT'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT
+\$SUDO systemctl enable --now unattended-upgrades
+
+echo "--> app dirs $REMOTE_DIR (owned by $APP_USER)"
 \$SUDO mkdir -p "$REMOTE_DIR" "$REMOTE_DIR/.releases"
-if [ -n "\$SUDO" ]; then \$SUDO chown -R "\$(id -u):\$(id -g)" "$REMOTE_DIR"; fi
+\$SUDO chown -R "$APP_USER:$APP_USER" "$REMOTE_DIR"
 
 echo "--> versions"
 docker --version
@@ -170,7 +222,7 @@ Next steps:
      AUTH_SECRET, your DOMAIN and AUTH_URL.
 
   3. First deploy (uploads the env files to $REMOTE_DIR):
-       ./devops/deploy.sh -h $HOST -i $SSH_KEY --env .env.production --env-local .env.production.local
+       ./devops/deploy-for-docker.sh -h $HOST -i $SSH_KEY --env .env.production --env-local .env.production.local
 
      Later deploys omit --env/--env-local; droplet env is left untouched.
 
