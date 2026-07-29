@@ -13,6 +13,7 @@ AI integration configuration: provider/model/key settings under `/backflip/setti
 - `L2-AI-01` — Route `/backflip/settings` — admin AI config UI. Tabs per provider (Anthropic, OpenAI, Google). (`apps/web/app/backflip/(protected)/settings/`)
 - `L2-AI-02` — Server action `saveAiConfig(prev, formData)` — upserts one provider's config; encrypts the key if supplied; enforces a single default. Admin-gated. (`settings/_actions.ts`)
 - `L2-AI-03` — Config persisted in `ai_config` (`L2-DB-17`). Keys encrypted via `L2-DB-16`.
+- `L2-AI-13` — Server action `listAiModels(provider)` + `settings/_lib/provider-models.ts` — live model list from the provider's models API using the stored key (decrypted server-side; key never sent to client, only ids/labels). No key / error → UI falls back to static suggestions. (`settings/_actions.ts`)
 
 ## Schemas
 - `L2-AI-04` — Providers: `anthropic` (default, Claude), `openai`, `google`. Extensible via the `ai_provider` enum.
