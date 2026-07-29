@@ -1,6 +1,6 @@
 "use client"
 
-import { RiCursorLine } from "@remixicon/react"
+import { RiCursorLine, RiExternalLinkLine } from "@remixicon/react"
 
 import { CommandBlock } from "./command-block"
 import {
@@ -22,6 +22,8 @@ type Guidance = {
   title: string
   /** One paragraph per entry. Two to four short sentences in total. */
   body: React.ReactNode[]
+  /** Optional deep link into the DigitalOcean control panel. */
+  link?: { href: string; label: string }
   /** Optional trailing block — a copyable command, a caveat callout. */
   extra?: React.ReactNode
 }
@@ -44,16 +46,28 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
         title: "Droplet host or IP",
         body: [
           "The droplet’s public IPv4 address — every command in this guide connects to it over SSH.",
-          "Get it from the DigitalOcean dashboard → Droplets → your droplet. A hostname works too, as long as it resolves to that droplet.",
+          "In the panel: Droplets → your droplet → the ipv4 value at the top. A hostname works too, as long as it resolves to that droplet.",
         ],
+        link: {
+          href: "https://cloud.digitalocean.com/droplets",
+          label: "DigitalOcean → Droplets",
+        },
       }
     case "sshKey":
       return {
         title: "SSH private key path",
         body: [
-          "Path on your machine to the private key whose public half was added to the droplet as root’s key — usually the key you picked when creating it.",
-          "It must be the droplet’s root key: the setup and deploy scripts all connect as root. Permissions must be 0600, or ssh refuses to use it.",
+          <>
+            Path on your machine to the <strong>private</strong> key — the file
+            without the <Mono>.pub</Mono> ending. Its public half is what you
+            added to the droplet as root’s key when creating it.
+          </>,
+          "It must be the droplet’s root key: the setup and deploy scripts all connect as root. Permissions must be 0600, or ssh refuses to use it:",
         ],
+        link: {
+          href: "https://cloud.digitalocean.com/account/security",
+          label: "DigitalOcean → Settings → Security (SSH keys)",
+        },
         extra: <CommandBlock lines={[chmodLine(vars.sshKey)]} compact />,
       }
     case "domain":
@@ -63,10 +77,20 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
           "The public hostname nginx will serve this app on.",
           <>
             Its DNS <Mono>A</Mono> record must already point at the droplet IP
-            before TLS can be issued — Let’s Encrypt verifies over HTTP. Add the
-            record at your DNS provider, wherever the domain’s nameservers live.
+            before TLS can be issued — Let’s Encrypt verifies over HTTP.
+          </>,
+          <>
+            If the domain’s DNS is on DigitalOcean: Networking → Domains → your
+            domain → create record — type <Mono>A</Mono>, hostname{" "}
+            <Mono>@</Mono> (or the subdomain, e.g. <Mono>app</Mono>), directed
+            to your droplet. Otherwise add the same record at whichever provider
+            hosts the domain’s nameservers.
           </>,
         ],
+        link: {
+          href: "https://cloud.digitalocean.com/networking/domains",
+          label: "DigitalOcean → Networking → Domains",
+        },
       }
     case "certbotEmail":
       return {
@@ -154,6 +178,17 @@ export function FieldGuidance({
             ))}
             {guidance.extra ? (
               <div className="mt-1">{guidance.extra}</div>
+            ) : null}
+            {guidance.link ? (
+              <a
+                href={guidance.link.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                {guidance.link.label}
+                <RiExternalLinkLine className="size-3.5" aria-hidden="true" />
+              </a>
             ) : null}
           </div>
         ) : (

@@ -1,6 +1,11 @@
 "use client"
 
-import { RiArrowRightSLine, RiEyeLine, RiEyeOffLine } from "@remixicon/react"
+import {
+  RiArrowRightSLine,
+  RiEyeLine,
+  RiEyeOffLine,
+  RiRefreshLine,
+} from "@remixicon/react"
 import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -50,6 +55,25 @@ const OPTIONAL: FieldSpec[] = [
   { key: "appName", label: "App name", placeholder: DEFAULT_APP_NAME },
   { key: "appPort", label: "App port", placeholder: DEFAULT_APP_PORT },
 ]
+
+// Unambiguous alphabet (no 0/O, 1/l/I) — the operator may need to retype this.
+const PASSWORD_ALPHABET =
+  "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789-_!"
+
+/** 24 chars via crypto.getRandomValues — rejection-sampled, no modulo bias. */
+function generatePassword() {
+  const out: string[] = []
+  const max = 256 - (256 % PASSWORD_ALPHABET.length)
+  while (out.length < 24) {
+    const bytes = crypto.getRandomValues(new Uint8Array(32))
+    for (const b of bytes) {
+      if (b < max && out.length < 24) {
+        out.push(PASSWORD_ALPHABET[b % PASSWORD_ALPHABET.length]!)
+      }
+    }
+  }
+  return out.join("")
+}
 
 /** A value the operator has set to something other than the script default. */
 function overridden(value: string, fallback: string) {
@@ -190,6 +214,20 @@ export function VariablesForm({
                   ) : (
                     <RiEyeLine aria-hidden="true" />
                   )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="flex-none"
+                  aria-label="Generate a random password"
+                  onClick={() => {
+                    onChange("adminPassword", generatePassword())
+                    setFocused("adminPassword")
+                    setRevealPassword(true)
+                  }}
+                >
+                  <RiRefreshLine aria-hidden="true" />
                 </Button>
               </div>
               <FieldDescription>
