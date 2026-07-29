@@ -24,6 +24,7 @@ import {
   RiUserLine,
 } from "@remixicon/react"
 
+import { BrandIcon } from "@/app/_components/brand-icon"
 import { can, type Capability } from "@/app/_lib/auth/permissions"
 import { NavUser } from "./nav-user"
 import type { SessionUser } from "./types"
@@ -106,8 +107,10 @@ export function AppSidebar({
               render={<Link href="/backflip" />}
               className="gap-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
             >
-              <div className="flex aspect-square size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                <RiShapesLine className="size-4" />
+              {/* Same brand tile as the public wordmark (bordered card tile +
+                  arc glyph), not an icon-on-primary block. */}
+              <div className="flex aspect-square size-7 flex-none items-center justify-center rounded-md border bg-card">
+                <BrandIcon size={14} className="text-primary" />
               </div>
               <div className="grid flex-1 text-left leading-tight">
                 <span className="text-sm font-semibold">Backflip</span>

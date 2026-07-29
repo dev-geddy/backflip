@@ -6,6 +6,8 @@ import { useTheme } from "next-themes"
 
 import { Button } from "@workspace/ui/components/button"
 
+import { BrandIcon } from "./brand-icon"
+
 function Wordmark({ className }: { className?: string }) {
   return (
     <a
@@ -13,21 +15,7 @@ function Wordmark({ className }: { className?: string }) {
       className={`flex items-center gap-2 text-base font-bold tracking-tight ${className ?? ""}`}
     >
       <span className="inline-flex size-[22px] items-center justify-center rounded-md border bg-card">
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          className="text-primary"
-        >
-          <path d="M12 3v7" />
-          <path d="M6 8a7 7 0 1 0 12 0" />
-        </svg>
+        <BrandIcon className="text-primary" />
       </span>
       Backflip
     </a>
