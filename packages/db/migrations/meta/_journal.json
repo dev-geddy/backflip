@@ -36,6 +36,20 @@
       "when": 1784886490379,
       "tag": "0004_low_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785367207450,
+      "tag": "0005_clear_mattie_franklin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785367217748,
+      "tag": "0006_seed_analytics_config",
+      "breakpoints": true
     }
   ]
 }

@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache"
 
-import { aiConfig, db, decryptSecret, emailConfig, encryptSecret } from "@workspace/db"
+import {
+  aiConfig,
+  analyticsConfig,
+  db,
+  decryptSecret,
+  emailConfig,
+  encryptSecret,
+} from "@workspace/db"
 import { eq, ne } from "drizzle-orm"
 
 import { auth } from "@/app/_lib/auth"
@@ -11,10 +18,10 @@ import { canAccessSettings } from "@/app/_lib/auth/permissions"
 import { fetchProviderModels, type ProviderModel } from "./_lib/provider-models"
 
 /**
- * Admin settings actions — AI + Email provider config (upsert, key encryption,
- * single-default enforcement). Both `settings`-gated.
+ * Admin settings actions — AI + Email + Analytics config (upsert, key
+ * encryption, single-default enforcement). All `settings`-gated.
  *
- * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07
+ * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07, L2-ANALYTICS-02
  */
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
@@ -142,6 +149,59 @@ export async function saveEmailConfig(
     .insert(emailConfig)
     .values(set as typeof emailConfig.$inferInsert)
     .onConflictDoUpdate({ target: emailConfig.provider, set })
+
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Saved." }
+}
+
+/**
+ * Google Analytics measurement ids: GA4 (`G-`), Google Tag (`GT-`), Ads (`AW-`)
+ * and legacy Universal Analytics (`UA-`). The id is interpolated into the
+ * gtag.js URL and `gtag("config", …)` on public pages, so it is validated
+ * strictly here (allow-list charset) rather than trusted.
+ */
+const MEASUREMENT_ID = /^(G|GT|AW|UA)-[A-Z0-9]+(-[A-Z0-9]+)?$/
+
+/**
+ * Upsert the single Google Analytics config row. The measurement id is public
+ * (it ships to every visitor) so it is stored in plaintext — no encryption, no
+ * masking. Blank id clears it, which turns analytics off entirely. Admin-gated.
+ *
+ * Public pages read this through `GET /api/public/analytics-config`, which is
+ * cached for ~5 min — a change can take that long to reach visitors.
+ */
+export async function saveAnalyticsConfig(
+  _prev: SaveState,
+  formData: FormData
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const raw = String(formData.get("measurementId") ?? "")
+    .trim()
+    .toUpperCase()
+  if (raw && !MEASUREMENT_ID.test(raw)) {
+    return {
+      ok: false,
+      message: "Measurement ID looks wrong — expected a tag like G-XXXXXXXXXX.",
+    }
+  }
+
+  const set = {
+    kind: "google_analytics",
+    measurementId: raw || null,
+    cookieBannerEnabled: formData.get("cookieBannerEnabled") != null,
+    cookieBannerText:
+      String(formData.get("cookieBannerText") ?? "").trim() || null,
+    updatedAt: new Date(),
+  }
+
+  await db
+    .insert(analyticsConfig)
+    .values(set)
+    .onConflictDoUpdate({ target: analyticsConfig.kind, set })
 
   revalidatePath("/backflip/settings")
   return { ok: true, message: "Saved." }

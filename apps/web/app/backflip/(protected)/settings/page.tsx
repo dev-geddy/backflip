@@ -1,8 +1,9 @@
-import { aiConfig, db, emailConfig } from "@workspace/db"
+import { aiConfig, analyticsConfig, db, emailConfig } from "@workspace/db"
 import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { type ProviderConfig } from "./_components/ai-config-form"
+import { type AnalyticsConfig } from "./_components/analytics-integration"
 import { type EmailConfig } from "./_components/email-config-form"
 import { IntegrationsView } from "./_components/integrations-view"
 import { keyPreview } from "./_lib/mask"
@@ -11,11 +12,12 @@ const PROVIDERS = ["anthropic", "openai", "google"] as const
 
 /**
  * /backflip/settings — admin Integrations (owner only). Master-detail over the
- * two real integrations: AI providers (per provider) and Email (Resend).
- * Secrets are never sent to the client; only whether a key is set + its masked
- * preview.
+ * three real integrations: AI providers (per provider), Email (Resend) and
+ * Google Analytics. Secrets are never sent to the client; only whether a key is
+ * set + its masked preview. The GA measurement id is public, so it round-trips
+ * in the clear.
  *
- * @spec L2-AI-01, L2-EMAIL-01
+ * @spec L2-AI-01, L2-EMAIL-01, L2-ANALYTICS-05
  */
 export default async function SettingsPage() {
   await requireCapability("settings")
@@ -46,5 +48,15 @@ export default async function SettingsPage() {
     keyPreview: keyPreview(emailRow?.apiKeyEnc),
   }
 
-  return <IntegrationsView ai={ai} email={email} />
+  const [analyticsRow] = await db
+    .select()
+    .from(analyticsConfig)
+    .where(eq(analyticsConfig.kind, "google_analytics"))
+  const analytics: AnalyticsConfig = {
+    measurementId: analyticsRow?.measurementId ?? "",
+    cookieBannerEnabled: analyticsRow?.cookieBannerEnabled ?? true,
+    cookieBannerText: analyticsRow?.cookieBannerText ?? "",
+  }
+
+  return <IntegrationsView ai={ai} email={email} analytics={analytics} />
 }

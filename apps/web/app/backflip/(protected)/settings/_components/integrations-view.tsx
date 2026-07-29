@@ -7,11 +7,15 @@ import { RiArrowLeftLine } from "@remixicon/react"
 
 import { AiIntegration } from "./ai-integration"
 import type { ProviderConfig } from "./ai-config-form"
+import {
+  AnalyticsIntegration,
+  type AnalyticsConfig,
+} from "./analytics-integration"
 import type { EmailConfig } from "./email-config-form"
 import { EmailIntegration } from "./email-integration"
 import { IntegrationsRail } from "./integrations-rail"
 
-type Selection = "ai" | "email"
+type Selection = "ai" | "email" | "analytics"
 
 /** One row in the integrations master list. */
 function ListRow({
@@ -57,21 +61,24 @@ function ListRow({
 
 /**
  * Integrations admin shell (design 2a) — master list of connected services +
- * detail pane + context rail. **Real-data-only:** exactly two integrations
- * exist today (AI providers, Resend email); Analytics/PostHog etc. are omitted.
+ * detail pane + context rail. **Real-data-only:** exactly three integrations
+ * exist today (AI providers, Resend email, Google Analytics).
  */
 export function IntegrationsView({
   ai,
   email,
+  analytics,
 }: {
   ai: ProviderConfig[]
   email: EmailConfig
+  analytics: AnalyticsConfig
 }) {
   const [selection, setSelection] = useState<Selection>("ai")
   const [mobileDetail, setMobileDetail] = useState(false)
 
   const aiConnected = ai.filter((c) => c.keyPreview).length
   const emailConnected = Boolean(email.keyPreview)
+  const analyticsConnected = Boolean(analytics.measurementId)
 
   function select(s: Selection) {
     setSelection(s)
@@ -119,6 +126,20 @@ export function IntegrationsView({
             title="Email"
             subtitle="Resend · transactional email"
           />
+          <ListRow
+            active={selection === "analytics"}
+            onClick={() => select("analytics")}
+            connected={analyticsConnected}
+            tile={
+              <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold">
+                GA
+              </span>
+            }
+            title="Google Analytics"
+            subtitle={
+              analyticsConnected ? analytics.measurementId : "Not configured"
+            }
+          />
         </div>
       </div>
 
@@ -139,8 +160,13 @@ export function IntegrationsView({
         </button>
         {selection === "ai" ? (
           <AiIntegration providers={ai} />
-        ) : (
+        ) : selection === "email" ? (
           <EmailIntegration email={email} connected={emailConnected} />
+        ) : (
+          <AnalyticsIntegration
+            analytics={analytics}
+            connected={analyticsConnected}
+          />
         )}
       </div>
 

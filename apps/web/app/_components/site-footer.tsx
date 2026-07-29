@@ -1,3 +1,11 @@
+import { AnalyticsGate } from "./analytics-gate"
+
+/**
+ * Public-site footer. Also the mount point for `AnalyticsGate` — this footer is
+ * the one piece of chrome every public page renders and no admin page does, so
+ * it scopes analytics + the cookie banner to the public surface (`L1-ARCH-01`)
+ * without touching the shared root layout.
+ */
 export function SiteFooter() {
   return (
     <footer className="border-t">
@@ -40,6 +48,7 @@ export function SiteFooter() {
           © {new Date().getFullYear()} Backflip
         </p>
       </div>
+      <AnalyticsGate />
     </footer>
   )
 }

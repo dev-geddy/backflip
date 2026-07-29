@@ -9,7 +9,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core"
 
-/** @spec L2-DB-05, L2-DB-06, L2-DB-07, L2-DB-17, L2-DB-18, L2-DB-20, L2-DB-22 */
+/** @spec L2-DB-05, L2-DB-06, L2-DB-07, L2-DB-17, L2-DB-18, L2-DB-20, L2-DB-22, L2-ANALYTICS-01 */
 
 /**
  * Platform roles. `owner` = top-level admin (seeded); can do everything.
@@ -146,5 +146,23 @@ export const emailConfig = pgTable("email_config", {
   fromName: text("fromName"),
   replyTo: text("replyTo"),
   enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
+
+/**
+ * Analytics config — single row per `kind` (only `google_analytics` today).
+ * `measurementId` is the public GA4 tag id (`G-…`) — NOT a secret, stored and
+ * served in plaintext. `cookieBannerEnabled` gates whether analytics needs
+ * consent before loading; `cookieBannerText` is the operator-editable banner
+ * copy (default seeded by migration).
+ */
+export const analyticsConfig = pgTable("analytics_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  kind: text("kind").notNull().unique().default("google_analytics"),
+  measurementId: text("measurementId"),
+  cookieBannerEnabled: boolean("cookieBannerEnabled").notNull().default(true),
+  cookieBannerText: text("cookieBannerText"),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 })
