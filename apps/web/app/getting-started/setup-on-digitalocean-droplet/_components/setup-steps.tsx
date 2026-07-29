@@ -1,6 +1,12 @@
 "use client"
 
-import { RiInformationLine, RiTerminalBoxLine } from "@remixicon/react"
+import {
+  RiDownloadLine,
+  RiInformationLine,
+  RiTerminalBoxLine,
+} from "@remixicon/react"
+
+import { Button } from "@workspace/ui/components/button"
 
 import { CommandBlock } from "./command-block"
 import {
@@ -15,6 +21,7 @@ import {
   provisionCommand,
   redeployCommand,
   resolve,
+  summaryDocument,
   type SetupVars,
 } from "./setup-vars"
 import { VariablesForm } from "./variables-form"
@@ -125,6 +132,12 @@ export const STEPS: StepMeta[] = [
     title: "Seed the admin account",
     short: "Admin",
     lead: "One-off, after the first deploy. Writes a temporary .env.init, hands it to the locked backflip user on the droplet, runs the seed, then removes it on both ends.",
+  },
+  {
+    id: "summary",
+    title: "Save your summary",
+    short: "Summary",
+    lead: "Everything you entered plus the day-two command reference, as one plain-text file. This page forgets your values when the tab closes — this file doesn't.",
   },
 ]
 
@@ -312,22 +325,57 @@ export function StepBody({
     )
   }
 
+  if (index === 5) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <RunOn>your machine — repo root</RunOn>
+          <CommandBlock lines={ownerSeedCommands(r)} />
+        </div>
+        <Note>
+          All four lines run locally — <Mono>scp</Mono> and <Mono>ssh</Mono>{" "}
+          reach the droplet for you. Never commit <Mono>.env.init</Mono>: it is
+          gitignored, and the last line deletes it.
+        </Note>
+        <Note>
+          Done. Sign in at <Mono>{r.appUrl}/backflip</Mono> with the owner email
+          and password from step 1. Leave the password blank for a Google-only
+          owner.
+        </Note>
+      </div>
+    )
+  }
+
+  const doc = summaryDocument(vars)
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <RunOn>your machine — repo root</RunOn>
-        <CommandBlock lines={ownerSeedCommands(r)} />
+      <div>
+        <Button
+          type="button"
+          onClick={() => {
+            const url = URL.createObjectURL(
+              new Blob([doc], { type: "text/plain;charset=utf-8" })
+            )
+            const a = document.createElement("a")
+            a.href = url
+            a.download = "backflip-setup-summary.txt"
+            a.click()
+            URL.revokeObjectURL(url)
+          }}
+        >
+          <RiDownloadLine aria-hidden="true" />
+          Download backflip-setup-summary.txt
+        </Button>
       </div>
       <Note>
-        All four lines run locally — <Mono>scp</Mono> and <Mono>ssh</Mono> reach
-        the droplet for you. Never commit <Mono>.env.init</Mono>: it is
-        gitignored, and the last line deletes it.
+        The file includes the owner password when one was set — store it
+        somewhere private (a password manager beats a Downloads folder).
       </Note>
-      <Note>
-        Done. Sign in at <Mono>{r.appUrl}/backflip</Mono> with the owner email
-        and password from step 1. Leave the password blank for a Google-only
-        owner.
-      </Note>
+      <CommandBlock
+        lines={doc.split("\n")}
+        label="backflip-setup-summary.txt"
+        prompt={false}
+      />
     </div>
   )
 }

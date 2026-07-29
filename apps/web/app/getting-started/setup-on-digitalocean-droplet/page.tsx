@@ -8,7 +8,7 @@ import { SetupGuide } from "./_components/setup-guide"
 export const metadata: Metadata = {
   title: "Setup on a DigitalOcean droplet",
   description:
-    "A guided, six-step wizard for deploying Backflip to a DigitalOcean droplet — fill in your variables and copy the ready-made commands.",
+    "A guided, step-by-step wizard for deploying Backflip to a DigitalOcean droplet — fill in your variables and copy the ready-made commands.",
 }
 
 // Server Component (RSC) shell around the client guide island. The guide is

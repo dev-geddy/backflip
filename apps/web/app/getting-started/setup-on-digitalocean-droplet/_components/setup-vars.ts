@@ -129,6 +129,88 @@ export function redeployCommand(r: Resolved) {
   ]
 }
 
+/** Same flags, no env upload — the everyday fast deploy. */
+export function redeployLocalBuildCommand(r: Resolved) {
+  return [
+    `./devops/deploy-for-pm2-build-locally.sh -h ${r.host} -i ${r.sshKey} -d ${r.domain}${r.instance}`,
+  ]
+}
+
+export function rollbackCommand(r: Resolved) {
+  return [
+    `./devops/rollback-for-pm2.sh -h ${r.host} -i ${r.sshKey} -d ${r.domain}${r.instance}`,
+  ]
+}
+
+export function logsCommand(r: Resolved) {
+  const name = varsAppName(r)
+  return [
+    `ssh -i ${r.sshKey} root@${r.host} "sudo -H -u backflip bash -c 'cd; . \\$HOME/.nvm/nvm.sh; pm2 logs ${name}'"`,
+  ]
+}
+
+export function statusCommand(r: Resolved) {
+  const name = varsAppName(r)
+  return [
+    `ssh -i ${r.sshKey} root@${r.host} "sudo -H -u backflip bash -c 'cd; . \\$HOME/.nvm/nvm.sh; pm2 status'; readlink ${r.appDir}/current"`,
+  ]
+}
+
+/** The pm2 process name embedded in an instance-flagged command set. */
+function varsAppName(r: Resolved) {
+  const m = r.instance.match(/-n (\S+)/)
+  return m?.[1] ?? DEFAULT_APP_NAME
+}
+
+/**
+ * Plain-text summary the operator can save after the last step: every value
+ * they entered plus the day-two command reference. Contains the owner password
+ * when one was set — the document itself carries the warning.
+ */
+export function summaryDocument(vars: SetupVars) {
+  const r = resolve(vars)
+  const rows: [string, string][] = [
+    ["Droplet host / IP", r.host],
+    ["SSH private key", r.sshKey],
+    ["Domain", r.domain],
+    ["Let's Encrypt email", r.certbotEmail],
+    ["App name (pm2 / nginx)", varsAppName(r)],
+    ["App port (loopback)", vars.appPort.trim() || DEFAULT_APP_PORT],
+    ["Deploy directory", r.appDir],
+    ["App URL", r.appUrl],
+    ["Admin console", `${r.appUrl}/backflip`],
+    ["Owner email", r.adminEmail],
+    ["Owner password", vars.adminPassword ? vars.adminPassword : "(not set — Google-only owner)"],
+  ]
+  const pad = Math.max(...rows.map(([k]) => k.length))
+
+  const section = (title: string, lines: string[]) =>
+    [`${title}`, "-".repeat(title.length), ...lines, ""].join("\n")
+
+  return [
+    "BACKFLIP — DROPLET SETUP SUMMARY",
+    "================================",
+    "",
+    "Keep this file private: it contains the owner password when one was set.",
+    "",
+    section(
+      "Your values",
+      rows.map(([k, v]) => `${k.padEnd(pad)}  ${v}`)
+    ),
+    section("Provision droplet (one-time)", provisionCommand(r)),
+    section("Provision database (one-time)", databaseCommand(r)),
+    section("First deploy (uploads env files)", firstDeployCommand(r)),
+    section("Redeploy — droplet build", redeployCommand(r)),
+    section("Redeploy — fast, build locally", redeployLocalBuildCommand(r)),
+    section("Rollback to the previous release", rollbackCommand(r)),
+    section("App logs", logsCommand(r)),
+    section("Status (pm2 + live slot)", statusCommand(r)),
+    section("Seed the owner account (one-time)", ownerSeedCommands(r)),
+    "All commands run on your machine, from the repo root.",
+    "",
+  ].join("\n")
+}
+
 export function ownerSeedCommands(r: Resolved) {
   // Single-quoted printf args: passwords routinely contain $, !, spaces — and
   // an unquoted `<placeholder>` would be read as a shell redirection.

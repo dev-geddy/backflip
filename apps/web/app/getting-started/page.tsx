@@ -15,7 +15,7 @@ const GUIDES = [
   {
     href: "/getting-started/setup-on-digitalocean-droplet",
     title: "Setup on a DigitalOcean droplet",
-    body: "Provision a droplet, create the database, fill your env files and ship the first deploy — a six-step wizard with copy-ready commands.",
+    body: "Provision a droplet, create the database, fill your env files and ship the first deploy — a step-by-step wizard with copy-ready commands.",
   },
   {
     href: "/getting-started/setup-on-digitalocean-droplet-docker-flavour",
