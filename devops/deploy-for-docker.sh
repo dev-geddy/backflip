@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # @spec L2-DEVOPS-02, L2-DEVOPS-07, L2-DEVOPS-15
-# Deploy to the droplet. Runs the same way from a laptop or from CI —
-# CI configs are thin wrappers around this script, never copies of it.
+# Deploy to a docker-flavor droplet (setup-droplet-for-docker.sh — apt node,
+# Caddy, db in compose). Thin orchestrator: parse flags, preflight, then pipe the
+# remote fragments in devops/lib/remote/ to the droplet in order.
+# Runs the same way from a laptop or from CI — CI configs are thin wrappers
+# around this script, never copies of it.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,11 +14,13 @@ source "$SCRIPT_DIR/lib/common.sh"
 usage() {
   cat <<'USAGE'
 Deploy the app to a docker-flavor droplet (setup-droplet-for-docker.sh):
-sync → install → build → migrate → release → pm2 restart → caddy reload →
+sync → install → build → migrate → release slot → pm2 restart → caddy reload →
 health check.
 
-Deploy dir: /var/www/<domain> — synced source at the root, immutable releases
-in releases/, live app behind the /var/www/<domain>/current symlink.
+Deploy dir: /var/www/<domain> — synced source at the root, two release slots
+blue/ and green/, live app behind the /var/www/<domain>/current symlink,
+persistent instance data in shared/ (never touched by a deploy). Each deploy
+rebuilds the inactive slot and flips `current` to it.
 
 Usage:
   ./devops/deploy-for-docker.sh -h <host> -i <path-to-ssh-key> -d <domain>
@@ -74,175 +79,57 @@ require_file "$SSH_KEY" "ssh private key not found"
 if [ -n "$ENV_FILE" ]; then require_file "$ENV_FILE" "--env file not found"; fi
 if [ -n "$ENV_LOCAL_FILE" ]; then require_file "$ENV_LOCAL_FILE" "--env-local file not found"; fi
 
-log "checking ssh to $SSH_USER@$HOST:$SSH_PORT"
-remote_run true >/dev/null 2>&1 || die "cannot ssh to $SSH_USER@$HOST:$SSH_PORT (run setup-droplet-for-docker.sh first?)"
+preflight_ssh "run setup-droplet-for-docker.sh first?"
 
-remote_run "mkdir -p $REMOTE_DIR"
+# Deploy dir + persistent shared/ (setup creates them too; harmless to re-ensure).
+remote_script app-dirs.sh "REMOTE_DIR='$REMOTE_DIR' APP_USER='$APP_USER'" >/dev/null
 
 # --- env files (uploaded only when explicitly passed; never overwritten otherwise) ---
-if [ -n "$ENV_FILE" ]; then
-  log "uploading $ENV_FILE → $REMOTE_DIR/.env"
-  remote_copy "$ENV_FILE" "$REMOTE_DIR/.env"
-  remote_run "chmod 600 $REMOTE_DIR/.env && chown $APP_USER:$APP_USER $REMOTE_DIR/.env"
-fi
-if [ -n "$ENV_LOCAL_FILE" ]; then
-  log "uploading $ENV_LOCAL_FILE → $REMOTE_DIR/.env.local"
-  remote_copy "$ENV_LOCAL_FILE" "$REMOTE_DIR/.env.local"
-  remote_run "chmod 600 $REMOTE_DIR/.env.local && chown $APP_USER:$APP_USER $REMOTE_DIR/.env.local"
-fi
-
-if ! remote_run "test -f $REMOTE_DIR/.env && test -f $REMOTE_DIR/.env.local"; then
-  die "$REMOTE_DIR/.env and $REMOTE_DIR/.env.local must both exist on the droplet.
-     Fill in devops/env/production.env.example and devops/env/production.env.local.example,
-     then re-run with --env <file> --env-local <file>."
-fi
-ok "droplet env present"
+push_env_files "$ENV_FILE" "$ENV_LOCAL_FILE"
 
 # --- preflight typecheck (local, multi-core) ---
-# The droplet build skips the TypeScript pass (NEXT_SKIP_TYPECHECK=1) — it costs
-# ~60s on a 1-vCPU droplet. Check here instead, where it's fast. Skipped when
-# deps aren't installed (e.g. thin CI wrappers) — CI should typecheck separately.
-if [ -d "$REPO_ROOT/node_modules" ]; then
-  log "typecheck (local)"
-  (cd "$REPO_ROOT" && corepack yarn workspace web typecheck) || die "typecheck failed — fix before deploying"
-  ok "typecheck clean"
-else
-  warn "node_modules missing locally — skipping preflight typecheck (droplet build skips it too)"
-fi
+preflight_typecheck
 
 # --- sync ---
 sync_repo
 
 # --- database (root: system services) ---
 log "starting database"
-remote_run "REMOTE_DIR='$REMOTE_DIR' bash -s" <<'REMOTE'
-set -euo pipefail
-cd "$REMOTE_DIR"
-# --project-directory . → all relative paths in the compose file resolve against
-# $REMOTE_DIR, and compose reads $REMOTE_DIR/.env for interpolation.
-DC="docker compose --project-directory . -f devops/compose.prod.yml"
-
-echo "--> start db"
-$DC up -d db
-
-echo "--> waiting for db health"
-healthy="no"
-for _ in $(seq 1 30); do
-  cid="$($DC ps -q db)"
-  if [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$cid" 2>/dev/null || echo starting)" = "healthy" ]; then
-    healthy="yes"; break
-  fi
-  sleep 2
-done
-[ "$healthy" = "yes" ] || { echo "db did not become healthy within 60s" >&2; $DC logs --tail 50 db >&2; exit 1; }
-echo "    db healthy"
-REMOTE
+remote_script db-docker-up.sh "REMOTE_DIR='$REMOTE_DIR'"
 ok "database ready"
 
 # --- install, build, migrate, release (app user: everything pm2/app-side) ---
-# Failure isolation: the live app serves from the current symlink via pm2, and
-# nothing below touches it until the symlink switch. Deps, build and migrations
-# all run against the synced working tree, so any failure up to that point
+# Failure isolation: the live app serves the ACTIVE slot via the current symlink,
+# and the release is assembled in the INACTIVE one. Deps, build and migrations all
+# run against the synced working tree, so any failure before the symlink flip
 # leaves the previous release running untouched.
 log "building + releasing (as $APP_USER)"
-remote_run "sudo -H -u $APP_USER REMOTE_DIR='$REMOTE_DIR' SKIP_MIGRATIONS='$SKIP_MIGRATIONS' APP_NAME='$APP_NAME' APP_PORT='$APP_PORT' bash -s" <<'REMOTE'
-set -euo pipefail
-cd "$REMOTE_DIR"
-
-echo "--> install deps"
-# Full install (not --production): the build and drizzle-kit need devDeps.
-corepack yarn install --immutable
-
-echo "--> build app"
-# Build before migrating: a build failure aborts before the schema moves, and
-# the old-app-on-new-schema window stays as short as possible.
-# NEXT_SKIP_TYPECHECK: types already checked in the deploy preflight (local).
-NEXT_SKIP_TYPECHECK=1 corepack yarn workspace web build
-
-if [ "$SKIP_MIGRATIONS" = "yes" ]; then
-  echo "--> skipping migrations"
-else
-  echo "--> migrations"
-  # Runs on the host. packages/db/src/load-env.ts reads $REMOTE_DIR/.env, whose
-  # DATABASE_URL points at the published 127.0.0.1 postgres port.
-  corepack yarn db:migrate
-fi
-
-echo "--> assembling release"
-# The standalone bundle mirrors the monorepo, so copying it wholesale gives
-# releases/<ts>/apps/web/server.js + a minimal node_modules at the root.
-# Static assets and public/ are not traced into it and must be copied in.
-mkdir -p "$REMOTE_DIR/releases"
-rel="$REMOTE_DIR/releases/$(date -u +%Y%m%d%H%M%S)"
-mkdir -p "$rel"
-cp -a apps/web/.next/standalone/. "$rel"/
-mkdir -p "$rel/apps/web/.next"
-cp -a apps/web/.next/static "$rel/apps/web/.next/static"
-if [ -d apps/web/public ]; then cp -a apps/web/public "$rel/apps/web/public"; fi
-
-echo "--> switching current -> releases/$(basename "$rel")"
-ln -sfn "$rel" "$REMOTE_DIR/current"
-
-echo "--> pm2 restart ($APP_NAME only — other apps untouched)"
-APP_DIR="$REMOTE_DIR" pm2 startOrRestart devops/pm2/ecosystem.config.cjs --only "$APP_NAME" && pm2 save
-
-echo "--> pruning old releases (keep 3)"
-stale="$(ls -1 "$REMOTE_DIR/releases" | sort | head -n -3 || true)"
-for old in $stale; do rm -rf "$REMOTE_DIR/releases/$old"; done
-REMOTE
+remote_script app-release.sh \
+  "sudo -H -u $APP_USER REMOTE_DIR='$REMOTE_DIR' SKIP_MIGRATIONS='$SKIP_MIGRATIONS' APP_NAME='$APP_NAME' APP_PORT='$APP_PORT' NEEDS_NVM=no"
 
 # --- caddy (root: system service) ---
 log "caddy config"
-remote_run "REMOTE_DIR='$REMOTE_DIR' bash -s" <<'REMOTE'
-set -euo pipefail
-cd "$REMOTE_DIR"
-DOMAIN="$(grep '^DOMAIN=' .env | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'")"
-[ -n "$DOMAIN" ] || { echo "DOMAIN is not set in $REMOTE_DIR/.env" >&2; exit 1; }
-sed "s/__DOMAIN__/$DOMAIN/" devops/Caddyfile > /etc/caddy/Caddyfile
-caddy validate --config /etc/caddy/Caddyfile
-systemctl reload caddy || systemctl restart caddy
-REMOTE
+remote_script caddy-render.sh "REMOTE_DIR='$REMOTE_DIR'"
 
 ok "release live"
 
 # --- health check ---
 log "health check"
-PM2_STATUS="$(remote_run "sudo -H -u $APP_USER APP_NAME='$APP_NAME' bash -s" <<'REMOTE'
-set -uo pipefail
-cd "$HOME"   # sudo keeps the invoking cwd; an inaccessible cwd makes node spawns fail EACCES
-pm2 jlist 2>/dev/null | node -e "
-let raw = ''
-process.stdin.on('data', (d) => (raw += d)).on('end', () => {
-  const app = JSON.parse(raw || '[]').find((a) => a.name === process.env.APP_NAME)
-  process.stdout.write(app ? String(app.pm2_env.status) : 'missing')
-})
-"
-REMOTE
-)"
+PM2_STATUS="$(pm2_health no)"
 
 if [ "$PM2_STATUS" != "online" ]; then
   warn "pm2 reports $APP_NAME status: ${PM2_STATUS:-unknown}"
-  remote_run "sudo -H -u $APP_USER bash -c 'cd; pm2 logs $APP_NAME --lines 30 --nostream'" || true
+  pm2_logs_tail no
   die "app process is not online"
 fi
 ok "pm2 online"
 
-CODE="$(remote_run 'bash -s' <<'REMOTE'
-set -uo pipefail
-code="000"
-for _ in $(seq 1 8); do
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://localhost:80 || echo 000)"
-  [ "$code" != "000" ] && break
-  sleep 3
-done
-printf '%s' "$code"
-REMOTE
-)"
+CODE="$(http_health)"
 
 # Any HTTP response means the stack is serving. Caddy answers :80 with a 308 to
 # https, so 3xx/4xx are expected — only "no response at all" is a failure.
 case "$CODE" in
-  000) die "no HTTP response on port 80. Check: pm2 logs backflip / systemctl status caddy" ;;
+  000) die "no HTTP response on port 80. Check: pm2 logs $APP_NAME / systemctl status caddy" ;;
   2*)  ok "http $CODE" ;;
   *)   warn "http $CODE (expected — Caddy redirects :80 to https); stack is responding" ;;
 esac
@@ -253,10 +140,11 @@ $(ok "deploy complete")
 
   host       $SSH_USER@$HOST
   dir        $REMOTE_DIR
+  live slot  $REMOTE_DIR/current
   migrations $([ "$SKIP_MIGRATIONS" = "yes" ] && echo skipped || echo applied)
 
   Logs:    ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST "sudo -H -u $APP_USER bash -c 'cd; pm2 logs $APP_NAME'"
-  Status:  ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST "sudo -H -u $APP_USER bash -c 'cd; pm2 status'; cd $REMOTE_DIR && docker compose --project-directory . -f devops/compose.prod.yml ps"
+  Status:  ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST "sudo -H -u $APP_USER bash -c 'cd; pm2 status'; readlink $REMOTE_DIR/current; cd $REMOTE_DIR && docker compose --project-directory . -f devops/compose.prod.yml ps"
 
   Site: https://$DOMAIN
 DONE
