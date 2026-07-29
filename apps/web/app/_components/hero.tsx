@@ -1,4 +1,8 @@
-import { RiArrowRightLine, RiSparkling2Line } from "@remixicon/react"
+import {
+  RiArrowRightLine,
+  RiGithubLine,
+  RiSparkling2Line,
+} from "@remixicon/react"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -53,6 +57,15 @@ export function Hero() {
               Browse UI
             </Button>
           </div>
+          <a
+            href="https://github.com/dev-geddy/backflip"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <RiGithubLine className="size-4" aria-hidden="true" />
+            github.com/dev-geddy/backflip
+          </a>
           <p className="mt-7 font-mono text-sm text-muted-foreground">
             <span className="text-primary">$</span> npx create-backflip@latest
           </p>
