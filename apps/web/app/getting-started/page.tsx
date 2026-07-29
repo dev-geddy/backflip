@@ -15,7 +15,13 @@ const GUIDES = [
   {
     href: "/getting-started/setup-on-digitalocean-droplet",
     title: "Setup on a DigitalOcean droplet",
-    body: "Provision a droplet, create the database, fill your env files and ship the first deploy — five steps with copy-ready commands.",
+    body: "Provision a droplet, create the database, fill your env files and ship the first deploy — a six-step wizard with copy-ready commands.",
+  },
+  {
+    href: "/getting-started/setup-on-digitalocean-droplet-docker-flavour",
+    title: "Droplet setup — Docker flavour",
+    body: "Postgres in Docker and Caddy for automatic TLS. Guide in the works while the flow is verified end-to-end.",
+    soon: true,
   },
 ]
 

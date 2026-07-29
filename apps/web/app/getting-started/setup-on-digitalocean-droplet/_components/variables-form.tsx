@@ -1,6 +1,6 @@
 "use client"
 
-import { RiEyeLine, RiEyeOffLine, RiLockLine } from "@remixicon/react"
+import { RiEyeLine, RiEyeOffLine } from "@remixicon/react"
 import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -70,8 +70,9 @@ const OPTIONAL: FieldSpec[] = [
 ]
 
 /**
- * The one shared form for the page. Every command below it reads from this
- * state — nothing is submitted, stored, or fetched.
+ * Step 1 of the wizard, and the one form on the page: every command in the
+ * later steps reads from this state. Nothing is submitted or fetched; the
+ * wizard shell mirrors it into sessionStorage, minus the owner password.
  */
 export function VariablesForm({
   vars,
@@ -103,18 +104,8 @@ export function VariablesForm({
   }
 
   return (
-    <div className="rounded-xl border bg-card">
-      <div className="border-b px-5 py-4">
-        <h2 className="font-heading text-base font-semibold tracking-tight">
-          Your variables
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Fill these in once — every command on this page rewrites itself as you
-          type.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-6 px-5 py-5">
+    <div className="rounded-xl border bg-card px-5 py-5">
+      <div className="flex flex-col gap-6">
         <div className="grid gap-4 sm:grid-cols-2">{CORE.map(renderField)}</div>
 
         <div className="flex flex-col gap-4 border-t pt-5">
@@ -128,7 +119,7 @@ export function VariablesForm({
 
         <div className="flex flex-col gap-4 border-t pt-5">
           <p className="font-mono text-xs tracking-[0.08em] text-muted-foreground uppercase">
-            Owner account — step 5 only
+            Owner account — step 6 only
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
@@ -183,23 +174,11 @@ export function VariablesForm({
               </div>
               <FieldDescription>
                 Pick it yourself. Leave blank for a Google-only owner (no
-                password).
+                password). Not stored — refill it after a reload.
               </FieldDescription>
             </Field>
           </div>
         </div>
-
-        <p className="flex items-start gap-2 rounded-lg bg-muted px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
-          <RiLockLine
-            className="mt-px size-4 flex-none text-primary"
-            aria-hidden="true"
-          />
-          <span>
-            These values stay in this browser tab. The page has no server
-            action, no storage and no network call — the only thing that leaves
-            is a command you copy yourself.
-          </span>
-        </p>
       </div>
     </div>
   )

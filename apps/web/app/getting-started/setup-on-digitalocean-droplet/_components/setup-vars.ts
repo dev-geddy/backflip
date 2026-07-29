@@ -116,6 +116,13 @@ export function firstDeployCommand(r: Resolved) {
   ]
 }
 
+/** Same flags, build done locally — `devops/deploy-for-pm2-build-locally.sh`. */
+export function firstDeployLocalBuildCommand(r: Resolved) {
+  return [
+    `./devops/deploy-for-pm2-build-locally.sh -h ${r.host} -i ${r.sshKey} -d ${r.domain}${r.instance} --env .env.production --env-local .env.production.local`,
+  ]
+}
+
 export function redeployCommand(r: Resolved) {
   return [
     `./devops/deploy-for-pm2.sh -h ${r.host} -i ${r.sshKey} -d ${r.domain}${r.instance}`,
