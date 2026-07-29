@@ -178,8 +178,12 @@ $(printf '%s\n' "$OTHER_BINS" | sed 's/^/       /')
      Harmless while nothing renders next/image; the moment it does, /_next/image
      breaks on the droplet — deploy with ./devops/deploy-for-pm2.sh then."
 fi
-# COPYFILE_DISABLE: keep macOS tar from sprinkling ._ AppleDouble files into the tarball.
-COPYFILE_DISABLE=1 tar -czf "$ART_DIR/artifact.tgz" -C "$ART_ROOT" .
+# COPYFILE_DISABLE: keep macOS tar from sprinkling ._ AppleDouble files into the
+# tarball. --no-xattrs (bsdtar): drop Apple xattr pax headers too — GNU tar on
+# the droplet warns "Ignoring unknown extended header keyword" on each one.
+tar_flags=()
+if tar --version 2>/dev/null | grep -q bsdtar; then tar_flags=(--no-xattrs --no-mac-metadata); fi
+COPYFILE_DISABLE=1 tar "${tar_flags[@]}" -czf "$ART_DIR/artifact.tgz" -C "$ART_ROOT" .
 ok "artifact $(du -h "$ART_DIR/artifact.tgz" | cut -f1 | tr -d ' ')"
 
 # --- upload + extract into the inactive slot (root: owns /var/www/<domain>) ---
