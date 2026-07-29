@@ -36,6 +36,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   trustHost: true,
   pages: { signIn: "/backflip/login" },
+  // Auth.js logs internally-caught errors (e.g. authorize/adapter failures)
+  // with a full stack even when the response itself is a normal 200/redirect.
+  // Compact that to name + message so dev logs stay readable.
+  logger: {
+    error: (error) => console.error(`[auth] ${error.name}: ${error.message}`),
+    warn: (code) => console.warn(`[auth] ${code}`),
+  },
   providers: [
     // Google only when configured; Credentials unless disabled (Google-only mode).
     ...(isGoogleConfigured()
