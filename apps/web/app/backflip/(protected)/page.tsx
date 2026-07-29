@@ -80,7 +80,9 @@ export default async function BackflipOverviewPage() {
   const doneCount = steps.filter((s) => s.done).length
 
   return (
-    <div className="h-full overflow-y-auto bg-card">
+    // Canvas matches the header (bg-background); only cards sit on bg-card,
+    // mirroring the ui-samples look.
+    <div className="h-full overflow-y-auto bg-background">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 p-6 lg:p-8">
         {/* Greeting */}
         <div>
@@ -123,7 +125,7 @@ export default async function BackflipOverviewPage() {
         {/* Info cards */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Setup checklist */}
-          <div className="rounded-xl border p-5">
+          <div className="rounded-xl border bg-card p-5">
             <div className="text-sm font-semibold">Finish setting up</div>
             <div className="mt-0.5 text-xs text-muted-foreground">
               {doneCount} of {steps.length} complete
@@ -168,7 +170,7 @@ export default async function BackflipOverviewPage() {
           </div>
 
           {/* Recent members */}
-          <div className="rounded-xl border p-5">
+          <div className="rounded-xl border bg-card p-5">
             <div className="text-sm font-semibold">Recent members</div>
             <div className="mt-0.5 text-xs text-muted-foreground">
               Newest to join
@@ -221,7 +223,7 @@ function StatCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col rounded-xl border p-5">
+    <div className="flex flex-col rounded-xl border bg-card p-5">
       <SectionLabel>{label}</SectionLabel>
       <div className="mt-2 flex items-baseline gap-1.5">
         <span className="text-2xl font-semibold tabular-nums tracking-tight">
