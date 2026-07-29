@@ -36,9 +36,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Behind a TLS-terminating proxy the edge request itself is plain http, so
+  // getToken would look for the non-secure cookie name while Auth.js (which
+  // trusts AUTH_URL) set `__Secure-authjs.session-token` — every session would
+  // read as null and login would redirect-loop. Derive the secure-cookie hint
+  // from AUTH_URL, not from the request protocol.
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
+    secureCookie: (process.env.AUTH_URL ?? "").startsWith("https://"),
   })
 
   if (!token) {
