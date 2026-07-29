@@ -79,14 +79,13 @@ remote_copy() {
 # excludes keep CI-written keys and env payloads off the droplet, and
 # `.releases` keeps the live release (served by pm2) out of rsync's reach.
 # Note: SSH_KEY paths with spaces aren't supported (rsync splits -e on spaces).
-# When syncing as root, files are chowned to $APP_USER so the app user can
-# install/build in the tree (a non-root SSH_USER is assumed to BE the app user).
+# When syncing as root, files are chowned to $APP_USER after the sync so the
+# app user can install/build in the tree (a non-root SSH_USER is assumed to BE
+# the app user). Post-sync chown, not rsync --chown — macOS rsync lacks it.
 sync_repo() {
   _ssh_ready
-  local chown_flag=()
-  [ "$SSH_USER" = "root" ] && chown_flag=(--chown "$APP_USER:$APP_USER")
   log "syncing $REPO_ROOT → $SSH_USER@$HOST:$REMOTE_DIR"
-  rsync -az --delete "${chown_flag[@]}" \
+  rsync -az --delete \
     --exclude '.git' \
     --exclude 'node_modules' \
     --exclude '.next' \
@@ -101,4 +100,7 @@ sync_repo() {
     --exclude 'env.local.deploy' \
     -e "ssh -i $SSH_KEY -p $SSH_PORT -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
     "$REPO_ROOT/" "$SSH_USER@$HOST:$REMOTE_DIR/"
+  if [ "$SSH_USER" = "root" ]; then
+    remote_run "chown -R $APP_USER:$APP_USER $REMOTE_DIR"
+  fi
 }
