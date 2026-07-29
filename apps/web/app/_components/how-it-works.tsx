@@ -6,6 +6,11 @@ const STEPS = [
     n: "01",
     title: "Clone",
     body: "Pull the foundation and install. Auth, DB, and UI come with it.",
+    cta: {
+      href: "https://github.com/dev-geddy/backflip",
+      label: "View on GitHub",
+      external: true,
+    },
   },
   {
     n: "02",
@@ -47,7 +52,14 @@ export function HowItWorks() {
                   size="sm"
                   variant="outline"
                   className="mt-4 self-start"
-                  render={<a href={s.cta.href} />}
+                  render={
+                    <a
+                      href={s.cta.href}
+                      {...("external" in s.cta && s.cta.external
+                        ? { target: "_blank", rel: "noreferrer" }
+                        : {})}
+                    />
+                  }
                 >
                   {s.cta.label}
                 </Button>
