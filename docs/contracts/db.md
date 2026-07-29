@@ -26,6 +26,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-17` — `ai_config` table (one row per `ai_provider` enum: anthropic|openai|google): `provider` (unique), `model`, `apiKeyEnc` (AES), `baseUrl`, `temperature` (default 0.7), `enabled`, `isDefault`, `updatedAt`. Owned by the `ai` domain.
 - `L2-DB-18` — `email_config` table (single row, `provider` unique default `resend`): `provider`, `apiKeyEnc` (AES), `fromEmail`, `fromName`, `replyTo`, `enabled`, `updatedAt`. Owned by the `email` domain.
 - `L2-DB-20` — `user_token_type` enum (`password_reset` | `email_change`) + `user_token` table: `id`, `userId` (fk → user, cascade), `type`, `tokenHash` (unique — sha256 of raw), `newEmail` (nullable; email_change only), `expiresAt`, `consumedAt` (nullable), `createdAt`. Single-use, time-boxed. Owned by the `auth` domain.
+- `L2-DB-23` — `analytics_config` table (single row, `kind` unique default `google_analytics`): `id`, `kind`, `measurementId` (nullable plaintext — public identifier, not a secret), `cookieBannerEnabled` (default true), `cookieBannerText`, `updatedAt`. Migration `0005` creates; `0006` seeds singleton row with default banner copy (`ON CONFLICT (kind) DO NOTHING`). Owned by the `analytics` domain (`L2-ANALYTICS-01`).
 
 ## Invariants
 - `L2-DB-09` — One schema source: `packages/db/src/schema.ts`. Apps import types/tables from `@workspace/db`, never redeclare.
@@ -38,7 +39,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-13` — `init-owner` without `ADMIN_EMAIL` → throws (define in `.env.init`). `ADMIN_PASSWORD` is optional (omit → Google-only owner).
 
 ## Acceptance
-- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`.
+- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token, analytics_config); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`; `0005`+`0006` add + seed `analytics_config`.
 - `L2-DB-15` — `init-owner` yields a `user` row: email from `.env.init`, role `owner`. `passwordHash` non-null when `ADMIN_PASSWORD` is set, else null (Google-only owner). Re-run updates, no duplicate.
 
 ## Constrained L3
