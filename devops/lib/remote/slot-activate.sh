@@ -42,4 +42,19 @@ echo "--> switching current -> $TARGET"
 ln -sfn "$TARGET" current
 
 echo "--> pm2 restart ($APP_NAME only — other apps untouched)"
+# pm2 never updates an existing app's script path via startOrRestart — a
+# process defined under an old deploy dir would silently keep running the old
+# entrypoint. Recreate when the stored script path differs; plain restart otherwise.
+want_script="$REMOTE_DIR/devops/pm2/start.sh"
+have_script="$(pm2 jlist 2>/dev/null | node -e '
+let raw = ""
+process.stdin.on("data", (d) => (raw += d)).on("end", () => {
+  const app = JSON.parse(raw || "[]").find((a) => a.name === process.env.APP_NAME)
+  process.stdout.write(app ? String(app.pm2_env.pm_exec_path || "") : "")
+})
+')"
+if [ -n "$have_script" ] && [ "$have_script" != "$want_script" ]; then
+  echo "--> pm2 script path changed ($have_script) — recreating $APP_NAME"
+  pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
+fi
 APP_DIR="$REMOTE_DIR" APP_PORT="${APP_PORT:-3070}" pm2 startOrRestart devops/pm2/ecosystem.config.cjs --only "$APP_NAME" && pm2 save

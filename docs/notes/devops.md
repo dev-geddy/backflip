@@ -43,6 +43,7 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 ## Deviations / notes
 - Flavors must not mix on one droplet: nginx and Caddy both bind 80/443.
 - `sudo -u backflip` keeps the invoking cwd (often `/root`) — inaccessible to backflip → node/pm2 spawns die with EACCES. Every `sudo -H -u backflip` invocation must `cd` first (scripts do; remember for ad-hoc ssh commands).
+- pm2 `startOrRestart` never updates an existing app's **script path** — after a deploy-dir move the process kept executing the old entrypoint (hit live on the /opt→/var/www migration: `errored`, MODULE_NOT_FOUND on the old path). Fragments now compare `pm_exec_path` against `$REMOTE_DIR/devops/pm2/start.sh` and `pm2 delete` + start when they differ.
 - Current droplet 137.184.106.241 = pm2 flavor + native Postgres 17, instance `backflip` @ 3070, domain `backflip.dev-geddy.com` (LE cert issued 2026-07-29, auto-renew timer on). Deploy dir `/var/www/backflip.dev-geddy.com` (migrated from `/opt/backflip` 2026-07-29).
 - Base + hardening block intentionally duplicated between the two setup scripts (each stays single-file, runnable in one go); keep them in sync when editing.
 - pm2-flavor CI: wrappers currently call `deploy-for-docker.sh` (pre-split behavior); switch the wrapper line to `deploy-for-pm2.sh` per droplet flavor.
