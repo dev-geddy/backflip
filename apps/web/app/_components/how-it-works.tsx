@@ -1,3 +1,4 @@
+import { Button } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
 
 const STEPS = [
@@ -10,6 +11,7 @@ const STEPS = [
     n: "02",
     title: "Configure",
     body: "Drop in your env keys and pick an AI provider. Set your theme tokens.",
+    cta: { href: "/getting-started", label: "Getting started" },
   },
   {
     n: "03",
@@ -40,6 +42,16 @@ export function HowItWorks() {
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                 {s.body}
               </p>
+              {s.cta ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-4 self-start"
+                  render={<a href={s.cta.href} />}
+                >
+                  {s.cta.label}
+                </Button>
+              ) : null}
             </Card>
           ))}
         </div>
