@@ -79,14 +79,14 @@ export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
 type ModelOption = { id: string; label: string }
 
 /**
- * Live models from the provider's models API (via `listAiModels`), with the
- * static suggestions as fallback while loading / when no key is saved.
+ * Live models from the provider's models API (via `listAiModels`). The static
+ * suggestions only bridge loading/fetch-failure once a key is saved — with no
+ * key there is nothing trustworthy to show, so the list stays empty.
  */
 function useProviderModels(cfg: ProviderConfig) {
-  const fallback: ModelOption[] = MODELS[cfg.provider].map((id) => ({
-    id,
-    label: id,
-  }))
+  const fallback: ModelOption[] = cfg.keyPreview
+    ? MODELS[cfg.provider].map((id) => ({ id, label: id }))
+    : []
   const [models, setModels] = useState<ModelOption[]>(fallback)
   const [live, setLive] = useState(false)
   const [loading, setLoading] = useState(Boolean(cfg.keyPreview))
@@ -122,6 +122,7 @@ function useProviderModels(cfg: ProviderConfig) {
 function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
   const [state, action, pending] = useActionState(saveAiConfig, null)
   const { models, live, loading } = useProviderModels(cfg)
+  const hasKey = Boolean(cfg.keyPreview)
   const letter = cfg.provider.charAt(0).toUpperCase()
 
   return (
@@ -198,10 +199,14 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
               id={`model-${cfg.provider}`}
               name="model"
               defaultValue={cfg.model}
-              disabled={loading}
+              disabled={loading || !hasKey}
             >
               <option value="">
-                {loading ? "Loading models…" : "Select a model…"}
+                {!hasKey
+                  ? "Save an API key to load models…"
+                  : loading
+                    ? "Loading models…"
+                    : "Select a model…"}
               </option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -227,37 +232,40 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
         </div>
       </form>
 
-      {/* Available models */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <SectionLabel>Available models</SectionLabel>
-          <span className="text-[11px] text-muted-foreground">
-            {loading
-              ? "fetching from provider…"
-              : live
-                ? "live from provider API"
-                : "suggestions — save an API key for the live list"}
-          </span>
-        </div>
-        <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
-          {models.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center justify-between gap-3 px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <span className="font-mono text-xs">{m.id}</span>
-                {m.label !== m.id ? (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {m.label}
-                  </span>
-                ) : null}
+      {/* Available models — only once a key is saved; no key means the only
+          list we could show is the stale hardcoded fallback. */}
+      {hasKey ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <SectionLabel>Available models</SectionLabel>
+            <span className="text-[11px] text-muted-foreground">
+              {loading
+                ? "fetching from provider…"
+                : live
+                  ? "live from provider API"
+                  : "suggestions — provider API unreachable"}
+            </span>
+          </div>
+          <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
+            {models.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between gap-3 px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <span className="font-mono text-xs">{m.id}</span>
+                  {m.label !== m.id ? (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {m.label}
+                    </span>
+                  ) : null}
+                </div>
+                {m.id === cfg.model ? <GreenBadge>Default</GreenBadge> : null}
               </div>
-              {m.id === cfg.model ? <GreenBadge>Default</GreenBadge> : null}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   )
 }
