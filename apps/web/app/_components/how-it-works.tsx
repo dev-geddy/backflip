@@ -22,6 +22,7 @@ const STEPS = [
     n: "03",
     title: "Ship",
     body: "Build the features that make your product yours — the plumbing is done.",
+    cta: { href: "/getting-started/start-building", label: "Start building" },
   },
 ]
 
