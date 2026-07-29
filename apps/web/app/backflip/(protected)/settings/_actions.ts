@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache"
 
-import { aiConfig, db, emailConfig, encryptSecret } from "@workspace/db"
-import { ne } from "drizzle-orm"
+import { aiConfig, db, decryptSecret, emailConfig, encryptSecret } from "@workspace/db"
+import { eq, ne } from "drizzle-orm"
 
 import { auth } from "@/app/_lib/auth"
 import { canAccessSettings } from "@/app/_lib/auth/permissions"
+
+import { fetchProviderModels, type ProviderModel } from "./_lib/provider-models"
 
 /**
  * Admin settings actions — AI + Email provider config (upsert, key encryption,
@@ -63,6 +65,52 @@ export async function saveAiConfig(
 
   revalidatePath("/backflip/settings")
   return { ok: true, message: "Saved." }
+}
+
+export type ListModelsState =
+  | { ok: true; models: ProviderModel[] }
+  | { ok: false; message: string }
+
+/**
+ * Live model list for a provider, fetched from its models API using the stored
+ * (decrypted server-side) key. Key never leaves the server; only model ids and
+ * labels are returned. No stored key → ok:false and the UI keeps its fallback
+ * suggestions.
+ *
+ * @spec L2-AI-13
+ */
+export async function listAiModels(provider: string): Promise<ListModelsState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+  if (!PROVIDERS.includes(provider as Provider)) {
+    return { ok: false, message: "Unknown provider" }
+  }
+
+  const row = await db.query.aiConfig.findFirst({
+    where: eq(aiConfig.provider, provider as Provider),
+  })
+  if (!row?.apiKeyEnc) {
+    return { ok: false, message: "No API key saved for this provider yet." }
+  }
+
+  try {
+    const models = await fetchProviderModels(
+      provider as Provider,
+      decryptSecret(row.apiKeyEnc)
+    )
+    if (models.length === 0) {
+      return { ok: false, message: "Provider returned no models." }
+    }
+    return { ok: true, models }
+  } catch {
+    // Don't leak provider error bodies (may echo request details) to the UI.
+    return {
+      ok: false,
+      message: "Could not fetch models — check the API key.",
+    }
+  }
 }
 
 /**

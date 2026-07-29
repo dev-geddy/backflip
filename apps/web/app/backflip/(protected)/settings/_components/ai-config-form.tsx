@@ -20,8 +20,9 @@ export const PACKAGE: Record<ProviderConfig["provider"], string> = {
 }
 
 /**
- * Fallback model suggestions per provider. Used until live models are fetched
- * from the provider API (pending L2-AI approval).
+ * Fallback model suggestions per provider — shown while the live list loads
+ * and when no API key is saved yet. With a saved key, the UI fetches the real
+ * list from the provider's models API (`listAiModels`, L2-AI-13).
  */
 export const MODELS: Record<ProviderConfig["provider"], string[]> = {
   anthropic: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5-20251001"],

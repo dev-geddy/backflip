@@ -9,7 +9,7 @@ import { NativeSelect } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { saveAiConfig } from "../_actions"
+import { listAiModels, saveAiConfig } from "../_actions"
 import { SectionLabel } from "../../_components/page-heading"
 import { LABEL, MODELS, PACKAGE, type ProviderConfig } from "./ai-config-form"
 
@@ -76,8 +76,52 @@ export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
   )
 }
 
+type ModelOption = { id: string; label: string }
+
+/**
+ * Live models from the provider's models API (via `listAiModels`), with the
+ * static suggestions as fallback while loading / when no key is saved.
+ */
+function useProviderModels(cfg: ProviderConfig) {
+  const fallback: ModelOption[] = MODELS[cfg.provider].map((id) => ({
+    id,
+    label: id,
+  }))
+  const [models, setModels] = useState<ModelOption[]>(fallback)
+  const [live, setLive] = useState(false)
+  const [loading, setLoading] = useState(Boolean(cfg.keyPreview))
+
+  useEffect(() => {
+    if (!cfg.keyPreview) return
+    let cancelled = false
+    setLoading(true)
+    listAiModels(cfg.provider)
+      .then((res) => {
+        if (cancelled) return
+        if (res.ok) {
+          setModels(res.models)
+          setLive(true)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg.provider, cfg.keyPreview])
+
+  // Keep the saved model selectable even if the live list doesn't include it.
+  if (cfg.model && !models.some((m) => m.id === cfg.model)) {
+    return { models: [{ id: cfg.model, label: cfg.model }, ...models], live, loading }
+  }
+  return { models, live, loading }
+}
+
 function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
   const [state, action, pending] = useActionState(saveAiConfig, null)
+  const { models, live, loading } = useProviderModels(cfg)
   const letter = cfg.provider.charAt(0).toUpperCase()
 
   return (
@@ -147,11 +191,14 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
               id={`model-${cfg.provider}`}
               name="model"
               defaultValue={cfg.model}
+              disabled={loading}
             >
-              <option value="">Select a model…</option>
-              {MODELS[cfg.provider].map((m) => (
-                <option key={m} value={m}>
-                  {m}
+              <option value="">
+                {loading ? "Loading models…" : "Select a model…"}
+              </option>
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label === m.id ? m.id : `${m.label} — ${m.id}`}
                 </option>
               ))}
             </NativeSelect>
@@ -175,15 +222,31 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
 
       {/* Available models */}
       <div className="flex flex-col gap-3">
-        <SectionLabel>Available models</SectionLabel>
-        <div className="divide-y rounded-lg border">
-          {MODELS[cfg.provider].map((m) => (
+        <div className="flex items-center gap-2">
+          <SectionLabel>Available models</SectionLabel>
+          <span className="text-[11px] text-muted-foreground">
+            {loading
+              ? "fetching from provider…"
+              : live
+                ? "live from provider API"
+                : "suggestions — save an API key for the live list"}
+          </span>
+        </div>
+        <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
+          {models.map((m) => (
             <div
-              key={m}
+              key={m.id}
               className="flex items-center justify-between gap-3 px-3 py-2.5"
             >
-              <span className="font-mono text-xs">{m}</span>
-              {m === cfg.model ? <GreenBadge>Default</GreenBadge> : null}
+              <div className="min-w-0">
+                <span className="font-mono text-xs">{m.id}</span>
+                {m.label !== m.id ? (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {m.label}
+                  </span>
+                ) : null}
+              </div>
+              {m.id === cfg.model ? <GreenBadge>Default</GreenBadge> : null}
             </div>
           ))}
         </div>
