@@ -9,19 +9,22 @@ import {
   decryptSecret,
   emailConfig,
   encryptSecret,
+  speechConfig,
 } from "@workspace/db"
 import { eq, ne } from "drizzle-orm"
 
 import { auth } from "@/app/_lib/auth"
 import { canAccessSettings } from "@/app/_lib/auth/permissions"
 
+import { fetchDeepgramModels, type SpeechModel } from "./_lib/deepgram-models"
 import { fetchProviderModels, type ProviderModel } from "./_lib/provider-models"
 
 /**
- * Admin settings actions — AI + Email + Analytics config (upsert, key
+ * Admin settings actions — AI + Email + Analytics + Speech config (upsert, key
  * encryption, single-default enforcement). All `settings`-gated.
  *
- * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07, L2-ANALYTICS-02
+ * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07,
+ *       L2-ANALYTICS-02, L2-SPEECH-02, L2-SPEECH-04
  */
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
@@ -205,4 +208,70 @@ export async function saveAnalyticsConfig(
 
   revalidatePath("/backflip/settings")
   return { ok: true, message: "Saved." }
+}
+
+/**
+ * Upsert the single Deepgram speech config row. Encrypts the API key when
+ * supplied; blank key field keeps the existing key. Admin-gated.
+ */
+export async function saveSpeechConfig(
+  _prev: SaveState,
+  formData: FormData
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const str = (k: string) => String(formData.get(k) ?? "").trim() || null
+  const set: Record<string, unknown> = {
+    provider: "deepgram",
+    sttModel: str("sttModel"),
+    ttsModel: str("ttsModel"),
+    enabled: formData.get("enabled") != null,
+    updatedAt: new Date(),
+  }
+  const apiKey = String(formData.get("apiKey") ?? "")
+  if (apiKey) set.apiKeyEnc = encryptSecret(apiKey)
+
+  await db
+    .insert(speechConfig)
+    .values(set as typeof speechConfig.$inferInsert)
+    .onConflictDoUpdate({ target: speechConfig.provider, set })
+
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Saved." }
+}
+
+export type ListSpeechModelsState =
+  | { ok: true; models: SpeechModel[] }
+  | { ok: false; message: string }
+
+/**
+ * Live STT + TTS model list from Deepgram, fetched with the stored (decrypted
+ * server-side) key. Key never leaves the server; only model names do.
+ */
+export async function listSpeechModels(): Promise<ListSpeechModelsState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const row = await db.query.speechConfig.findFirst({
+    where: eq(speechConfig.provider, "deepgram"),
+  })
+  if (!row?.apiKeyEnc) {
+    return { ok: false, message: "No API key saved yet." }
+  }
+
+  try {
+    const models = await fetchDeepgramModels(decryptSecret(row.apiKeyEnc))
+    if (models.length === 0) {
+      return { ok: false, message: "Deepgram returned no models." }
+    }
+    return { ok: true, models }
+  } catch {
+    // Don't leak provider error bodies (may echo request details) to the UI.
+    return { ok: false, message: "Could not fetch models — check the API key." }
+  }
 }

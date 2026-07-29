@@ -14,8 +14,9 @@ import {
 import type { EmailConfig } from "./email-config-form"
 import { EmailIntegration } from "./email-integration"
 import { IntegrationsRail } from "./integrations-rail"
+import { SpeechIntegration, type SpeechConfig } from "./speech-integration"
 
-type Selection = "ai" | "email" | "analytics"
+type Selection = "ai" | "email" | "analytics" | "speech"
 
 /** One row in the integrations master list. */
 function ListRow({
@@ -61,17 +62,19 @@ function ListRow({
 
 /**
  * Integrations admin shell (design 2a) — master list of connected services +
- * detail pane + context rail. **Real-data-only:** exactly three integrations
- * exist today (AI providers, Resend email, Google Analytics).
+ * detail pane + context rail. **Real-data-only:** exactly four integrations
+ * exist today (AI providers, Resend email, Google Analytics, Deepgram speech).
  */
 export function IntegrationsView({
   ai,
   email,
   analytics,
+  speech,
 }: {
   ai: ProviderConfig[]
   email: EmailConfig
   analytics: AnalyticsConfig
+  speech: SpeechConfig
 }) {
   const [selection, setSelection] = useState<Selection>("ai")
   const [mobileDetail, setMobileDetail] = useState(false)
@@ -79,6 +82,7 @@ export function IntegrationsView({
   const aiConnected = ai.filter((c) => c.keyPreview).length
   const emailConnected = Boolean(email.keyPreview)
   const analyticsConnected = Boolean(analytics.measurementId)
+  const speechConnected = Boolean(speech.keyPreview)
 
   function select(s: Selection) {
     setSelection(s)
@@ -140,6 +144,18 @@ export function IntegrationsView({
               analyticsConnected ? analytics.measurementId : "Not configured"
             }
           />
+          <ListRow
+            active={selection === "speech"}
+            onClick={() => select("speech")}
+            connected={speechConnected}
+            tile={
+              <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold">
+                Dg
+              </span>
+            }
+            title="Speech"
+            subtitle="Deepgram · speech-to-text & TTS"
+          />
         </div>
       </div>
 
@@ -162,11 +178,13 @@ export function IntegrationsView({
           <AiIntegration providers={ai} />
         ) : selection === "email" ? (
           <EmailIntegration email={email} connected={emailConnected} />
-        ) : (
+        ) : selection === "analytics" ? (
           <AnalyticsIntegration
             analytics={analytics}
             connected={analyticsConnected}
           />
+        ) : (
+          <SpeechIntegration speech={speech} connected={speechConnected} />
         )}
       </div>
 

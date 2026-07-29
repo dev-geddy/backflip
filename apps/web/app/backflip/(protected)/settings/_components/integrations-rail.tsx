@@ -3,7 +3,7 @@ import { SectionLabel } from "../../_components/page-heading"
 type AboutLink = { label: string; href: string }
 
 const ABOUT: Record<
-  "ai" | "email" | "analytics",
+  "ai" | "email" | "analytics" | "speech",
   { title: string; body: string; links: AboutLink[] }
 > = {
   ai: {
@@ -17,6 +17,14 @@ const ABOUT: Record<
     links: [
       { label: "Resend docs", href: "https://resend.com/docs" },
       { label: "Resend dashboard", href: "https://resend.com/api-keys" },
+    ],
+  },
+  speech: {
+    title: "About Deepgram",
+    body: "Speech-to-text and text-to-speech run through Deepgram. Add your API key, then pick default STT and TTS models from the live catalog.",
+    links: [
+      { label: "Deepgram docs", href: "https://developers.deepgram.com/docs" },
+      { label: "Deepgram console", href: "https://console.deepgram.com" },
     ],
   },
   analytics: {
@@ -35,7 +43,7 @@ const ABOUT: Record<
 export function IntegrationsRail({
   selection,
 }: {
-  selection: "ai" | "email" | "analytics"
+  selection: "ai" | "email" | "analytics" | "speech"
 }) {
   const about = ABOUT[selection]
   return (

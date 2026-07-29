@@ -156,6 +156,23 @@ export const emailConfig = pgTable("email_config", {
  * consent before loading; `cookieBannerText` is the operator-editable banner
  * copy (default seeded by migration).
  */
+/**
+ * Speech (Deepgram) config — single row (`provider` unique). API key
+ * AES-256-GCM encrypted (see `crypto.ts`); plaintext never leaves the server.
+ * `sttModel`/`ttsModel` hold Deepgram canonical model names.
+ */
+export const speechConfig = pgTable("speech_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  provider: text("provider").notNull().unique().default("deepgram"),
+  apiKeyEnc: text("apiKeyEnc"),
+  sttModel: text("sttModel"),
+  ttsModel: text("ttsModel"),
+  enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
+
 export const analyticsConfig = pgTable("analytics_config", {
   id: text("id")
     .primaryKey()
