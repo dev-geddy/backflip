@@ -21,20 +21,24 @@ active, the docker compose db otherwise.
 Multi-instance safe: pm2 startOrRestart touches only this instance's app
 (-n name); other apps under the shared pm2 daemon keep running.
 
+Deploy dir: /var/www/<domain> — synced source at the root, immutable releases
+in releases/, live app behind the /var/www/<domain>/current symlink.
+
 Usage:
-  ./devops/deploy-for-pm2.sh -h <host> -i <path-to-ssh-key> [-n <app-name>]
-                             [--app-port <port>] [-u user] [-p port]
+  ./devops/deploy-for-pm2.sh -h <host> -i <path-to-ssh-key> -d <domain>
+                             [-n <app-name>] [--app-port <port>] [-u user] [-p port]
                              [--env <file>] [--env-local <file>] [--skip-migrations]
 
   -h  droplet host or IP        (required)
   -i  ssh private key path      (required)
+  -d  domain of this instance   (required — keys the deploy dir /var/www/<domain>; must match setup -d)
   -n  app/instance name         (default: backflip — must match setup -n)
   --app-port  app loopback port (default: 3070 — must match setup --app-port)
   -u  ssh user                  (default: root)
   -p  ssh port                  (default: 22)
 
-  --env <file>        upload as /opt/<app-name>/.env       (first deploy only)
-  --env-local <file>  upload as /opt/<app-name>/.env.local (first deploy only)
+  --env <file>        upload as /var/www/<domain>/.env       (first deploy only)
+  --env-local <file>  upload as /var/www/<domain>/.env.local (first deploy only)
   --skip-migrations   don't run drizzle migrations
 
 Templates for the env files: devops/env/production.env{,.local}.example
@@ -45,6 +49,7 @@ HOST=""
 SSH_KEY=""
 SSH_USER="root"
 SSH_PORT="22"
+DOMAIN=""
 ENV_FILE=""
 ENV_LOCAL_FILE=""
 SKIP_MIGRATIONS="no"
@@ -53,6 +58,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     -h|--host)         require_arg "$1" "${2:-}"; HOST="$2"; shift 2 ;;
     -i|--identity)     require_arg "$1" "${2:-}"; SSH_KEY="$2"; shift 2 ;;
+    -d|--domain)       require_arg "$1" "${2:-}"; DOMAIN="$2"; shift 2 ;;
     -n|--app-name)     require_arg "$1" "${2:-}"; APP_NAME="$2"; shift 2 ;;
     --app-port)        require_arg "$1" "${2:-}"; APP_PORT="$2"; shift 2 ;;
     -u|--user)         require_arg "$1" "${2:-}"; SSH_USER="$2"; shift 2 ;;
@@ -67,7 +73,8 @@ done
 
 [ -n "$HOST" ] || die_usage "-h <host> is required"
 [ -n "$SSH_KEY" ] || die_usage "-i <path-to-ssh-key> is required"
-REMOTE_DIR="/opt/$APP_NAME"
+[ -n "$DOMAIN" ] || die_usage "-d <domain> is required"
+REMOTE_DIR="/var/www/$DOMAIN"
 
 # --- preflight ---
 require_file "$SSH_KEY" "ssh private key not found"
@@ -149,7 +156,7 @@ REMOTE
 ok "database ready"
 
 # --- install, build, migrate, release (app user: everything pm2/app-side) ---
-# Failure isolation: the live app serves from .releases/current via pm2, and
+# Failure isolation: the live app serves from the current symlink via pm2, and
 # nothing below touches it until the symlink switch. Deps, build and migrations
 # all run against the synced working tree, so any failure up to that point
 # leaves the previous release running untouched.
@@ -185,24 +192,25 @@ fi
 
 echo "--> assembling release"
 # The standalone bundle mirrors the monorepo, so copying it wholesale gives
-# .releases/<ts>/apps/web/server.js + a minimal node_modules at the root.
+# releases/<ts>/apps/web/server.js + a minimal node_modules at the root.
 # Static assets and public/ are not traced into it and must be copied in.
-rel="$REMOTE_DIR/.releases/$(date -u +%Y%m%d%H%M%S)"
+mkdir -p "$REMOTE_DIR/releases"
+rel="$REMOTE_DIR/releases/$(date -u +%Y%m%d%H%M%S)"
 mkdir -p "$rel"
 cp -a apps/web/.next/standalone/. "$rel"/
 mkdir -p "$rel/apps/web/.next"
 cp -a apps/web/.next/static "$rel/apps/web/.next/static"
 if [ -d apps/web/public ]; then cp -a apps/web/public "$rel/apps/web/public"; fi
 
-echo "--> switching current -> $(basename "$rel")"
-ln -sfn "$rel" "$REMOTE_DIR/.releases/current"
+echo "--> switching current -> releases/$(basename "$rel")"
+ln -sfn "$rel" "$REMOTE_DIR/current"
 
 echo "--> pm2 restart ($APP_NAME only — other apps untouched)"
 APP_DIR="$REMOTE_DIR" pm2 startOrRestart devops/pm2/ecosystem.config.cjs --only "$APP_NAME" && pm2 save
 
 echo "--> pruning old releases (keep 3)"
-stale="$(ls -1 "$REMOTE_DIR/.releases" | grep -v '^current$' | sort | head -n -3 || true)"
-for old in $stale; do rm -rf "$REMOTE_DIR/.releases/$old"; done
+stale="$(ls -1 "$REMOTE_DIR/releases" | sort | head -n -3 || true)"
+for old in $stale; do rm -rf "$REMOTE_DIR/releases/$old"; done
 REMOTE
 
 ok "release live"
@@ -262,5 +270,5 @@ $(ok "deploy complete")
   Logs:    ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST "sudo -H -u $APP_USER bash -c 'cd; . \\\$HOME/.nvm/nvm.sh; pm2 logs $APP_NAME'"
   Status:  ssh -i $SSH_KEY -p $SSH_PORT $SSH_USER@$HOST "sudo -H -u $APP_USER bash -c 'cd; . \\\$HOME/.nvm/nvm.sh; pm2 status'; systemctl status nginx --no-pager | head -5"
 
-  Site is on https://<your DOMAIN> once DNS resolves to this droplet.
+  Site: https://$DOMAIN
 DONE

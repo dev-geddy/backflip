@@ -1,6 +1,7 @@
 # @spec L2-DEVOPS-09
 # Required Drone secrets:
 #   deploy_host       - droplet host/IP
+#   deploy_domain     - instance domain (deploy dir /var/www/<domain>)
 #   deploy_ssh_key    - private SSH key, no passphrase
 #   deploy_env        - optional, full contents of .env (first deploy / env changes only)
 #   deploy_env_local  - optional, full contents of .env.local (first deploy / env changes only)
@@ -22,6 +23,8 @@ steps:
     environment:
       DEPLOY_HOST:
         from_secret: deploy_host
+      DEPLOY_DOMAIN:
+        from_secret: deploy_domain
       DEPLOY_SSH_KEY:
         from_secret: deploy_ssh_key
       DEPLOY_ENV:
@@ -36,4 +39,4 @@ steps:
       - ARGS=""
       - if test -n "$DEPLOY_ENV"; then printf '%s' "$DEPLOY_ENV" > env.deploy; ARGS="$ARGS --env env.deploy"; fi
       - if test -n "$DEPLOY_ENV_LOCAL"; then printf '%s' "$DEPLOY_ENV_LOCAL" > env.local.deploy; ARGS="$ARGS --env-local env.local.deploy"; fi
-      - ./devops/deploy-for-docker.sh -h "$DEPLOY_HOST" -i key.pem $ARGS
+      - ./devops/deploy-for-docker.sh -h "$DEPLOY_HOST" -i key.pem -d "$DEPLOY_DOMAIN" $ARGS

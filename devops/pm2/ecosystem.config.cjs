@@ -4,8 +4,12 @@
 // (name/dir/port) from the deploy script's env, so several instances can share
 // one pm2 daemon — startOrRestart only ever touches the named app.
 const name = process.env.APP_NAME || "backflip"
-const dir = process.env.APP_DIR || `/opt/${name}`
+const dir = process.env.APP_DIR
 const port = process.env.APP_PORT || "3070"
+
+if (!dir) {
+  throw new Error("APP_DIR is required (/var/www/<domain> — set by the deploy script)")
+}
 
 module.exports = {
   apps: [

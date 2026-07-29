@@ -1,6 +1,6 @@
 # @spec L2-DEVOPS-05
 # Template for the droplet's native Caddy (/etc/caddy/Caddyfile).
-# deploy.sh replaces __DOMAIN__ with $DOMAIN from /opt/backflip/.env, writes the
+# deploy.sh replaces __DOMAIN__ with $DOMAIN from /var/www/<domain>/.env, writes the
 # result to /etc/caddy/Caddyfile and reloads caddy. Auto-TLS via Let's Encrypt —
 # needs a DNS A record for the domain → droplet IP, ports 80/443 open.
 

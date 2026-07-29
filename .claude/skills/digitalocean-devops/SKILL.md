@@ -43,9 +43,9 @@ Two droplet flavors; matching setup + deploy script pairs.
 - All deploy logic lives in `devops/*.sh`. CI files (`deploy.yml`, `.drone.yml`) are thin wrappers that call a deploy script — never duplicate logic in CI YAML.
 - New CI provider = new thin wrapper script + new short doc in `devops/docs/`, linked from `devops.md`.
 - Docs stay short and actionable.
-- Droplet runtime env = `/opt/backflip/.env` + `.env.local`.
-- Droplet runtime = pm2 process `backflip` serving `/opt/backflip/.releases/current` (Next standalone). Releases pruned to last 3.
-- Compose (db only) is always invoked as `docker compose --project-directory . -f devops/compose.prod.yml`, run from `/opt/backflip`.
+- Droplet runtime env = `/var/www/<domain>/.env` + `.env.local`.
+- Droplet runtime = pm2 process `backflip` serving `/var/www/<domain>/current` (Next standalone). Releases pruned to last 3.
+- Compose (db only) is always invoked as `docker compose --project-directory . -f devops/compose.prod.yml`, run from `/var/www/<domain>`.
 
 ## Before changing anything
 Read `devops.md` + the relevant `devops/docs/*.md` first. Domain contract:

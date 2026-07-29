@@ -18,8 +18,8 @@ Database is provisioned separately — run one of:
   ./devops/setup-droplet-db-native.sh   (Postgres 17 on the host)
   ./devops/setup-droplet-db-docker.sh   (Postgres in Docker)
 
-Multi-instance: re-run with a different -n/-d/--app-port to host another
-instance on the same droplet (own dir /opt/<name>, pm2 app, nginx site, cert).
+Multi-instance: re-run with a different -d/-n/--app-port to host another
+instance on the same droplet (own /var/www/<domain>, pm2 app, nginx site, cert).
 
 Usage:
   ./devops/setup-droplet-for-pm2.sh -h <host> -i <path-to-ssh-key> -d <domain>
@@ -30,7 +30,7 @@ Usage:
   -i  ssh private key path      (required)
   -d  domain for nginx + TLS    (required; A record should point at the droplet)
   -m  email for Let's Encrypt   (recommended: expiry notices)
-  -n  app/instance name         (default: backflip → /opt/backflip, pm2 app + nginx site "backflip")
+  -n  app/instance name         (default: backflip — pm2 app + nginx site name)
   --app-port  app loopback port (default: 3070; must be unique per instance)
   -u  ssh user                  (default: root)
   -p  ssh port                  (default: 22)
@@ -62,7 +62,7 @@ done
 [ -n "$HOST" ] || die_usage "-h <host> is required"
 [ -n "$SSH_KEY" ] || die_usage "-i <path-to-ssh-key> is required"
 [ -n "$DOMAIN" ] || die_usage "-d <domain> is required"
-REMOTE_DIR="/opt/$APP_NAME"
+REMOTE_DIR="/var/www/$DOMAIN"
 
 NVM_VERSION="v0.40.3"
 
@@ -102,7 +102,7 @@ else
 fi
 
 # Dedicated app user: locked (no password, no ssh keys → no remote login),
-# owns /opt/backflip and runs pm2 + the app. Root stays for system work only.
+# owns /var/www/<domain> and runs pm2 + the app. Root stays for system work only.
 if id "$APP_USER" >/dev/null 2>&1; then
   echo "--> user $APP_USER exists, skipping"
 else
@@ -210,7 +210,7 @@ APT
 $SUDO systemctl enable --now unattended-upgrades
 
 echo "--> app dirs $REMOTE_DIR (owned by $APP_USER)"
-$SUDO mkdir -p "$REMOTE_DIR" "$REMOTE_DIR/.releases"
+$SUDO mkdir -p "$REMOTE_DIR" "$REMOTE_DIR/releases"
 $SUDO chown -R "$APP_USER:$APP_USER" "$REMOTE_DIR"
 
 echo "--> versions"
@@ -266,7 +266,7 @@ Next steps:
      AUTH_SECRET, DOMAIN=$DOMAIN and AUTH_URL.
 
   3. First deploy (uploads the env files to $REMOTE_DIR):
-       ./devops/deploy-for-pm2.sh -h $HOST -i $SSH_KEY -n $APP_NAME --app-port $APP_PORT --env .env.production --env-local .env.production.local
+       ./devops/deploy-for-pm2.sh -h $HOST -i $SSH_KEY -d $DOMAIN -n $APP_NAME --app-port $APP_PORT --env .env.production --env-local .env.production.local
 
      Later deploys omit --env/--env-local; droplet env is left untouched.
 

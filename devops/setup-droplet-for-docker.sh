@@ -15,10 +15,11 @@ hardening (ssh key-only, fail2ban, unattended-upgrades), app dirs.
 Pairs with ./devops/deploy-for-docker.sh.
 
 Usage:
-  ./devops/setup-droplet-for-docker.sh -h <host> -i <path-to-ssh-key> [-u user] [-p port]
+  ./devops/setup-droplet-for-docker.sh -h <host> -i <path-to-ssh-key> -d <domain> [-u user] [-p port]
 
   -h  droplet host or IP        (required)
   -i  ssh private key path      (required)
+  -d  domain of this instance   (required — keys the deploy dir /var/www/<domain>)
   -u  ssh user                  (default: root)
   -p  ssh port                  (default: 22)
 USAGE
@@ -28,11 +29,13 @@ HOST=""
 SSH_KEY=""
 SSH_USER="root"
 SSH_PORT="22"
+DOMAIN=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--host)      require_arg "$1" "${2:-}"; HOST="$2"; shift 2 ;;
     -i|--identity)  require_arg "$1" "${2:-}"; SSH_KEY="$2"; shift 2 ;;
+    -d|--domain)    require_arg "$1" "${2:-}"; DOMAIN="$2"; shift 2 ;;
     -u|--user)      require_arg "$1" "${2:-}"; SSH_USER="$2"; shift 2 ;;
     -p|--port)      require_arg "$1" "${2:-}"; SSH_PORT="$2"; shift 2 ;;
     --help)         usage; exit 0 ;;
@@ -42,6 +45,8 @@ done
 
 [ -n "$HOST" ] || die_usage "-h <host> is required"
 [ -n "$SSH_KEY" ] || die_usage "-i <path-to-ssh-key> is required"
+[ -n "$DOMAIN" ] || die_usage "-d <domain> is required"
+REMOTE_DIR="/var/www/$DOMAIN"
 
 # --- preflight ---
 require_file "$SSH_KEY" "ssh private key not found"
@@ -77,7 +82,7 @@ else
 fi
 
 # Dedicated app user: locked (no password, no ssh keys → no remote login),
-# owns /opt/backflip and runs pm2 + the app. Root stays for system work only.
+# owns /var/www/<domain> and runs pm2 + the app. Root stays for system work only.
 if id "$APP_USER" >/dev/null 2>&1; then
   echo "--> user $APP_USER exists, skipping"
 else
@@ -197,7 +202,7 @@ APT
 \$SUDO systemctl enable --now unattended-upgrades
 
 echo "--> app dirs $REMOTE_DIR (owned by $APP_USER)"
-\$SUDO mkdir -p "$REMOTE_DIR" "$REMOTE_DIR/.releases"
+\$SUDO mkdir -p "$REMOTE_DIR" "$REMOTE_DIR/releases"
 \$SUDO chown -R "$APP_USER:$APP_USER" "$REMOTE_DIR"
 
 echo "--> versions"
@@ -222,7 +227,7 @@ Next steps:
      AUTH_SECRET, your DOMAIN and AUTH_URL.
 
   3. First deploy (uploads the env files to $REMOTE_DIR):
-       ./devops/deploy-for-docker.sh -h $HOST -i $SSH_KEY --env .env.production --env-local .env.production.local
+       ./devops/deploy-for-docker.sh -h $HOST -i $SSH_KEY -d $DOMAIN --env .env.production --env-local .env.production.local
 
      Later deploys omit --env/--env-local; droplet env is left untouched.
 

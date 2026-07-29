@@ -1,6 +1,7 @@
 # @spec L2-DEVOPS-08
 # Required secrets (Settings -> Secrets and variables -> Actions):
 #   DEPLOY_HOST       - droplet host/IP
+#   DEPLOY_DOMAIN     - instance domain (deploy dir /var/www/<domain>)
 #   DEPLOY_SSH_KEY    - private SSH key, no passphrase
 #   DEPLOY_ENV        - optional, full contents of .env (first deploy / env changes only)
 #   DEPLOY_ENV_LOCAL  - optional, full contents of .env.local (first deploy / env changes only)
@@ -42,4 +43,4 @@ jobs:
           echo "ARGS=$ARGS" >> "$GITHUB_ENV"
 
       - name: Deploy
-        run: ./devops/deploy-for-docker.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem $ARGS
+        run: ./devops/deploy-for-docker.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem -d "${{ secrets.DEPLOY_DOMAIN }}" $ARGS

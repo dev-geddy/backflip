@@ -23,18 +23,18 @@ Uploads env files too — needed once, or whenever env changes:
 ```
 
 ## What happens
-1. rsyncs the repo to `/opt/backflip` on the droplet
+1. rsyncs the repo to `/var/www/<domain>` on the droplet
 2. `yarn install`
 3. ensures the db is up (pm2 flavor: `pg_isready` for native postgres, compose up + health wait for docker db; docker flavor: compose up + health wait)
 4. `yarn workspace web build` (Next standalone)
 5. runs Drizzle migrations on the host
-6. copies the standalone bundle to a timestamped release dir (`/opt/backflip/.releases/<ts>`), flips the `current` symlink
+6. copies the standalone bundle to a timestamped release dir (`/var/www/<domain>/releases/<ts>`), flips the `current` symlink
 7. `pm2 startOrRestart` the app
 8. proxy: docker flavor renders + reloads Caddy; pm2 flavor leaves nginx alone (setup owns it)
 9. prunes releases, keeping the last 3
 10. health-checks (pm2 online + HTTP on :80)
 
-Install/build/migration failures abort before the symlink flip — the live app keeps serving the previous release from `.releases/current` throughout.
+Install/build/migration failures abort before the symlink flip — the live app keeps serving the previous release from `current` throughout.
 
 ## Skip migrations
 Add `--skip-migrations` to skip step 5 (e.g. deploying an unrelated hotfix):
@@ -45,7 +45,7 @@ Add `--skip-migrations` to skip step 5 (e.g. deploying an unrelated hotfix):
 ## Rollback
 Fast path — repoint the symlink to a previous release, no rebuild:
 ```bash
-ssh -i <ssh-key> root@<host> 'ln -sfn /opt/backflip/.releases/<ts> /opt/backflip/.releases/current && . .nvm/nvm.sh 2>/dev/null; pm2 restart backflip'
+ssh -i <ssh-key> root@<host> 'ln -sfn /var/www/<domain>/releases/<ts> /var/www/<domain>/current && . .nvm/nvm.sh 2>/dev/null; pm2 restart backflip'
 ```
 Clean path — redeploy an older ref (rebuilds and redeploys that version, env files untouched):
 ```bash

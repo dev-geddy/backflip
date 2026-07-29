@@ -6,6 +6,7 @@ Pipeline: `.drone.yml` — a thin wrapper over `devops/deploy-for-docker.sh`. Ru
 | Secret | What | Required? |
 |---|---|---|
 | `deploy_host` | Droplet host/IP | always |
+| `deploy_domain` | Instance domain (deploy dir /var/www/<domain>) | always |
 | `deploy_ssh_key` | Private SSH key, no passphrase | always |
 | `deploy_env` | Full contents of `.env.production` | first deploy / env changes only |
 | `deploy_env_local` | Full contents of `.env.production.local` | first deploy / env changes only |

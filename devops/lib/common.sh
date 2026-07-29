@@ -37,12 +37,13 @@ require_arg() {
 # Paths. REPO_ROOT = two levels up from this file (devops/lib → repo root).
 _COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(cd "$_COMMON_DIR/../.." && pwd)}"
-# Instance identity: several instances can share one droplet, each with its own
-# name → its own dir (/opt/<name>), pm2 process, nginx site and port.
-# Scripts taking -n/--app-name re-derive REMOTE_DIR after parsing flags.
+# Instance identity: several instances can share one droplet. The domain keys
+# the deploy dir (/var/www/<domain> — source at the root, releases/ + `current`
+# symlink); APP_NAME names the pm2 process and nginx site; APP_PORT the loopback
+# port. Scripts taking -d/--domain set REMOTE_DIR after parsing flags.
 APP_NAME="${APP_NAME:-backflip}"
 APP_PORT="${APP_PORT:-3070}"
-REMOTE_DIR="${REMOTE_DIR:-/opt/$APP_NAME}"
+REMOTE_DIR="${REMOTE_DIR:-}"
 # Dedicated app user: pm2 + the app run as this locked, no-ssh user; root does
 # only system work (packages, db, proxy). Created by the setup scripts.
 # Shared by all instances on a droplet (one pm2 daemon supervising all).
@@ -77,20 +78,22 @@ remote_copy() {
 # Excluded paths are also protected from --delete, so the droplet's own .env,
 # .env.local and .env.init survive every sync. The `*.pem` / `env*.deploy`
 # excludes keep CI-written keys and env payloads off the droplet, and
-# `.releases` keeps the live release (served by pm2) out of rsync's reach.
+# anchored /releases + /current keep the live release (served by pm2) out of rsync's reach.
 # Note: SSH_KEY paths with spaces aren't supported (rsync splits -e on spaces).
 # When syncing as root, files are chowned to $APP_USER after the sync so the
 # app user can install/build in the tree (a non-root SSH_USER is assumed to BE
 # the app user). Post-sync chown, not rsync --chown — macOS rsync lacks it.
 sync_repo() {
   _ssh_ready
+  : "${REMOTE_DIR:?REMOTE_DIR not set (script must derive it from the domain)}"
   log "syncing $REPO_ROOT → $SSH_USER@$HOST:$REMOTE_DIR"
   rsync -az --delete \
     --exclude '.git' \
     --exclude 'node_modules' \
     --exclude '.next' \
     --exclude '.turbo' \
-    --exclude '.releases' \
+    --exclude '/releases' \
+    --exclude '/current' \
     --exclude '.env' \
     --exclude '.env.local' \
     --exclude '.env.init' \

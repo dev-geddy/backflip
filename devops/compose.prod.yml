@@ -1,9 +1,9 @@
 # @spec L2-DEVOPS-04
 # Production database — the ONLY dockerized service on the droplet.
 # The app runs on the host via pm2 (Next standalone build); Caddy is a native
-# systemd service. Always run from /opt/backflip as:
+# systemd service. Always run from /var/www/<domain> as:
 #   docker compose --project-directory . -f devops/compose.prod.yml <cmd>
-# `--project-directory .` → compose reads /opt/backflip/.env for ${...} interpolation.
+# `--project-directory .` → compose reads /var/www/<domain>/.env for ${...} interpolation.
 name: backflip
 
 services:

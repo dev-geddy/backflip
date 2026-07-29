@@ -8,6 +8,7 @@ Set under **Settings → Secrets and variables → Actions**.
 | Secret | What | Required? |
 |---|---|---|
 | `DEPLOY_HOST` | Droplet host/IP | always |
+| `DEPLOY_DOMAIN` | Instance domain (deploy dir /var/www/<domain>) | always |
 | `DEPLOY_SSH_KEY` | Private SSH key, no passphrase | always |
 | `DEPLOY_ENV` | Full contents of `.env.production` | first deploy / env changes only |
 | `DEPLOY_ENV_LOCAL` | Full contents of `.env.production.local` | first deploy / env changes only |
