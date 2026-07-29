@@ -41,12 +41,16 @@ export function CommandBlock({
   lines,
   label,
   prompt = true,
+  compact = false,
   className,
 }: {
   lines: string[]
   label?: string
   /** Show the `$` shell prompt gutter. Off for file snippets. */
   prompt?: boolean
+  /** Narrow columns (the step-1 guidance panel): wrap instead of scrolling,
+   * icon-only copy button. */
+  compact?: boolean
   className?: string
 }) {
   const [copied, setCopied] = useState(false)
@@ -76,11 +80,24 @@ export function CommandBlock({
           {label}
         </div>
       ) : null}
-      <div className="flex items-start gap-2 p-3">
-        <pre className="min-w-0 flex-1 overflow-x-auto py-0.5 font-mono text-[0.8125rem] leading-relaxed">
+      <div
+        className={cn("flex items-start gap-2 p-3", compact && "gap-1.5 p-2")}
+      >
+        <pre
+          className={cn(
+            "min-w-0 flex-1 py-0.5 font-mono text-[0.8125rem] leading-relaxed",
+            compact ? "whitespace-pre-wrap" : "overflow-x-auto"
+          )}
+        >
           <code>
             {lines.map((line, i) => (
-              <span key={i} className="block whitespace-pre">
+              <span
+                key={i}
+                className={cn(
+                  "block",
+                  compact ? "break-all whitespace-pre-wrap" : "whitespace-pre"
+                )}
+              >
                 {prompt ? (
                   <span
                     aria-hidden="true"
@@ -96,7 +113,7 @@ export function CommandBlock({
         </pre>
         <Button
           variant="outline"
-          size="sm"
+          size={compact ? "icon-sm" : "sm"}
           onClick={copy}
           aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
           className="flex-none"
@@ -106,7 +123,7 @@ export function CommandBlock({
           ) : (
             <RiFileCopyLine aria-hidden="true" />
           )}
-          {copied ? "Copied" : "Copy"}
+          {compact ? null : copied ? "Copied" : "Copy"}
         </Button>
       </div>
     </div>

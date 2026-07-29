@@ -1,9 +1,14 @@
 "use client"
 
-import { RiEyeLine, RiEyeOffLine } from "@remixicon/react"
+import { RiArrowRightSLine, RiEyeLine, RiEyeOffLine } from "@remixicon/react"
 import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 import {
   Field,
   FieldDescription,
@@ -11,6 +16,7 @@ import {
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 
+import { FieldGuidance } from "./field-guidance"
 import {
   DEFAULT_APP_NAME,
   DEFAULT_APP_PORT,
@@ -21,58 +27,60 @@ type FieldSpec = {
   key: keyof SetupVars
   label: string
   placeholder: string
-  hint: string
   type?: "text" | "email"
-  wide?: boolean
 }
 
 const CORE: FieldSpec[] = [
-  {
-    key: "host",
-    label: "Droplet host or IP",
-    placeholder: "203.0.113.10",
-    hint: "The droplet's public IPv4 — DigitalOcean dashboard → Droplets → your droplet.",
-  },
+  { key: "host", label: "Droplet host or IP", placeholder: "203.0.113.10" },
   {
     key: "sshKey",
     label: "SSH private key path",
     placeholder: "~/.ssh/id_ed25519",
-    hint: "Local private key with root access, chosen when the droplet was created. Needs mode 600.",
   },
-  {
-    key: "domain",
-    label: "Domain",
-    placeholder: "app.example.com",
-    hint: "Its DNS A record must already point at the droplet IP — Let's Encrypt verifies over HTTP.",
-  },
+  { key: "domain", label: "Domain", placeholder: "app.example.com" },
   {
     key: "certbotEmail",
-    label: "Let's Encrypt email",
+    label: "Let’s Encrypt email",
     placeholder: "ops@example.com",
-    hint: "Where certificate expiry notices go. Omit the -m flag to register without one.",
     type: "email",
   },
 ]
 
 const OPTIONAL: FieldSpec[] = [
-  {
-    key: "appName",
-    label: "App name",
-    placeholder: DEFAULT_APP_NAME,
-    hint: `Instance name — pm2 process + nginx site. Leave blank for ${DEFAULT_APP_NAME}.`,
-  },
-  {
-    key: "appPort",
-    label: "App port",
-    placeholder: DEFAULT_APP_PORT,
-    hint: `Loopback port nginx proxies to. Leave blank for ${DEFAULT_APP_PORT}; unique per instance.`,
-  },
+  { key: "appName", label: "App name", placeholder: DEFAULT_APP_NAME },
+  { key: "appPort", label: "App port", placeholder: DEFAULT_APP_PORT },
 ]
+
+/** A value the operator has set to something other than the script default. */
+function overridden(value: string, fallback: string) {
+  const trimmed = value.trim()
+  return trimmed !== "" && trimmed !== fallback
+}
+
+function hasInstanceOverride(vars: SetupVars) {
+  return (
+    overridden(vars.appName, DEFAULT_APP_NAME) ||
+    overridden(vars.appPort, DEFAULT_APP_PORT)
+  )
+}
+
+/** Uppercase micro-label heading a field group. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-mono text-xs tracking-[0.08em] text-muted-foreground uppercase">
+      {children}
+    </span>
+  )
+}
 
 /**
  * Step 1 of the wizard, and the one form on the page: every command in the
  * later steps reads from this state. Nothing is submitted or fetched; the
  * wizard shell mirrors it into sessionStorage, minus the owner password.
+ *
+ * Layout is form-left / guidance-right (stacked below `lg`): per-field help
+ * lives in the sidebar, keyed off the focused field, so the form itself stays a
+ * single uncluttered column.
  */
 export function VariablesForm({
   vars,
@@ -82,11 +90,18 @@ export function VariablesForm({
   onChange: (key: keyof SetupVars, value: string) => void
 }) {
   const [revealPassword, setRevealPassword] = useState(false)
+  const [focused, setFocused] = useState<keyof SetupVars | null>(null)
+  // `null` = untouched, follow the values: collapsed by default, but already
+  // open when a non-default instance name/port is present. Restored values
+  // arrive after mount (the shell reads sessionStorage in an effect), so this
+  // has to be derived rather than an initial state. Any manual toggle wins.
+  const [optionalToggled, setOptionalToggled] = useState<boolean | null>(null)
+  const optionalOpen = optionalToggled ?? hasInstanceOverride(vars)
 
   function renderField(spec: FieldSpec) {
     const id = `var-${spec.key}`
     return (
-      <Field key={spec.key} className={spec.wide ? "sm:col-span-2" : undefined}>
+      <Field key={spec.key}>
         <FieldLabel htmlFor={id}>{spec.label}</FieldLabel>
         <Input
           id={id}
@@ -96,32 +111,38 @@ export function VariablesForm({
           spellCheck={false}
           value={vars[spec.key]}
           placeholder={spec.placeholder}
+          onFocus={() => setFocused(spec.key)}
           onChange={(event) => onChange(spec.key, event.target.value)}
         />
-        <FieldDescription>{spec.hint}</FieldDescription>
       </Field>
     )
   }
 
   return (
-    <div className="rounded-xl border bg-card px-5 py-5">
-      <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2">{CORE.map(renderField)}</div>
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+      <div className="w-full max-w-[26rem] min-w-0 flex-1 rounded-xl border bg-card px-5 py-5">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">{CORE.map(renderField)}</div>
 
-        <div className="flex flex-col gap-4 border-t pt-5">
-          <p className="font-mono text-xs tracking-[0.08em] text-muted-foreground uppercase">
-            Optional — multi-instance droplets
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {OPTIONAL.map(renderField)}
-          </div>
-        </div>
+          <Collapsible
+            open={optionalOpen}
+            onOpenChange={(open) => setOptionalToggled(open)}
+            className="flex flex-col gap-4 border-t pt-5"
+          >
+            <CollapsibleTrigger className="group flex w-full items-center gap-1.5 text-left">
+              <RiArrowRightSLine
+                className="size-4 flex-none text-muted-foreground transition-transform group-data-[panel-open]:rotate-90"
+                aria-hidden="true"
+              />
+              <GroupLabel>Optional — multi-instance droplets</GroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="flex flex-col gap-4">
+              {OPTIONAL.map(renderField)}
+            </CollapsibleContent>
+          </Collapsible>
 
-        <div className="flex flex-col gap-4 border-t pt-5">
-          <p className="font-mono text-xs tracking-[0.08em] text-muted-foreground uppercase">
-            Owner account — step 6 only
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-4 border-t pt-5">
+            <GroupLabel>Owner account — step 6 only</GroupLabel>
             <Field>
               <FieldLabel htmlFor="var-adminEmail">Owner email</FieldLabel>
               <Input
@@ -132,11 +153,9 @@ export function VariablesForm({
                 spellCheck={false}
                 value={vars.adminEmail}
                 placeholder="you@example.com"
+                onFocus={() => setFocused("adminEmail")}
                 onChange={(event) => onChange("adminEmail", event.target.value)}
               />
-              <FieldDescription>
-                The first admin. Signs in at the admin console after seeding.
-              </FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="var-adminPassword">
@@ -151,6 +170,7 @@ export function VariablesForm({
                   spellCheck={false}
                   value={vars.adminPassword}
                   placeholder="a long random passphrase"
+                  onFocus={() => setFocused("adminPassword")}
                   onChange={(event) =>
                     onChange("adminPassword", event.target.value)
                   }
@@ -173,12 +193,15 @@ export function VariablesForm({
                 </Button>
               </div>
               <FieldDescription>
-                Pick it yourself. Leave blank for a Google-only owner (no
-                password). Not stored — refill it after a reload.
+                Not stored — refill after a reload.
               </FieldDescription>
             </Field>
           </div>
         </div>
+      </div>
+
+      <div className="w-full max-w-[26rem] min-w-0 lg:w-80 lg:max-w-none lg:flex-none">
+        <FieldGuidance field={focused} vars={vars} />
       </div>
     </div>
   )
