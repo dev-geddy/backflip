@@ -19,7 +19,10 @@ Two droplet flavors; matching setup + deploy script pairs.
 - `devops/setup-droplet-for-docker.sh` — provision, docker flavor: apt Node 24, pm2, native Caddy, Docker for db.
 - `devops/setup-droplet-db-native.sh` — db for pm2 flavor: native Postgres 17 (PGDG), loopback, creates role+db, prints `DATABASE_URL`.
 - `devops/setup-droplet-db-docker.sh` — db alternative: Docker engine only; db container starts on first deploy.
-- `devops/deploy-for-pm2.sh` / `devops/deploy-for-docker.sh` — deploy/redeploy entrypoints (same flags).
+- `devops/deploy-for-pm2.sh` / `devops/deploy-for-docker.sh` — deploy/redeploy entrypoints (same flags). Blue/green: release lands in the inactive slot (`blue/`|`green/` under `/var/www/<domain>`), `current` symlink flips only after assembly — failures leave the live slot serving. `shared/` = persistent instance data, never touched by deploys.
+- `devops/deploy-for-pm2-build-locally.sh` — fast deploy: builds on the operator machine, ships a tar artifact, extracts to the inactive slot, migrations via SSH tunnel (db loopback-only). Same flags. Falls back to deploy-for-pm2.sh if native binaries detected in artifact.
+- `devops/rollback-for-pm2.sh -h -i -d [-n --app-port]` — flip `current` to the previous slot + pm2 restart (code only, no migration revert; refuses on empty slot).
+- Scripts are thin orchestrators over `devops/lib/remote/*.sh` fragments (standalone bash, piped via `remote_script`); shared base/hardening/node/db/health fragments.
 - `devops/lib/common.sh` — shared helpers sourced by all scripts.
 - `devops/compose.prod.yml` — db-only compose (Postgres, loopback `127.0.0.1:5432`).
 - `devops/pm2/start.sh`, `devops/pm2/ecosystem.config.cjs` — pm2 entry/config for the app process (`backflip`).

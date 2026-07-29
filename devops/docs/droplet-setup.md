@@ -21,7 +21,7 @@ The docker flavor already includes Docker; its db comes up on first deploy.
 - Install fail2ban (sshd jail: 5 retries → 1h ban) and enable unattended security upgrades
 - Configure `ufw`: allow SSH, 80, 443; deny everything else
 - Install pm2 with a systemd startup unit
-- Create `/var/www/<domain>` and `/var/www/<domain>/releases` (deploy target)
+- Create `/var/www/<domain>` and `/var/www/<domain>/shared` (persistent instance data — future admin file uploads; deploys never touch it). Release slots `blue/`/`green/` are created by the first deploys
 
 ## Run it — pm2 flavor (nginx + Let's Encrypt)
 Domain is a required parameter; point its A record at the droplet first for
