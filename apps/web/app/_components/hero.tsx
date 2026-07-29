@@ -66,9 +66,6 @@ export function Hero() {
             <RiGithubLine className="size-4" aria-hidden="true" />
             github.com/dev-geddy/backflip
           </a>
-          <p className="mt-7 font-mono text-sm text-muted-foreground">
-            <span className="text-primary">$</span> npx create-backflip@latest
-          </p>
         </div>
       </div>
     </section>
