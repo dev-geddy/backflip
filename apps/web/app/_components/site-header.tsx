@@ -70,9 +70,9 @@ export function SiteHeader() {
             variant="ghost"
             size="sm"
             className="text-muted-foreground"
-            render={<a href="/ui-samples" />}
+            render={<a href="/getting-started" />}
           >
-            UI Samples
+            Getting started
           </Button>
           <ThemeToggle />
           <Button size="sm" render={<a href="/backflip" />}>

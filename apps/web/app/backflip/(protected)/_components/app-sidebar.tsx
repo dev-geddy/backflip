@@ -47,6 +47,12 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
         icon: RiDashboardLine,
         capability: "dashboard",
       },
+      {
+        title: "UI samples",
+        url: "/backflip/ui-samples",
+        icon: RiShapesLine,
+        capability: "dashboard",
+      },
     ],
   },
   {

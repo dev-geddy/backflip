@@ -15,7 +15,7 @@ Shared design system: `packages/ui` component library, theme, and the `/ui-sampl
 - `L2-UI-03` — `@workspace/ui/globals.css` — theme tokens (CSS vars), imported once in root layout.
 - `L2-UI-04` — Root layout providers: `ThemeProvider` (next-themes), `TooltipProvider`, `Toaster` (sonner). (`apps/web/app/layout.tsx`)
 - `L2-UI-05` — Route `/ui-samples` — renders every component; `d` toggles dark mode. (`apps/web/app/ui-samples/page.tsx`)
-- `L2-UI-18` — Route `/getting-started/setup-on-digitalocean-droplet` — public guided deploy walkthrough. Client-only: operator variables live in component state, never persisted or transmitted, rendered into copyable `devops/` commands. Mirrors `L2-DEVOPS-01`, `L2-DEVOPS-02`, `L2-DEVOPS-06`; command strings must track those. (`apps/web/app/getting-started/…`)
+- `L2-UI-18` — Routes `/getting-started` (guide index) + `/getting-started/setup-on-digitalocean-droplet` (guided deploy walkthrough) — public. Client-only: operator variables live in component state, never persisted or transmitted, rendered into copyable `devops/` commands. Mirrors `L2-DEVOPS-01`, `L2-DEVOPS-02`, `L2-DEVOPS-06`; command strings must track those. (`apps/web/app/getting-started/…`)
 
 ## Schemas
 - `L2-UI-06` — shadcn config (`packages/ui/components.json`): style `base-mira`, baseColor `neutral`, RSC on, icons `remixicon`, css vars on.

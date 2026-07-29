@@ -29,8 +29,8 @@ export function SiteFooter() {
           aria-label="Footer"
           className="flex flex-wrap gap-5 text-sm text-muted-foreground"
         >
-          <a href="/ui-samples" className="hover:text-foreground">
-            UI Samples
+          <a href="/getting-started" className="hover:text-foreground">
+            Getting started
           </a>
           <a href="/backflip" className="hover:text-foreground">
             Admin

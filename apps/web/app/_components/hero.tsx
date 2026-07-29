@@ -52,9 +52,9 @@ export function Hero() {
             <Button
               variant="outline"
               size="lg"
-              render={<a href="/ui-samples" />}
+              render={<a href="/getting-started" />}
             >
-              Browse UI
+              Getting started
             </Button>
           </div>
           <a
