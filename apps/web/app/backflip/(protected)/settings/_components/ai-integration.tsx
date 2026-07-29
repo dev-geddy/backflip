@@ -170,11 +170,18 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
         <div className="flex max-w-md flex-col gap-4">
           <Field>
             <FieldLabel htmlFor={`key-${cfg.provider}`}>API key</FieldLabel>
+            {/* type="text" + CSS masking, NOT type="password": a password input
+                makes Chrome treat the form as a login form and prefill saved
+                admin credentials into it. */}
             <Input
               id={`key-${cfg.provider}`}
               name="apiKey"
-              type="password"
+              type="text"
               autoComplete="off"
+              spellCheck={false}
+              data-1p-ignore
+              data-lpignore="true"
+              className="[-webkit-text-security:disc]"
               placeholder={
                 cfg.keyPreview
                   ? `${cfg.keyPreview} — leave blank to keep`

@@ -73,11 +73,18 @@ export function EmailIntegration({
         <div className="flex max-w-xl flex-col gap-4">
           <Field>
             <FieldLabel htmlFor="resend-key">API key</FieldLabel>
+            {/* type="text" + CSS masking, NOT type="password": a password input
+                makes Chrome treat the form as a login form and prefill saved
+                admin credentials into it. */}
             <Input
               id="resend-key"
               name="apiKey"
-              type="password"
+              type="text"
               autoComplete="off"
+              spellCheck={false}
+              data-1p-ignore
+              data-lpignore="true"
+              className="[-webkit-text-security:disc]"
               placeholder={
                 email.keyPreview
                   ? `${email.keyPreview} — leave blank to keep`
