@@ -98,6 +98,18 @@ if ! remote_run "test -f $REMOTE_DIR/.env && test -f $REMOTE_DIR/.env.local"; th
 fi
 ok "droplet env present"
 
+# --- preflight typecheck (local, multi-core) ---
+# The droplet build skips the TypeScript pass (NEXT_SKIP_TYPECHECK=1) — it costs
+# ~60s on a 1-vCPU droplet. Check here instead, where it's fast. Skipped when
+# deps aren't installed (e.g. thin CI wrappers) — CI should typecheck separately.
+if [ -d "$REPO_ROOT/node_modules" ]; then
+  log "typecheck (local)"
+  (cd "$REPO_ROOT" && corepack yarn workspace web typecheck) || die "typecheck failed — fix before deploying"
+  ok "typecheck clean"
+else
+  warn "node_modules missing locally — skipping preflight typecheck (droplet build skips it too)"
+fi
+
 # --- sync ---
 sync_repo
 
@@ -159,7 +171,8 @@ corepack yarn install --immutable
 echo "--> build app"
 # Build before migrating: a build failure aborts before the schema moves, and
 # the old-app-on-new-schema window stays as short as possible.
-corepack yarn workspace web build
+# NEXT_SKIP_TYPECHECK: types already checked in the deploy preflight (local).
+NEXT_SKIP_TYPECHECK=1 corepack yarn workspace web build
 
 if [ "$SKIP_MIGRATIONS" = "yes" ]; then
   echo "--> skipping migrations"

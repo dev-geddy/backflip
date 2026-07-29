@@ -14,6 +14,18 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(import.meta.dirname, "../.."),
   },
+  experimental: {
+    // Persistent Turbopack cache in .next/cache — the droplet keeps .next
+    // between deploys (rsync-protected), so warm rebuilds skip most compilation.
+    turbopackFileSystemCacheForDev: true,
+    turbopackFileSystemCacheForBuild: true,
+  },
+  typescript: {
+    // Droplet builds run on 1 vCPU; the type check adds ~60s there and the same
+    // code is typechecked in dev/CI. Deploy scripts set NEXT_SKIP_TYPECHECK=1;
+    // local/CI builds still check.
+    ignoreBuildErrors: process.env.NEXT_SKIP_TYPECHECK === "1",
+  },
 }
 
 export default nextConfig

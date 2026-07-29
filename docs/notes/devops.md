@@ -29,7 +29,8 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 - Releases are immutable copies under `.releases/<ts>`; `current` symlink flip is the go-live moment. Everything before the flip (install/build/migrate) cannot affect the serving release; last 3 kept → fast rollback = repoint symlink + `pm2 restart backflip`.
 - Migrations on host: root `db:migrate` → drizzle-kit; `packages/db/src/load-env.ts` reads `/opt/backflip/.env` (repo root = `/opt/backflip`) → loopback `DATABASE_URL`.
 - Owner seed (one-off): scp `.env.init` → `/opt/backflip/.env.init`, `corepack yarn init-owner` on host, rm. No container gymnastics anymore.
-- Build happens in the synced source tree; `.next` survives rsync (excluded+protected) → warm build cache between deploys.
+- Build happens in the synced source tree; `.next` survives rsync (excluded+protected) → warm build cache between deploys. Turbopack persistent fs cache enabled (`experimental.turbopackFileSystemCacheForBuild`, lives in `.next/cache`) — first droplet build after enabling is cold, later ones skip most compilation.
+- Droplet build skips the TypeScript pass (`NEXT_SKIP_TYPECHECK=1` → `typescript.ignoreBuildErrors`; ~60s saved on 1 vCPU). Deploy scripts run `yarn workspace web typecheck` locally as preflight (guarded on `node_modules` presence — thin CI wrappers skip it; CI should typecheck separately).
 - CI = thin wrappers only; deploy logic exists once in `deploy.sh` (`L2-DEVOPS-03`).
 
 ## Deviations / notes
