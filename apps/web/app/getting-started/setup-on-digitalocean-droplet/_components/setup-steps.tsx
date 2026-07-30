@@ -225,6 +225,7 @@ export function StepBody({
         </Note>
         <div>
           <Button
+            size="lg"
             render={
               <a
                 href="https://m.do.co/c/773b078c800a"
@@ -237,11 +238,11 @@ export function StepBody({
             <RiExternalLinkLine aria-hidden="true" />
           </Button>
         </div>
-        <Note>
+        <p className="text-xs leading-relaxed text-muted-foreground">
           Referral link — new DigitalOcean accounts get free starting credit,
           and it supports this project. Already have a droplet? Skip straight to
           the next step.
-        </Note>
+        </p>
       </div>
     )
   }
