@@ -2,6 +2,7 @@
 
 import {
   RiDownloadLine,
+  RiExternalLinkLine,
   RiInformationLine,
   RiTerminalBoxLine,
 } from "@remixicon/react"
@@ -98,6 +99,12 @@ export type StepMeta = {
 /** The wizard's running order. Index = step number - 1. */
 export const STEPS: StepMeta[] = [
   {
+    id: "get-droplet",
+    title: "Get a droplet",
+    short: "Get droplet",
+    lead: "You need a fresh Ubuntu droplet to deploy to. Create one on DigitalOcean, note its IP, and come back — everything else happens from your machine.",
+  },
+  {
     id: "variables",
     title: "Your variables",
     short: "Variables",
@@ -158,9 +165,55 @@ export function StepBody({
 }) {
   const r = resolve(vars)
 
-  if (index === 0) return <VariablesForm vars={vars} onChange={onChange} />
+  if (index === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="max-w-xl divide-y overflow-hidden rounded-lg border bg-card">
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">Image</span> — Ubuntu
+            LTS (24.04 or newer), plain image, no marketplace app.
+          </div>
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">Size</span> — 2 GB
+            RAM is comfortable; 1 GB works too, provisioning adds 2 GB of swap.
+          </div>
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">Authentication</span>{" "}
+            — choose SSH key and add your <em>public</em> key during creation
+            (the next step&apos;s sidebar shows how to generate one).
+          </div>
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">After creation</span>{" "}
+            — copy the droplet&apos;s public IP; it&apos;s the first variable in
+            the next step.
+          </div>
+        </div>
+        <div>
+          <Button
+            render={
+              <a
+                href="https://m.do.co/c/773b078c800a"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            Create a droplet on DigitalOcean
+            <RiExternalLinkLine aria-hidden="true" />
+          </Button>
+        </div>
+        <Note>
+          Referral link — new DigitalOcean accounts get free starting credit,
+          and it supports this project. Already have a droplet? Skip straight to
+          the next step.
+        </Note>
+      </div>
+    )
+  }
 
-  if (index === 1) {
+  if (index === 1) return <VariablesForm vars={vars} onChange={onChange} />
+
+  if (index === 2) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -176,7 +229,7 @@ export function StepBody({
     )
   }
 
-  if (index === 2) {
+  if (index === 3) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -193,7 +246,7 @@ export function StepBody({
     )
   }
 
-  if (index === 3) {
+  if (index === 4) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -283,7 +336,7 @@ export function StepBody({
     )
   }
 
-  if (index === 4) {
+  if (index === 5) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -325,7 +378,7 @@ export function StepBody({
     )
   }
 
-  if (index === 5) {
+  if (index === 6) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -339,7 +392,7 @@ export function StepBody({
         </Note>
         <Note>
           Done. Sign in at <Mono>{r.appUrl}/backflip</Mono> with the owner email
-          and password from step 1. Leave the password blank for a Google-only
+          and password from step 2. Leave the password blank for a Google-only
           owner.
         </Note>
       </div>

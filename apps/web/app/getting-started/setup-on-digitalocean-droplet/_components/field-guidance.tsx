@@ -142,7 +142,7 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
         title: "Owner email",
         body: [
           <>
-            The first admin account, seeded in step 6. It signs in at{" "}
+            The first admin account, seeded in step 7. It signs in at{" "}
             <Mono>{appUrl}/backflip</Mono>.
           </>,
           "Use an address you can receive mail at — verification and password resets go there.",
@@ -153,7 +153,7 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
         title: "Owner password",
         body: [
           "You choose this one; nothing hands it to you. It becomes the owner’s sign-in password on the admin console.",
-          "Leave it blank for a Google-only owner. This page never stores it — it stays in memory and is gone after a reload, so refill it before running step 6.",
+          "Leave it blank for a Google-only owner. This page never stores it — it stays in memory and is gone after a reload, so refill it before running step 7.",
         ],
       }
   }
