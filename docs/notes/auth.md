@@ -61,6 +61,14 @@
 - **Edge/node split**: proxy stays edge-safe (`getToken`, no db). Full auth (adapter + bcrypt + pg) is node-only, used by the route handler.
 - `packages/typescript-config/nextjs.json` sets `declaration:false` — fixes next-auth v5 TS2742 ("inferred type cannot be named") under `noEmit`.
 
+## Unit tests (vitest, `corepack yarn workspace web test`)
+Colocated next to the sources they protect. They exist to freeze the security invariants, not for coverage.
+- `app/_lib/auth/permissions.test.ts` — capability matrix per role (`L2-AUTH-21`).
+- `app/_lib/auth/config.test.ts` — auth-mode flags via `vi.stubEnv`: both Google vars required; `AUTH_CREDENTIALS_ENABLED=false` honored only with Google configured; a sweep asserts ≥1 sign-in method always remains (`L2-AUTH-33/34`).
+- `app/_lib/auth/auth-callbacks.test.ts` — the real Auth.js config object, captured by mocking `next-auth`'s default export (`NextAuth(config)`), with `@workspace/db` swapped for a stub `db.query.users.findFirst` and `@auth/drizzle-adapter` stubbed out. Covers provider composition per auth mode (`L2-AUTH-05/33/34`), `signIn` Google pre-registration incl. profile-email fallback and credentials pass-through (`L2-AUTH-10/11/14`), credentials `authorize` with a real bcrypt hash — wrong password / plaintext hash / no hash / unknown email / blank input all → `null` (`L2-AUTH-09`), and the revocation path: `jwt` stamps then revalidates `tokenVersion` (mismatch or missing user → `invalid`), `session` drops `user` (`L2-AUTH-36`). Note: `Credentials()` keeps the user-supplied `authorize` under `provider.options` until Auth.js init merges it — the test reads it there.
+- `app/_lib/auth/tokens.test.ts` — recording stub for the Drizzle query builder (`insert/update/select` chains), real `generateToken`/`hashToken` via `importActual`. Locks: invalidate-then-insert order, 60-min TTL, hash-only storage (raw token absent from the insert), lookup by hash not raw, single-use consume + rejection of wrong-type/consumed/expired/empty, `RATE_LIMIT = {3, 15min}` and the count cutoff (`L2-AUTH-29/31/37`).
+- Not unit-testable without a real DB (left to e2e): actual SQL semantics of the invalidation/rate-limit `WHERE` clauses, `user_token` uniqueness, and adapter account linking.
+
 ## State
 - Credentials login verified end-to-end earlier (seeded owner → session `role: owner` → protected 200).
 - Login UI (`login-03`) + dashboard shell (`sidebar-08`) built; typecheck + lint clean; login page renders.

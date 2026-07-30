@@ -9,7 +9,9 @@
     "start": "next start -p 3070",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test --tsconfig ./e2e/tsconfig.json"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -28,6 +30,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",
@@ -37,6 +40,7 @@
     "@workspace/typescript-config": "*",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
