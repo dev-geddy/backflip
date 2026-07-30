@@ -68,9 +68,10 @@ export function MembersView({
 
   return (
     <div className="flex h-full min-h-0 bg-card">
+      {/* List — on the header canvas, not the card */}
       <div
         className={cn(
-          "min-h-0 w-full flex-col overflow-hidden lg:flex lg:w-[372px] lg:flex-none lg:border-r",
+          "min-h-0 w-full flex-col overflow-hidden bg-background lg:flex lg:w-[372px] lg:flex-none lg:border-r",
           mobileDetail ? "hidden" : "flex"
         )}
       >
@@ -88,9 +89,10 @@ export function MembersView({
         />
       </div>
 
+      {/* Detail — keeps the card surface */}
       <div
         className={cn(
-          "min-h-0 flex-1 flex-col overflow-hidden lg:flex",
+          "min-h-0 flex-1 flex-col overflow-hidden bg-card lg:flex",
           mobileDetail ? "flex" : "hidden"
         )}
       >
