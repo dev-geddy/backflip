@@ -44,7 +44,7 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 
 ## Overview page — design 5A (L2-UI-03)
 `/backflip` rebuilt from generic stat-cards/chart/table to the 5A home. **Real data only.**
-- `page.tsx` (RSC) — greeting (`Welcome back, {firstName}`, real date) + `OverviewJump` + 3 real stat cards (Members total/active/pending, Integrations enabled + health dot, Pending) + 2 info cards: **Finish setting up** (4 real steps derived from name/user-count/ai/email config) + **Recent members** (newest 4 from `users`). Full-bleed, `max-w-[900px]` centered; canvas `bg-background` (matches the header), each card `rounded-xl border bg-card p-5` (was a flat `bg-card` page with borderless-bg cards).
+- `page.tsx` (RSC) — greeting (`Welcome back, {firstName}`, real date) + `OverviewJump` + 3 real stat cards (Members total/active/pending, Integrations enabled + health dot, Pending) + 2 info cards: **Finish setting up** (4 real steps derived from name/user-count/ai/email config) + **Recent members** (newest 4 from `users`). Full-bleed, `max-w-[900px]` centered; canvas `bg-background` (matches the header) layered with the public hero backdrop (same stripe-texture + readability-overlay divs as `hero.tsx`, inside a `relative min-h-full` wrapper so it spans the scroll area), each card `rounded-xl border bg-card p-5` (was a flat `bg-card` page with borderless-bg cards).
 - Removed: `section-cards.tsx`, `dashboard-chart.tsx`, `recent-table.tsx`.
 - `_components/overview-jump.tsx` — large quick-jump field opening the shared command palette.
 
