@@ -58,7 +58,9 @@ export default async function AccountPage() {
   const emailVerified = Boolean(row?.emailVerified)
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-card lg:flex-row">
+    // Canvas matches the header (bg-background); only cards sit on bg-card,
+    // mirroring the ui-samples look.
+    <div className="flex h-full min-h-0 flex-col bg-background lg:flex-row">
       {/* Main */}
       <div className="min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-[680px] min-w-0 flex-col gap-6 p-6 lg:p-8">
@@ -110,8 +112,9 @@ export default async function AccountPage() {
       </div>
 
       {/* Security rail — narrower at lg so the main column keeps room; widens
-          again once there is space. `min-w-0` lets its own content shrink. */}
-      <div className="w-full min-w-0 flex-none overflow-y-auto border-t bg-muted/50 p-6 lg:w-64 lg:border-t-0 lg:border-l xl:w-80">
+          again once there is space. `min-w-0` lets its own content shrink. Same
+          bg-background canvas as the main column; its own cards carry bg-card. */}
+      <div className="w-full min-w-0 flex-none overflow-y-auto border-t bg-background p-6 lg:w-64 lg:border-t-0 lg:border-l xl:w-80">
         <AccountRail emailVerified={emailVerified} loginMethods={loginMethods} />
       </div>
     </div>
