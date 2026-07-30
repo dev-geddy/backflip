@@ -35,14 +35,14 @@ export function Hero() {
             Full-stack foundation
           </Badge>
           <h1 className="mt-5 text-[clamp(2.5rem,6.4vw,4.25rem)] leading-[1.02] font-bold tracking-tight">
-            Clone it. Ship features,
+            Your idea, built by AI.
             <br />
-            not boilerplate.
+            Owned by you.
           </h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-            A batteries-included platform foundation — auth, admin dashboard,
-            Postgres + Drizzle, a shadcn UI system, and AI wiring, ready on day
-            one.
+            A pro-grade foundation with proper development standards built in,
+            so Claude Code can build and maintain your project the right way.
+            You own everything it makes. No coding knowledge required.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" render={<a href="/backflip" />}>
