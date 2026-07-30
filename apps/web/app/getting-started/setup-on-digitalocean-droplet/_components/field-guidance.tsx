@@ -72,17 +72,9 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
           <div className="flex flex-col gap-2">
             <CommandBlock lines={[chmodLine(vars.sshKey)]} compact />
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Don’t have a key yet? Generate one, then upload the printed{" "}
-              <Mono>.pub</Mono> contents under Settings → Security and pick it
-              when creating the droplet:
+              No key? Generating one is covered in step 1, Get a droplet — the
+              key must exist on the droplet before this guide can connect.
             </p>
-            <CommandBlock
-              lines={[
-                'ssh-keygen -t ed25519 -f ~/.ssh/id_backflip -C "backflip"',
-                "cat ~/.ssh/id_backflip.pub",
-              ]}
-              compact
-            />
           </div>
         ),
       }

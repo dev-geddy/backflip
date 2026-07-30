@@ -182,8 +182,8 @@ export function StepBody({
           </div>
           <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
             <span className="font-medium text-foreground">Authentication</span>{" "}
-            — choose SSH key and add your <em>public</em> key during creation
-            (the next step&apos;s sidebar shows how to generate one).
+            — choose SSH key and add your <em>public</em> key during creation.
+            No key yet? Generate one below first.
           </div>
           <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
             <span className="font-medium text-foreground">After creation</span>{" "}
@@ -191,6 +191,23 @@ export function StepBody({
             the next step.
           </div>
         </div>
+        <div className="flex flex-col gap-2">
+          <RunOn>your machine — any shell</RunOn>
+          <CommandBlock
+            lines={[
+              'ssh-keygen -t ed25519 -f ~/.ssh/id_backflip -C "backflip"',
+              "cat ~/.ssh/id_backflip.pub",
+            ]}
+            label="generate an ssh key (skip if you have one)"
+          />
+        </div>
+        <Note>
+          Upload the printed <Mono>.pub</Mono> contents in the DigitalOcean
+          panel under Settings → Security → SSH keys, then pick that key when
+          creating the droplet. The private half (
+          <Mono>~/.ssh/id_backflip</Mono>) stays on your machine — it&apos;s the
+          key path variable in the next step.
+        </Note>
         <div>
           <Button
             render={
