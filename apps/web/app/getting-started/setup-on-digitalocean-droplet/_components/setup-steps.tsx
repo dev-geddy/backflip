@@ -190,6 +190,21 @@ export function StepBody({
             — copy the droplet&apos;s public IP; it&apos;s the first variable in
             the next step.
           </div>
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">
+              Point your domain at it
+            </span>{" "}
+            — add a DNS <Mono>A</Mono> record for the domain you&apos;ll use,
+            directed at the droplet&apos;s IP, right after creation. Let&apos;s
+            Encrypt verifies domain ownership over HTTP, so until DNS resolves
+            to this droplet the provisioning step can&apos;t issue the TLS
+            certificate and the site won&apos;t be reachable at your domain. If
+            DNS is on DigitalOcean: Networking → Domains → your domain →{" "}
+            <Mono>A</Mono> record, hostname <Mono>@</Mono> (or a subdomain),
+            directed to the droplet. DNS changes take a few minutes to
+            propagate — adding the record now means it&apos;s live by the time
+            you provision.
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <RunOn>your machine — any shell</RunOn>
