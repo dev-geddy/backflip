@@ -217,66 +217,7 @@ export function SetupGuide() {
           that leaves is a command you copy yourself.
         </span>
       </p>
-
-      <DocsLinks />
     </div>
   )
 }
 
-const REPO = "https://github.com/dev-geddy/backflip/blob/master"
-
-const NEXT_LINKS = [
-  {
-    href: `${REPO}/devops.md`,
-    label: "devops.md",
-    body: "Deployment overview: both droplet flavors, prerequisites, quick start.",
-  },
-  {
-    href: `${REPO}/devops/docs/droplet-setup.md`,
-    label: "devops/docs/droplet-setup.md",
-    body: "Provisioning in full, plus a troubleshooting list for TLS, SSH and OOM.",
-  },
-  {
-    href: `${REPO}/devops/docs/deploy-local.md`,
-    label: "devops/docs/deploy-local.md",
-    body: "Redeploys from your machine, migrations, rollback by release symlink.",
-  },
-]
-
-function DocsLinks() {
-  return (
-    <div className="mt-14 rounded-xl border bg-card p-5">
-      <h2 className="font-heading text-base font-semibold tracking-tight">
-        Where the full docs live
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        This page is the guided version of the repo’s deployment docs.
-      </p>
-      <ul className="mt-4 flex flex-col divide-y border-t">
-        {NEXT_LINKS.map((link) => (
-          <li key={link.href}>
-            <a
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-              className="group flex items-start gap-3 py-3.5 transition-colors hover:text-foreground"
-            >
-              <RiArrowRightLine
-                className="mt-0.5 size-4 flex-none text-primary transition-transform group-hover:translate-x-0.5"
-                aria-hidden="true"
-              />
-              <span className="min-w-0">
-                <span className="block font-mono text-xs break-all">
-                  {link.label}
-                </span>
-                <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
-                  {link.body}
-                </span>
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
