@@ -7,16 +7,18 @@
 > **Depends on L2:** none
 
 ## Owns
-Local dev infrastructure: Docker Compose services (app, postgres), ports, env/credentials.
+Local dev infrastructure: Docker Compose services (web, postgres, one-shot migrate/seed), profiles, ports, env/credentials.
 
 ## Interfaces
-- `L2-INF-01` — `docker compose up` → app + db. App host **3071** → container 3070. (`docker-compose.yml`)
-- `L2-INF-02` — `docker compose up db` → postgres only (preferred dev: db in Docker, app run locally).
+- `L2-INF-01` — `docker compose --profile web up -d --build` → `backflip-db` + one-shot `backflip-db-migrate` (drizzle migrations, must complete first) + `backflip-web` on host **3071** → container 3070. (`docker-compose.yml`)
+- `L2-INF-02` — `docker compose up -d` (no profile) → `backflip-db` only — the default; preferred dev: db in Docker, app run natively.
+- `L2-INF-14` — `docker compose --profile seed run --rm db-seed` → one-shot `backflip-db-seed` (`init-owner`); creds from `.env.init` (env_file, optional) or `-e ADMIN_EMAIL -e ADMIN_PASSWORD`. Runs after migrate.
 - `L2-INF-03` — App local dev port **3070** (`corepack yarn dev`); local prod `corepack yarn workspace web start` also 3070.
-- `L2-INF-04` — App Docker image — Next standalone build (`output: "standalone"`), runner ships only the bundle, `node apps/web/server.js` on container 3070. (`apps/web/Dockerfile`, context = repo root)
+- `L2-INF-04` — App Docker image — Next standalone build (`output: "standalone"`), runner ships only the bundle, `node apps/web/server.js` on container 3070. Stage `deps` (workspace + node_modules, no build) is the migrate/seed tool image. (`apps/web/Dockerfile`, context = repo root)
 
 ## Schemas
-- `L2-INF-05` — Postgres service: image `postgres:17-alpine`, host port `${POSTGRES_PORT:-5544}` → 5432, volume `backflip_pgdata`, healthcheck `pg_isready`.
+- `L2-INF-05` — Postgres service: image `postgres:17-alpine`, container `backflip-db`, host port `${POSTGRES_PORT:-5544}` → 5432, volume `backflip_pgdata`, healthcheck `pg_isready`.
+- `L2-INF-15` — Fixed container names: `backflip-db`, `backflip-web`, `backflip-db-migrate`, `backflip-db-seed`.
 - `L2-INF-06` — `DATABASE_URL` — app→db connection. Local app: `localhost:${POSTGRES_PORT}`. In-container app: `db:5432` (compose env overrides `.env`).
 - `L2-INF-07` — Env vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `DATABASE_URL`. Defined in `.env` (copy of `.env.example`).
 
@@ -30,7 +32,7 @@ Local dev infrastructure: Docker Compose services (app, postgres), ports, env/cr
 
 ## Acceptance
 - `L2-INF-12` — `docker compose up -d db` + `corepack yarn dev` → app on 3070 reaches db on `localhost:${POSTGRES_PORT}`.
-- `L2-INF-13` — `docker compose up --build` → app on 3071, db healthy, app reaches db at `db:5432`.
+- `L2-INF-13` — `docker compose --profile web up -d --build` → migrations applied, app on 3071 (`AUTH_URL` overridden to `http://localhost:3071`), db healthy, app reaches db at `db:5432`. Native 3070 dev keeps working against the same db.
 
 ## Constrained L3
 - `/docs/notes/infra.md`

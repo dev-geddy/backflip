@@ -31,7 +31,7 @@ and can be deleted once the owner is seeded.
 **2. Install, set up the database, run:**
 ```bash
 corepack yarn install
-docker compose up -d db      # start Postgres (Docker)
+docker compose up -d         # start Postgres (backflip-db) only
 corepack yarn db:migrate     # create tables
 corepack yarn init-owner     # seed admin from .env.init
 corepack yarn dev            # app → http://localhost:3070
@@ -69,7 +69,7 @@ in place. Re-seed anytime by recreating `.env.init` and rerunning `init-owner`.
 - **Secrets**: set a real `ENCRYPTION_KEY` in `.env` (`openssl rand -base64 32`) — it encrypts stored secrets (AI provider keys).
 - **DB changes**: edit `packages/db/src/schema.ts` → `corepack yarn db:generate` → `db:migrate`.
 - **Admin dashboard UI** is built from shadcn blocks — browse and lift components/layouts from **https://ui.shadcn.com/blocks** (this project uses `login-03`, `dashboard-01`, `sidebar-08`).
-- **Full Docker** (app + db): `docker compose up --build` → app on `3071`.
+- **Full Docker** (app + db): `docker compose --profile web up -d --build` → migrations run, app on `3071`. Owner seed: `docker compose --profile seed run --rm db-seed`.
 - More commands + conventions: `.claude/skills/dev-workflow`.
 
 ## Deployment

@@ -1,14 +1,21 @@
 # Web app container. Build context = repo root (monorepo).
-# Runner ships only the Next standalone bundle (`output: "standalone"`) —
-# `node apps/web/server.js`, not `next start`. Container port 3070 (compose maps host 3071).
+# Stages:
+#   deps   — full workspace + node_modules, no Next build. Used by the one-shot
+#            db-migrate / db-seed compose services (drizzle-kit + tsx need
+#            source and devDeps, not a compiled app).
+#   build  — Next standalone build on top of deps.
+#   runner — ships only the standalone bundle (`node apps/web/server.js`,
+#            not `next start`). Container port 3070 (compose maps host 3071).
 # @spec L2-INF-04
 FROM node:24-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 
-FROM base AS build
+FROM base AS deps
 COPY . .
 RUN corepack yarn install --immutable
+
+FROM deps AS build
 RUN corepack yarn workspace web build
 
 FROM node:24-alpine AS runner

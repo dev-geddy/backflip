@@ -32,9 +32,9 @@ How to operate the backflip monorepo. Terse. Exact commands.
 ## Docker + database
 - **Preferred dev flow: app local, db in Docker.** Run app via `corepack yarn dev` (port 3070, hot reload); run only postgres in Docker.
   - First time: `cp .env.example .env`.
-  - `docker compose up -d db` → postgres on `localhost:${POSTGRES_PORT:-5544}`.
+  - `docker compose up -d` → `backflip-db` only (web/seed sit behind profiles) → postgres on `localhost:${POSTGRES_PORT:-5544}`.
   - `corepack yarn dev` → app on 3070, reads `DATABASE_URL` from `.env`.
-- Full Docker (app + db): `docker compose up --build` → app on **3071** (containerized prod build), db as above. In-container app connects to db at `db:5432`.
+- Full Docker (app + db): `docker compose --profile web up -d --build` → `backflip-web` on **3071** (containerized prod build) after one-shot `backflip-db-migrate` applies migrations; db as above. In-container app connects to db at `db:5432`. Owner seed in Docker: `docker compose --profile seed run --rm db-seed` (`.env.init` or `-e ADMIN_EMAIL -e ADMIN_PASSWORD`).
 - Postgres host port default **5544** (env `POSTGRES_PORT`), kept off 5432 to avoid clashes. Change in `.env` if it collides.
 - Creds: `.env` (gitignored) — copy of `.env.example` (committed template). Same values seed the db container and are read by the local app.
 - Files: `docker-compose.yml`, `apps/web/Dockerfile`, `.dockerignore`. See `README.md`.
@@ -45,11 +45,11 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - Type-change gotcha: drizzle-kit generates `SET DATA TYPE` without a `USING` cast; for incompatible casts (text→integer) Postgres rejects it and `drizzle-kit migrate` fails quietly. Hand-add `USING <col>::<type>` to the SQL, or use `db:push` in dev.
 - Secrets at rest: `encryptSecret`/`decryptSecret` from `@workspace/db` (AES, `ENCRYPTION_KEY`). Used for AI provider keys.
 - `corepack yarn init-owner` — seed/refresh platform owner from `.env.init` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), role `owner`.
-- Env: `DATABASE_URL` in `.env`; one-off admin seed creds in `.env.init` (read only by `init-owner`, never the app); runtime `AUTH_*` in `.env.local` (all gitignored). Needs db up (`docker compose up -d db`).
+- Env: `DATABASE_URL` in `.env`; one-off admin seed creds in `.env.init` (read only by `init-owner`, never the app); runtime `AUTH_*` in `.env.local` (all gitignored). Needs db up (`docker compose up -d`).
 - **DB discipline (do automatically):**
   - Schema edited (`packages/db/src/schema.ts`) → run `db:generate` then `db:migrate`. Commit the generated SQL. No schema change lands without its migration.
   - Seed data added/changed → run the matching seed (e.g. `init-owner`).
-  - Before any db op, ensure the db is up: if `docker compose up -d db` / the container isn't running, start it (or ask the user to start Docker if the daemon is down).
+  - Before any db op, ensure the db is up: if `docker compose up -d` / the `backflip-db` container isn't running, start it (or ask the user to start Docker if the daemon is down).
 
 ## Quality gates (turbo, from repo root)
 - Typecheck: `corepack yarn typecheck` (per-app: `corepack yarn workspace web typecheck` → `tsc --noEmit`).
