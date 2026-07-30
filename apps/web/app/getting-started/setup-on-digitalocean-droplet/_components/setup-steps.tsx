@@ -174,8 +174,11 @@ export function StepBody({
             LTS (24.04 or newer), plain image, no marketplace app.
           </div>
           <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
-            <span className="font-medium text-foreground">Size</span> — 2 GB
-            RAM is comfortable; 1 GB works too, provisioning adds 2 GB of swap.
+            <span className="font-medium text-foreground">Size</span> — the
+            cheapest 512 MB droplet is enough to start: provisioning adds 2 GB
+            of swap, and the build-locally deploy keeps heavy work off the
+            droplet. Pick 2 GB+ if you&apos;d rather build on the droplet
+            itself.
           </div>
           <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
             <span className="font-medium text-foreground">Authentication</span>{" "}
