@@ -72,137 +72,182 @@ export default async function BackflipOverviewPage() {
   const firstName = sessionUser.name?.split(" ")[0] || "there"
 
   const steps = [
-    { label: "Set your display name", done: Boolean(sessionUser.name), href: "/backflip/account", cta: "Account" },
-    { label: "Invite your team", done: total > 1, href: "/backflip/users", cta: "Add member" },
-    { label: "Connect an AI provider", done: providersConfigured > 0, href: "/backflip/settings", cta: "Integrations" },
-    { label: "Configure email sending", done: emailConfigured, href: "/backflip/settings", cta: "Integrations" },
+    {
+      label: "Set your display name",
+      done: Boolean(sessionUser.name),
+      href: "/backflip/account",
+      cta: "Account",
+    },
+    {
+      label: "Invite your team",
+      done: total > 1,
+      href: "/backflip/users",
+      cta: "Add member",
+    },
+    {
+      label: "Connect an AI provider",
+      done: providersConfigured > 0,
+      href: "/backflip/settings",
+      cta: "Integrations",
+    },
+    {
+      label: "Configure email sending",
+      done: emailConfigured,
+      href: "/backflip/settings",
+      cta: "Integrations",
+    },
   ]
   const doneCount = steps.filter((s) => s.done).length
 
   return (
-    // Canvas matches the header (bg-background); only cards sit on bg-card,
-    // mirroring the ui-samples look.
+    // Canvas matches the header (bg-background) and carries the public
+    // homepage hero backdrop (CSS stripe texture + readability overlay);
+    // cards sit on bg-card.
     <div className="h-full overflow-y-auto bg-background">
-      <div className="mx-auto flex max-w-[900px] flex-col gap-6 p-6 lg:p-8">
-        {/* Greeting */}
-        <div>
-          <div className="text-sm text-muted-foreground">
-            {DATE_FMT.format(new Date())}
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            Welcome back, {firstName}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Jump to anything, or pick up where you left off.
-          </p>
-        </div>
-
-        <OverviewJump />
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Members" value={String(total)}>
-            <span className="text-muted-foreground">
-              {active} active · {pending} pending
-            </span>
-          </StatCard>
-          <StatCard label="Integrations" value={String(providersEnabled)} unit="enabled">
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <span
-                className={cn(
-                  "size-1.5 rounded-full",
-                  providersEnabled > 0 ? "bg-emerald-500" : "bg-muted-foreground/30"
-                )}
-              />
-              {providersEnabled > 0 ? "All healthy" : "None enabled"}
-            </span>
-          </StatCard>
-          <StatCard label="Pending" value={String(pending)}>
-            <span className="text-muted-foreground">Awaiting first sign-in</span>
-          </StatCard>
-        </div>
-
-        {/* Info cards */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Setup checklist */}
-          <div className="rounded-xl border bg-card p-5">
-            <div className="text-sm font-semibold">Finish setting up</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {doneCount} of {steps.length} complete
+      <div className="relative min-h-full">
+        {/* Angled stripe texture — same recipe as the public hero. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-card [background-image:repeating-linear-gradient(135deg,var(--muted)_0_2px,transparent_2px_22px)]"
+        />
+        {/* Readability overlay — fades to the theme background where content sits. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_34%,transparent_82%),linear-gradient(0deg,var(--background)_2%,transparent_34%)]"
+        />
+        <div className="relative mx-auto flex max-w-[900px] flex-col gap-6 p-6 lg:p-8">
+          {/* Greeting */}
+          <div>
+            <div className="text-sm text-muted-foreground">
+              {DATE_FMT.format(new Date())}
             </div>
-            <div className="mt-4 flex flex-col">
-              {steps.map((s, i) => (
-                <div
-                  key={s.label}
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+              Welcome back, {firstName}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Jump to anything, or pick up where you left off.
+            </p>
+          </div>
+
+          <OverviewJump />
+
+          {/* Stat cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Members" value={String(total)}>
+              <span className="text-muted-foreground">
+                {active} active · {pending} pending
+              </span>
+            </StatCard>
+            <StatCard
+              label="Integrations"
+              value={String(providersEnabled)}
+              unit="enabled"
+            >
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span
                   className={cn(
-                    "flex items-center gap-3 py-2",
-                    i < steps.length - 1 && "border-b"
+                    "size-1.5 rounded-full",
+                    providersEnabled > 0
+                      ? "bg-emerald-500"
+                      : "bg-muted-foreground/30"
                   )}
-                >
-                  <span
-                    className={cn(
-                      "flex size-[18px] flex-none items-center justify-center rounded-full",
-                      s.done ? "bg-emerald-500" : "border-[1.5px] border-input"
-                    )}
-                  >
-                    {s.done ? (
-                      <RiCheckLine className="size-3 text-white" />
-                    ) : null}
-                  </span>
-                  {s.done ? (
-                    <span className="flex-1 text-[13px] text-muted-foreground line-through">
-                      {s.label}
-                    </span>
-                  ) : (
-                    <>
-                      <span className="flex-1 text-[13px]">{s.label}</span>
-                      <Link
-                        href={s.href}
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        {s.cta} →
-                      </Link>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
+                />
+                {providersEnabled > 0 ? "All healthy" : "None enabled"}
+              </span>
+            </StatCard>
+            <StatCard label="Pending" value={String(pending)}>
+              <span className="text-muted-foreground">
+                Awaiting first sign-in
+              </span>
+            </StatCard>
           </div>
 
-          {/* Recent members */}
-          <div className="rounded-xl border bg-card p-5">
-            <div className="text-sm font-semibold">Recent members</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              Newest to join
-            </div>
-            <div className="mt-4 flex flex-col">
-              {recent.map((u, i) => {
-                const label = u.name || u.email
-                return (
+          {/* Info cards */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* Setup checklist */}
+            <div className="rounded-xl border bg-card p-5">
+              <div className="text-sm font-semibold">Finish setting up</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                {doneCount} of {steps.length} complete
+              </div>
+              <div className="mt-4 flex flex-col">
+                {steps.map((s, i) => (
                   <div
-                    key={u.id}
+                    key={s.label}
                     className={cn(
                       "flex items-center gap-3 py-2",
-                      i < recent.length - 1 && "border-b"
+                      i < steps.length - 1 && "border-b"
                     )}
                   >
-                    <Avatar className="size-8 rounded-full">
-                      {u.image ? <AvatarImage src={u.image} alt={label} /> : null}
-                      <AvatarFallback className="rounded-full text-[10px]">
-                        {initials(label)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px]">
-                        <span className="font-medium">{label}</span> joined
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {JOINED_FMT.format(u.createdAt)}
+                    <span
+                      className={cn(
+                        "flex size-[18px] flex-none items-center justify-center rounded-full",
+                        s.done
+                          ? "bg-emerald-500"
+                          : "border-[1.5px] border-input"
+                      )}
+                    >
+                      {s.done ? (
+                        <RiCheckLine className="size-3 text-white" />
+                      ) : null}
+                    </span>
+                    {s.done ? (
+                      <span className="flex-1 text-[13px] text-muted-foreground line-through">
+                        {s.label}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-[13px]">{s.label}</span>
+                        <Link
+                          href={s.href}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          {s.cta} →
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent members */}
+            <div className="rounded-xl border bg-card p-5">
+              <div className="text-sm font-semibold">Recent members</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                Newest to join
+              </div>
+              <div className="mt-4 flex flex-col">
+                {recent.map((u, i) => {
+                  const label = u.name || u.email
+                  return (
+                    <div
+                      key={u.id}
+                      className={cn(
+                        "flex items-center gap-3 py-2",
+                        i < recent.length - 1 && "border-b"
+                      )}
+                    >
+                      <Avatar className="size-8 rounded-full">
+                        {u.image ? (
+                          <AvatarImage src={u.image} alt={label} />
+                        ) : null}
+                        <AvatarFallback className="rounded-full text-[10px]">
+                          {initials(label)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px]">
+                          <span className="font-medium">{label}</span> joined
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {JOINED_FMT.format(u.createdAt)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -226,7 +271,7 @@ function StatCard({
     <div className="flex flex-col rounded-xl border bg-card p-5">
       <SectionLabel>{label}</SectionLabel>
       <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="text-2xl font-semibold tabular-nums tracking-tight">
+        <span className="text-2xl font-semibold tracking-tight tabular-nums">
           {value}
         </span>
         {unit ? (
