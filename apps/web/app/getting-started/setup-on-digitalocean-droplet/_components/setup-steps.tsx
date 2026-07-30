@@ -105,6 +105,12 @@ export const STEPS: StepMeta[] = [
     lead: "You need a fresh Ubuntu droplet to deploy to. Create one on DigitalOcean, note its IP, and come back — everything else happens from your machine.",
   },
   {
+    id: "clone",
+    title: "Clone Backflip locally",
+    short: "Clone",
+    lead: "Everything in this guide runs from a local clone — provisioning, deploys, migrations, the admin seed. Grab the repo and the few tools the scripts expect.",
+  },
+  {
     id: "variables",
     title: "Your variables",
     short: "Variables",
@@ -247,9 +253,55 @@ export function StepBody({
     )
   }
 
-  if (index === 1) return <VariablesForm vars={vars} onChange={onChange} />
+  if (index === 1) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="max-w-xl divide-y overflow-hidden rounded-lg border bg-card">
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">git</span> — to clone
+            the repo and pull updates.
+          </div>
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">
+              Node.js 24 + corepack
+            </span>{" "}
+            — same major the droplet runs; corepack ships with Node and
+            activates the pinned yarn 4 automatically. <Mono>nvm</Mono> is the
+            easiest way to get it.
+          </div>
+          <div className="px-4 py-3.5 text-sm leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">
+              OpenSSH + openssl
+            </span>{" "}
+            — the deploy scripts drive <Mono>ssh</Mono>/<Mono>scp</Mono>, and
+            two env secrets are generated with <Mono>openssl rand</Mono>.
+            Preinstalled on macOS and Linux; on Windows use WSL.
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <RunOn>your machine — any shell</RunOn>
+          <CommandBlock
+            lines={[
+              "git clone https://github.com/dev-geddy/backflip.git",
+              "cd backflip",
+              "corepack enable",
+              "corepack yarn install",
+            ]}
+          />
+        </div>
+        <Note>
+          Backflip is developed primarily with <strong>Claude Code</strong> —
+          the repo ships instructions, skills and doc contracts tuned for it
+          (that&apos;s what the Start building phase leans on). Other AI coding
+          agents are untested.
+        </Note>
+      </div>
+    )
+  }
 
-  if (index === 2) {
+  if (index === 2) return <VariablesForm vars={vars} onChange={onChange} />
+
+  if (index === 3) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -265,7 +317,7 @@ export function StepBody({
     )
   }
 
-  if (index === 3) {
+  if (index === 4) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -282,7 +334,7 @@ export function StepBody({
     )
   }
 
-  if (index === 4) {
+  if (index === 5) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -372,7 +424,7 @@ export function StepBody({
     )
   }
 
-  if (index === 5) {
+  if (index === 6) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -414,7 +466,7 @@ export function StepBody({
     )
   }
 
-  if (index === 6) {
+  if (index === 7) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
@@ -428,7 +480,7 @@ export function StepBody({
         </Note>
         <Note>
           Done. Sign in at <Mono>{r.appUrl}/backflip</Mono> with the owner email
-          and password from step 2. Leave the password blank for a Google-only
+          and password from step 3. Leave the password blank for a Google-only
           owner.
         </Note>
       </div>

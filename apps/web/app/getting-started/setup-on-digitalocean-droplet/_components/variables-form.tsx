@@ -211,7 +211,7 @@ export function VariablesForm({
           </Collapsible>
 
           <div className="flex flex-col gap-4 border-t pt-5">
-            <GroupLabel>Owner account — step 7 only</GroupLabel>
+            <GroupLabel>Owner account — step 8 only</GroupLabel>
             <Field>
               <FieldLabel htmlFor="var-adminEmail">Owner email</FieldLabel>
               <div className="flex gap-2">

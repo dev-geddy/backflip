@@ -142,8 +142,9 @@ export function SetupGuide() {
 
   const meta = STEPS[step]!
 
+  // max-w-6xl matches the site header/hero container width.
   return (
-    <div className="mx-auto max-w-4xl px-6 py-14">
+    <div className="mx-auto max-w-6xl px-6 py-14">
       <div ref={topRef} aria-hidden="true" className="scroll-mt-6" />
 
       <div className="flex items-center justify-between gap-4">
