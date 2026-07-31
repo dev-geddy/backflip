@@ -1,4 +1,8 @@
 # @spec L2-DEVOPS-09
+# Thin wrapper over devops/deploy-for-pm2-build-locally.sh: the build runs on
+# the Drone runner (typecheck → build → pack), only the assembled artifact
+# ships to the droplet; migrations run from the runner via an ssh tunnel.
+#
 # Required Drone secrets:
 #   deploy_host       - droplet host/IP
 #   deploy_domain     - instance domain (deploy dir /var/www/<domain>)
@@ -19,7 +23,10 @@ trigger:
 
 steps:
   - name: deploy
-    image: alpine:3.21
+    # Debian (glibc) on purpose: the runner builds the artifact, so its traced
+    # node_modules must match the droplet's Ubuntu. An alpine/musl build would
+    # ship musl binaries (sharp) the droplet cannot load.
+    image: node:24-bookworm-slim
     environment:
       DEPLOY_HOST:
         from_secret: deploy_host
@@ -32,11 +39,16 @@ steps:
       DEPLOY_ENV_LOCAL:
         from_secret: deploy_env_local
     commands:
-      - apk add --no-cache bash openssh-client rsync curl
+      # bash: the deploy script is bash (arrays, /dev/tcp port probe).
+      # openssh-client: scp upload + the ControlMaster migration tunnel.
+      - apt-get update -qq && apt-get install -y -qq --no-install-recommends bash openssh-client
+      - corepack enable
+      # The build-locally flow refuses without local deps — install them here.
+      - corepack yarn install --immutable
       - umask 077
       - printf '%s\n' "$DEPLOY_SSH_KEY" > key.pem
       - chmod 600 key.pem
       - ARGS=""
       - if test -n "$DEPLOY_ENV"; then printf '%s' "$DEPLOY_ENV" > env.deploy; ARGS="$ARGS --env env.deploy"; fi
       - if test -n "$DEPLOY_ENV_LOCAL"; then printf '%s' "$DEPLOY_ENV_LOCAL" > env.local.deploy; ARGS="$ARGS --env-local env.local.deploy"; fi
-      - ./devops/deploy-for-docker.sh -h "$DEPLOY_HOST" -i key.pem -d "$DEPLOY_DOMAIN" $ARGS
+      - ./devops/deploy-for-pm2-build-locally.sh -h "$DEPLOY_HOST" -i key.pem -d "$DEPLOY_DOMAIN" $ARGS
