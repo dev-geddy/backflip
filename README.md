@@ -44,6 +44,17 @@ corepack yarn dev            # app → http://localhost:3070
   - changed `AUTH_*` (incl. Google) in `.env.local` → **restart `yarn dev`** (env loads at startup)
 - Google login is optional — add `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (redirect URI `http://localhost:3070/api/auth/callback/google`); works only for already-registered emails.
 
+## Tests
+```bash
+corepack yarn workspace web test        # unit (Vitest) — fast, no database needed
+corepack yarn workspace web test:e2e    # e2e (Playwright) — needs `docker compose up -d`
+```
+E2e boots its own app on port `3170` against a dedicated `backflip_test` database —
+your dev server and dev data are untouched. First run on a machine also needs the
+browser once: `corepack yarn workspace web exec playwright install chromium`.
+Optional: `corepack yarn workspace web test:e2e:screenshots` captures key pages
+into `.screenshots/` (gitignored).
+
 ## Production: seed the owner once, then delete the secret
 The owner seed is a **one-off kickoff step**. Run it a single time against the prod
 database, then delete the credentials file:

@@ -57,6 +57,12 @@ How to operate the backflip monorepo. Terse. Exact commands.
 - Format: `corepack yarn format` (prettier write).
 - Build: `corepack yarn build`.
 
+## Tests
+- Unit (Vitest, no db): `corepack yarn workspace web test`. Suites colocated `**/*.test.ts` (auth invariants under `app/_lib/auth/`).
+- E2e (Playwright, needs `backflip-db` up): `corepack yarn workspace web test:e2e`. Boots own app on **3170** against dedicated `backflip_test` db (dev db untouched); builds into `.next-e2e`. First run per machine: `corepack yarn workspace web exec playwright install chromium`.
+- Screenshots (separate step, 1200×900): `corepack yarn workspace web test:e2e:screenshots` → `.screenshots/*.png` (gitignored).
+- Contract: `docs/contracts/testing.md`; notes: `docs/notes/testing.md`.
+
 ## Install / add deps
 - Install: `corepack yarn install`.
 - Add to a workspace: `corepack yarn workspace <name> add <pkg>` (workspaces: `web`, `@workspace/ui`, …).
