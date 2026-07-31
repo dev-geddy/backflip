@@ -29,7 +29,22 @@ export default defineConfig({
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: "**/screenshots.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Separate step (`test:e2e:screenshots`): captures PNGs into `.screenshots/`.
+    {
+      name: "screenshots",
+      testMatch: "**/screenshots.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1200, height: 720 },
+      },
+    },
+  ],
   webServer: {
     command: `../../node_modules/.bin/next dev -p ${PORT_APP}`,
     url: BASE_URL,

@@ -14,6 +14,8 @@ Automated tests for the web app: unit tooling (Vitest), e2e tooling (Playwright)
 - `L2-TEST-02` — `corepack yarn workspace web test:e2e` → Playwright chromium, specs in `apps/web/e2e/`. `webServer` invokes `next dev -p 3170` directly (bypasses dotenv-cli) with explicit env: test `DATABASE_URL`, fixed `AUTH_SECRET`, `NEXT_DIST_DIR=.next-e2e`, no `AUTH_GOOGLE_*` (credentials-only). Config `apps/web/playwright.config.ts`.
 - `L2-TEST-03` — e2e `globalSetup` (`apps/web/e2e/global-setup.ts`): create `backflip_test` on `localhost:${POSTGRES_PORT:-5544}` if missing, run drizzle migrations, truncate auth tables, reseed fixtures `owner@e2e.test` (owner) + `teammate@e2e.test` (teammate) with bcrypt hashes. Never drops the DB (live pools under `reuseExistingServer`).
 
+- `L2-TEST-09` — `corepack yarn workspace web test:e2e:screenshots` → separate Playwright project ("screenshots", viewport 1200×720), never part of the default e2e run. Captures public homepage, admin home, integrations, members, account into gitignored `.screenshots/` at repo root — the single source for page screenshots; one resolution for all. Spec `apps/web/e2e/screenshots.spec.ts`.
+
 ## Invariants
 - `L2-TEST-04` — e2e never reads or mutates the dev `backflip` database; suite runs only against `backflip_test`.
 - `L2-TEST-05` — e2e dev server never shares `.next` with the 3070 dev server: builds into `.next-e2e` via `NEXT_DIST_DIR` (honored in `next.config.ts`).

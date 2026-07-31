@@ -8,12 +8,14 @@
 - `apps/web/e2e/env.ts` — test DB names/URLs, port 3170, fixture accounts.
 - `apps/web/e2e/global-setup.ts` — DB create/migrate/truncate/seed (`L2-TEST-03/04`).
 - `apps/web/e2e/auth.spec.ts` — 5 happy paths: unauth redirect, owner login, wrong password, teammate blocked from settings, sign-out.
+- `apps/web/e2e/screenshots.spec.ts` — screenshot step (`L2-TEST-09`): public homepage + admin home/integrations/users/account (owner login) → `.screenshots/*.png`, all 1200×720. Own Playwright project; default `test:e2e` runs `--project=chromium` which ignores it.
 - `apps/web/e2e/tsconfig.json` — Playwright TS loader can't resolve `extends` from `@workspace/typescript-config`; passed via `--tsconfig` in the `test:e2e` script.
 - Unit suites colocated in `app/_lib/auth/*.test.ts` — detail in `/docs/notes/auth.md` § Unit tests.
 
 ## Run
 - Unit: `corepack yarn workspace web test` (fast, no DB).
 - E2e: `docker compose up -d` first, then `corepack yarn workspace web test:e2e`.
+- Screenshots: `corepack yarn workspace web test:e2e:screenshots` (same DB/server prereqs).
 
 ## Gotchas
 - `webServer` calls the `next` binary directly — the dotenv-cli `dev` script would load root `.env` and dotenv never overrides preset vars, but bypassing it entirely keeps dev credentials out (`L2-TEST-02`).
