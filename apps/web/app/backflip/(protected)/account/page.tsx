@@ -63,7 +63,7 @@ export default async function AccountPage() {
     <div className="flex h-full min-h-0 flex-col bg-background lg:flex-row">
       {/* Main */}
       <div className="min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[680px] min-w-0 flex-col gap-6 p-6 lg:p-8">
+        <div className="mx-auto flex w-full max-w-[900px] min-w-0 flex-col gap-6 p-6 lg:p-8">
           <PageHeading
             title="My account"
             description="Your personal profile and sign-in credentials."
