@@ -266,7 +266,9 @@ function Response({
   answer: string
   ref: React.Ref<HTMLDivElement>
 }) {
-  const empty = !answer && status !== "thinking"
+  // Centered until there is markdown to render — both the placeholder and the
+  // thinking indicator read better mid-box than pinned to the top corner.
+  const empty = !answer
 
   return (
     <div

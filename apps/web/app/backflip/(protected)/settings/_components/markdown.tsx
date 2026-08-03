@@ -100,7 +100,15 @@ const COMPONENTS: Components = {
   ),
   table: ({ className, ...props }) => (
     <div className="my-2 overflow-x-auto rounded-lg border">
-      <table className={cn("w-full text-left", className)} {...props} />
+      {/* Row separators, not cell separators: the last row drops its border so
+          the rule doesn't double up with the wrapper's bottom edge. */}
+      <table
+        className={cn(
+          "w-full text-left [&>tbody>tr:last-child>td]:border-0",
+          className
+        )}
+        {...props}
+      />
     </div>
   ),
   th: ({ className, ...props }) => (
@@ -110,10 +118,7 @@ const COMPONENTS: Components = {
     />
   ),
   td: ({ className, ...props }) => (
-    <td
-      className={cn("border-b px-2.5 py-1.5 last:border-0", className)}
-      {...props}
-    />
+    <td className={cn("border-b px-2.5 py-1.5", className)} {...props} />
   ),
 }
 
