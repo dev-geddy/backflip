@@ -100,21 +100,10 @@ export default async function BackflipOverviewPage() {
   const doneCount = steps.filter((s) => s.done).length
 
   return (
-    // Canvas matches the header (bg-background) and carries the public
-    // homepage hero backdrop (CSS stripe texture + readability overlay);
-    // cards sit on bg-card.
-    <div className="h-full overflow-y-auto bg-background">
+    // Canvas mirrors ui-samples (bg-muted light / bg-background dark) so
+    // bg-card cards pop in light mode.
+    <div className="h-full overflow-y-auto bg-muted dark:bg-background">
       <div className="relative min-h-full">
-        {/* Angled stripe texture — same recipe as the public hero. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-card [background-image:repeating-linear-gradient(135deg,var(--muted)_0_2px,transparent_2px_22px)]"
-        />
-        {/* Readability overlay — fades to the theme background where content sits. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_34%,transparent_82%),linear-gradient(0deg,var(--background)_2%,transparent_34%)]"
-        />
         <div className="relative mx-auto flex max-w-[900px] flex-col gap-6 p-6 lg:p-8">
           {/* Greeting */}
           <div>
