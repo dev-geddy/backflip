@@ -8,6 +8,11 @@ Stack: Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · Drizzle + Postgres 
 
 > **Self-hosted starter.** You run this yourself and supply your own secrets. The values in `.env.example` are local-dev defaults only — generate real secrets before deploying anywhere (see [Security](#security)).
 
+## How it works
+Set up once — clone, [provision a droplet](./devops.md), first deploy — then every feature runs the same loop: describe it, let Claude Code build to spec, review the PR, deploy.
+
+![From one-time setup (clone → provision droplet → first deploy) to the per-feature loop: you describe, Claude Code builds to spec, pull request review and merge, deploy live in prod](./docs/assets/setup-to-ship.png)
+
 ## Prerequisites
 - **Docker Desktop** (running) — for Postgres
 - **Node ≥ 20** with **corepack** (pins `yarn@4.17.1` — always run `corepack yarn …`)
