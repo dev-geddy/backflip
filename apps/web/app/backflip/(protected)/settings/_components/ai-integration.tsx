@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
@@ -8,10 +8,13 @@ import { Input } from "@workspace/ui/components/input"
 import { NativeSelect } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
+import { RiFlaskLine } from "@remixicon/react"
 
-import { listAiModels, saveAiConfig } from "../_actions"
+import { saveAiConfig } from "../_actions"
+import { useProviderModels } from "../_hooks/use-provider-models"
 import { SectionLabel } from "../../_components/page-heading"
-import { LABEL, MODELS, PACKAGE, type ProviderConfig } from "./ai-config-form"
+import { LABEL, PACKAGE, type ProviderConfig } from "./ai-config-form"
+import { AiTestDialog } from "./ai-test-dialog"
 
 function GreenBadge({ children }: { children: React.ReactNode }) {
   return (
@@ -31,17 +34,42 @@ export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
   const [active, setActive] = useState<ProviderConfig["provider"]>(
     providers[0]?.provider ?? "anthropic"
   )
+  const [testOpen, setTestOpen] = useState(false)
   const cfg = providers.find((p) => p.provider === active) ?? providers[0]
+  const canTest = providers.some((p) => p.enabled && p.keyPreview)
   if (!cfg) return null
 
   return (
     <div className="flex flex-col gap-5 p-5">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">AI providers</h2>
-        <p className="text-sm text-muted-foreground">
-          Connect model providers. Keys are encrypted at rest.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">AI providers</h2>
+          <p className="text-sm text-muted-foreground">
+            Connect model providers. Keys are encrypted at rest.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canTest}
+          onClick={() => setTestOpen(true)}
+          title={
+            canTest
+              ? undefined
+              : "Enable a provider with a saved API key to run a test."
+          }
+        >
+          <RiFlaskLine />
+          Test integration
+        </Button>
       </div>
+
+      <AiTestDialog
+        providers={providers}
+        open={testOpen}
+        onOpenChange={setTestOpen}
+      />
 
       {/* Provider tabs */}
       <div className="flex gap-1 border-b">
@@ -74,49 +102,6 @@ export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
       <ProviderPane key={cfg.provider} cfg={cfg} />
     </div>
   )
-}
-
-type ModelOption = { id: string; label: string }
-
-/**
- * Live models from the provider's models API (via `listAiModels`). The static
- * suggestions only bridge loading/fetch-failure once a key is saved — with no
- * key there is nothing trustworthy to show, so the list stays empty.
- */
-function useProviderModels(cfg: ProviderConfig) {
-  const fallback: ModelOption[] = cfg.keyPreview
-    ? MODELS[cfg.provider].map((id) => ({ id, label: id }))
-    : []
-  const [models, setModels] = useState<ModelOption[]>(fallback)
-  const [live, setLive] = useState(false)
-  const [loading, setLoading] = useState(Boolean(cfg.keyPreview))
-
-  useEffect(() => {
-    if (!cfg.keyPreview) return
-    let cancelled = false
-    setLoading(true)
-    listAiModels(cfg.provider)
-      .then((res) => {
-        if (cancelled) return
-        if (res.ok) {
-          setModels(res.models)
-          setLive(true)
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfg.provider, cfg.keyPreview])
-
-  // Keep the saved model selectable even if the live list doesn't include it.
-  if (cfg.model && !models.some((m) => m.id === cfg.model)) {
-    return { models: [{ id: cfg.model, label: cfg.model }, ...models], live, loading }
-  }
-  return { models, live, loading }
 }
 
 function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
