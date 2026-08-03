@@ -1,4 +1,9 @@
 # @spec L2-DEVOPS-08
+# Thin wrapper over devops/deploy-for-pm2-build-locally.sh: the build runs on
+# the Actions runner (typecheck → build → pack), only the assembled artifact
+# ships to the droplet; migrations run from the runner via an ssh tunnel.
+# ubuntu-latest is glibc like the droplet, so the traced node_modules match.
+#
 # Required secrets (Settings -> Secrets and variables -> Actions):
 #   DEPLOY_HOST       - droplet host/IP
 #   DEPLOY_DOMAIN     - instance domain (deploy dir /var/www/<domain>)
@@ -23,6 +28,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+
+      # The build-locally flow refuses without local deps — install them here.
+      - name: Install dependencies
+        run: corepack yarn install --immutable
+
       - name: Write SSH key
         run: |
           umask 077
@@ -43,4 +61,4 @@ jobs:
           echo "ARGS=$ARGS" >> "$GITHUB_ENV"
 
       - name: Deploy
-        run: ./devops/deploy-for-docker.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem -d "${{ secrets.DEPLOY_DOMAIN }}" $ARGS
+        run: ./devops/deploy-for-pm2-build-locally.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem -d "${{ secrets.DEPLOY_DOMAIN }}" $ARGS
