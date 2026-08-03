@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
+import { ThemeToggle } from "@/app/_components/theme-toggle"
 import { HeaderSearch } from "./header-search"
 
 /** Route → breadcrumb trail (design shows a parent · page crumb on sub-pages). */
@@ -64,6 +65,10 @@ export function SiteHeader({
           >
             Docs
           </a>
+          <ThemeToggle
+            variant="ghost"
+            className="size-7 text-muted-foreground hover:text-foreground"
+          />
           <Avatar className="size-7 rounded-full">
             <AvatarFallback className="rounded-full text-xs" title={userName}>
               {userInitials}
