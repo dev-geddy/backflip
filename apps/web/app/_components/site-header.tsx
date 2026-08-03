@@ -1,12 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { RiMoonLine, RiSunLine } from "@remixicon/react"
-import { useTheme } from "next-themes"
-
 import { Button } from "@workspace/ui/components/button"
 
 import { BrandIcon } from "./brand-icon"
+import { ThemeToggle } from "./theme-toggle"
 
 function Wordmark({ className }: { className?: string }) {
   return (
@@ -19,29 +16,6 @@ function Wordmark({ className }: { className?: string }) {
       </span>
       Backflip
     </a>
-  )
-}
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
-  const isDark = resolvedTheme === "dark"
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      aria-label="Toggle theme"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-    >
-      {/* Mount guard avoids hydration mismatch before the theme resolves. */}
-      {mounted && isDark ? (
-        <RiSunLine className="size-[18px]" aria-hidden="true" />
-      ) : (
-        <RiMoonLine className="size-[18px]" aria-hidden="true" />
-      )}
-    </Button>
   )
 }
 
