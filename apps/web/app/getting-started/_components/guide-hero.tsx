@@ -4,8 +4,22 @@ import { Badge } from "@workspace/ui/components/badge"
 
 const DEVOPS_DOC = "https://github.com/dev-geddy/backflip/blob/master/devops.md"
 
-// Server Component. Same stripe-texture backdrop as the homepage hero, shorter.
-export function GuideHero() {
+/**
+ * Hero band shared by the setup wizards. Same stripe-texture backdrop as the
+ * homepage hero, shorter. Copy comes from the page — one hero, one flavour of
+ * chrome, no per-guide fork.
+ */
+export function GuideHero({
+  title,
+  lead,
+  flavour,
+}: {
+  /** Heading lines — rendered stacked, one `<br/>`-separated line each. */
+  title: string[]
+  lead: string
+  /** Optional badge next to "Getting started" naming the droplet flavour. */
+  flavour?: string
+}) {
   return (
     <section
       aria-label="Introduction"
@@ -22,22 +36,25 @@ export function GuideHero() {
 
       <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-14">
         <div className="max-w-2xl">
-          <Badge variant="outline" className="gap-1.5 rounded-full">
-            <RiTerminalBoxLine
-              className="size-3.5 text-primary"
-              aria-hidden="true"
-            />
-            Getting started
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="gap-1.5 rounded-full">
+              <RiTerminalBoxLine
+                className="size-3.5 text-primary"
+                aria-hidden="true"
+              />
+              Getting started
+            </Badge>
+            {flavour ? <Badge variant="secondary">{flavour}</Badge> : null}
+          </div>
           <h1 className="mt-5 text-[clamp(2rem,5vw,3.25rem)] leading-[1.05] font-bold tracking-tight">
-            Setup on a
-            <br />
-            DigitalOcean droplet
+            {title.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))}
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            A few guided steps from a bare Ubuntu droplet to Backflip live on
-            your domain, over HTTPS. Fill in your variables once and copy the
-            commands — they run from the repo root on your own machine.
+            {lead}
           </p>
           <a
             href={DEVOPS_DOC}

@@ -4,7 +4,15 @@ import { RiCheckLine } from "@remixicon/react"
 
 import { cn } from "@workspace/ui/lib/utils"
 
-import type { StepMeta } from "./setup-steps"
+export type StepMeta = {
+  id: string
+  /** Full heading, shown above the step body. */
+  title: string
+  /** Stepper label — one or two words. */
+  short: string
+  /** One to two sentences of context. */
+  lead: string
+}
 
 /**
  * Numbered progress indicator. Every dot is clickable — the guide is a reading

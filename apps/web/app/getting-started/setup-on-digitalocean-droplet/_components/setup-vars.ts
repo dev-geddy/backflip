@@ -150,7 +150,6 @@ export function logsCommand(r: Resolved) {
 }
 
 export function statusCommand(r: Resolved) {
-  const name = varsAppName(r)
   return [
     `ssh -i ${r.sshKey} root@${r.host} "sudo -H -u backflip bash -c 'cd; . \\$HOME/.nvm/nvm.sh; pm2 status'; readlink ${r.appDir}/current"`,
   ]
