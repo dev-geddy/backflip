@@ -12,8 +12,34 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 
+import { createRateLimiter } from "@/app/_lib/rate-limit"
 import { isCredentialsEnabled, isGoogleConfigured } from "./config"
 import "./types"
+
+/**
+ * Failed-login throttle. Keyed on client IP + normalized email; only failures
+ * count and a success clears the key. Blocked attempts return the same generic
+ * `null` as a bad password (no lockout signal, no enumeration). In-process only
+ * (see `rate-limit.ts`) — one pm2 process / container per instance.
+ */
+const LOGIN_MAX_ATTEMPTS = 10
+const LOGIN_WINDOW_MS = 15 * 60_000
+const loginRateLimiter = createRateLimiter({
+  max: LOGIN_MAX_ATTEMPTS,
+  windowMs: LOGIN_WINDOW_MS,
+})
+
+/** Best-effort client IP from the proxy's forwarded headers (edge sets these). */
+function clientIp(request?: Request): string {
+  const fwd = request?.headers?.get?.("x-forwarded-for")
+  if (fwd) return fwd.split(",")[0]!.trim()
+  return request?.headers?.get?.("x-real-ip")?.trim() || "unknown"
+}
+
+/** Normalize an email for lookup/compare — matches how every write path stores it. */
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase()
+}
 
 /**
  * Auth.js (v5) config. Two providers:
@@ -24,7 +50,7 @@ import "./types"
  * Session strategy is JWT (required by the Credentials provider). The Drizzle
  * adapter persists OAuth accounts. Runs on the Node runtime (uses `pg`).
  *
- * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36
+ * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36, L2-AUTH-40, L2-AUTH-41
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -55,20 +81,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: { label: "Email", type: "email" },
               password: { label: "Password", type: "password" },
             },
-            authorize: async (creds) => {
-              const email = typeof creds?.email === "string" ? creds.email : ""
+            authorize: async (creds, request) => {
+              const rawEmail =
+                typeof creds?.email === "string" ? creds.email : ""
               const password =
                 typeof creds?.password === "string" ? creds.password : ""
-              if (!email || !password) return null
+              if (!rawEmail || !password) return null
+              const email = normalizeEmail(rawEmail)
+
+              // Throttle brute-force / credential-stuffing per IP+email.
+              const rlKey = `${clientIp(request as Request | undefined)}:${email}`
+              if (loginRateLimiter.blocked(rlKey)) return null
 
               const user = await db.query.users.findFirst({
                 where: eq(users.email, email),
               })
-              if (!user?.passwordHash) return null
+              if (!user?.passwordHash) {
+                loginRateLimiter.hit(rlKey)
+                return null
+              }
 
               const ok = await bcrypt.compare(password, user.passwordHash)
-              if (!ok) return null
+              if (!ok) {
+                loginRateLimiter.hit(rlKey)
+                return null
+              }
 
+              loginRateLimiter.reset(rlKey)
               return {
                 id: user.id,
                 email: user.email,
@@ -83,13 +122,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       : []),
   ],
   callbacks: {
-    // Google: reject unless a user with that email already exists.
+    // Google: reject unless the OAuth email is verified AND a user with that
+    // email already exists. The `email_verified` gate stops an attacker who
+    // controls an account asserting an unverified address from linking into a
+    // pre-registered user (`allowDangerousEmailAccountLinking` is on).
     signIn: async ({ account, user, profile }) => {
       if (account?.provider !== "google") return true
-      const email = user?.email ?? profile?.email
-      if (!email) return false
+      if (profile?.email_verified !== true) return false
+      const rawEmail = user?.email ?? profile?.email
+      if (!rawEmail) return false
       const existing = await db.query.users.findFirst({
-        where: eq(users.email, email),
+        where: eq(users.email, normalizeEmail(rawEmail)),
       })
       return Boolean(existing)
     },

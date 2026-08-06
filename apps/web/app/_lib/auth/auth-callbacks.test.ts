@@ -150,16 +150,33 @@ describe("signIn callback (L2-AUTH-10, L2-AUTH-11, L2-AUTH-14)", () => {
       signIn({
         account: { provider: "google" },
         user: { email: "stranger@example.com" },
+        profile: { email_verified: true },
       })
     ).resolves.toBe(false)
     expect(findFirst).toHaveBeenCalledTimes(1)
   })
 
-  it("allows Google sign-in for a pre-registered email", async () => {
+  it("allows Google sign-in for a pre-registered, verified email", async () => {
     findFirst.mockResolvedValue(USER_ROW)
     await expect(
-      signIn({ account: { provider: "google" }, user: { email: USER_ROW.email } })
+      signIn({
+        account: { provider: "google" },
+        user: { email: USER_ROW.email },
+        profile: { email_verified: true },
+      })
     ).resolves.toBe(true)
+  })
+
+  it("denies Google sign-in when the email is not verified", async () => {
+    findFirst.mockResolvedValue(USER_ROW)
+    await expect(
+      signIn({
+        account: { provider: "google" },
+        user: { email: USER_ROW.email },
+        profile: { email: USER_ROW.email, email_verified: false },
+      })
+    ).resolves.toBe(false)
+    expect(findFirst).not.toHaveBeenCalled()
   })
 
   it("falls back to the profile email when the user has none", async () => {
@@ -168,7 +185,7 @@ describe("signIn callback (L2-AUTH-10, L2-AUTH-11, L2-AUTH-14)", () => {
       signIn({
         account: { provider: "google" },
         user: {},
-        profile: { email: USER_ROW.email },
+        profile: { email: USER_ROW.email, email_verified: true },
       })
     ).resolves.toBe(true)
     expect(findFirst).toHaveBeenCalledTimes(1)
@@ -176,7 +193,11 @@ describe("signIn callback (L2-AUTH-10, L2-AUTH-11, L2-AUTH-14)", () => {
 
   it("denies Google sign-in with no email at all", async () => {
     await expect(
-      signIn({ account: { provider: "google" }, user: {}, profile: {} })
+      signIn({
+        account: { provider: "google" },
+        user: {},
+        profile: { email_verified: true },
+      })
     ).resolves.toBe(false)
     expect(findFirst).not.toHaveBeenCalled()
   })

@@ -1,8 +1,41 @@
 import path from "node:path"
 import type { NextConfig } from "next"
 
-/** @spec L2-UI-10, L2-DEVOPS-16 */
+/**
+ * Baseline security response headers applied to every route. Deliberately
+ * conservative: `frame-ancestors`/`base-uri`/`object-src` don't affect how
+ * same-origin scripts/styles load, so they add clickjacking + injection
+ * defense without a nonce pipeline. A full `script-src`/`style-src` CSP needs
+ * per-request nonces (Next injects inline hydration script/style) and is left
+ * as a follow-up. HSTS is prod-only so it never pins `localhost` to https.
+ */
+const SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  },
+  ...(process.env.NODE_ENV === "production"
+    ? [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=63072000; includeSubDomains",
+        },
+      ]
+    : []),
+]
+
+/** @spec L2-UI-10, L2-DEVOPS-16, L2-DEVOPS-21 */
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }]
+  },
   // Self-contained server bundle (.next/standalone) — run with `node server.js`,
   // not `next start`. Prod runtime: pm2 on the droplet, node in Docker locally.
   output: "standalone",

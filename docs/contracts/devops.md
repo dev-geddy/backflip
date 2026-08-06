@@ -31,6 +31,7 @@ Production deployment: DigitalOcean droplet provisioning, deploy pipeline (local
 - `L2-DEVOPS-11` — No secrets in git or CI logs; env files land only on the droplet (0600).
 - `L2-DEVOPS-17` — Privilege model: app + pm2 run as locked `backflip` user (no password/ssh); `/var/www/<domain>` owned by it; root does only system work (packages, db, proxy, firewall). Deploy app-phase runs via `sudo -u backflip`.
 - `L2-DEVOPS-18` — Multi-instance: instance identity = domain + app name + port (`-d` keys `/var/www/<domain>`; `-n`/`--app-port` default `backflip`/3070 name the pm2 app + nginx site + port); deploys affect only the named instance (pm2 `--only`, name-scoped health check). pm2-flavor feature; docker flavor's Caddy config is single-site.
+- `L2-DEVOPS-21` — App sets baseline security response headers on every route via `next.config.ts` `headers()`: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (camera/mic/geo/topics off), CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, and prod-only HSTS (`max-age=63072000; includeSubDomains`, gated on `NODE_ENV==="production"`). A nonce-based `script-src`/`style-src` CSP is a follow-up. The proxy layer (`L2-DEVOPS-05`) may add its own headers on top.
 
 ## Errors
 - `L2-DEVOPS-12` — Deploy with no `.env`/`.env.local` on droplet → dies with hint to templates + `--env` flags.
