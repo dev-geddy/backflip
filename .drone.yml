@@ -1,3 +1,28 @@
+# @spec L2-DEVOPS-25
+# Checks on every push / PR. Also the reason push builds exist at all: `deploy`
+# below is promote-only, and a build whose every pipeline is filtered out is not
+# recorded — leaving nothing to `drone build promote`. This pipeline gives each
+# master commit a build number to promote.
+# No secrets, no droplet access.
+kind: pipeline
+type: docker
+name: ci
+
+trigger:
+  event:
+    - push
+    - pull_request
+
+steps:
+  - name: checks
+    image: node:24-bookworm-slim
+    commands:
+      - corepack enable
+      - corepack yarn install --immutable
+      - corepack yarn typecheck
+      - corepack yarn lint
+
+---
 # @spec L2-DEVOPS-09
 # Thin wrapper over devops/deploy-for-pm2-build-locally.sh: the build runs on
 # the Drone runner (typecheck → build → pack), only the assembled artifact
