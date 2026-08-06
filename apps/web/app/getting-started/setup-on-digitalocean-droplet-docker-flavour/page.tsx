@@ -32,18 +32,19 @@ export default function SetupOnDropletDockerFlavourPage() {
               Setup on a DigitalOcean droplet — Docker flavour
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              The Docker flavour runs Postgres in a container and fronts the
-              app with Caddy for automatic TLS. This walkthrough is being
-              verified end-to-end and will land here.
+              The Docker flavour runs Postgres in a container and fronts the app
+              with Caddy for automatic TLS. This walkthrough is being verified
+              end-to-end and will land here.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button render={<a href="/getting-started/setup-on-digitalocean-droplet" />}>
+              <Button
+                render={
+                  <a href="/getting-started/setup-on-digitalocean-droplet" />
+                }
+              >
                 Use the pm2 flavour guide
               </Button>
-              <Button
-                variant="outline"
-                render={<a href="/getting-started" />}
-              >
+              <Button variant="outline" render={<a href="/getting-started" />}>
                 All guides
               </Button>
             </div>

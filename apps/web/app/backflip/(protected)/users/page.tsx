@@ -51,7 +51,8 @@ export default async function UsersPage() {
     for (const p of providers) loginMethods.push(PROVIDER_LABELS[p] ?? p)
 
     const emailVerified = Boolean(u.emailVerified)
-    const status = loginMethods.length > 0 || emailVerified ? "active" : "pending"
+    const status =
+      loginMethods.length > 0 || emailVerified ? "active" : "pending"
 
     return {
       id: u.id,

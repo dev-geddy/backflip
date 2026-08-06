@@ -168,7 +168,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: eq(users.id, token.id),
           columns: { role: true, tokenVersion: true },
         })
-        if (!current || (current.tokenVersion ?? 0) !== (token.tokenVersion ?? 0)) {
+        if (
+          !current ||
+          (current.tokenVersion ?? 0) !== (token.tokenVersion ?? 0)
+        ) {
           token.invalid = true
         } else {
           token.role = current.role

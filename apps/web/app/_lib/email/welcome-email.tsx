@@ -1,11 +1,6 @@
 import { Text } from "@react-email/components"
 
-import {
-  EmailShell,
-  FallbackUrl,
-  PrimaryButton,
-  emailText,
-} from "./layout"
+import { EmailShell, FallbackUrl, PrimaryButton, emailText } from "./layout"
 
 export type WelcomeEmailProps = {
   /** Recipient display name; falls back to a neutral greeting when absent. */

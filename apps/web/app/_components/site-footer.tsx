@@ -1,4 +1,5 @@
 import { AnalyticsGate } from "./analytics-gate"
+import { AppVersion } from "./app-version"
 
 /**
  * Public-site footer. Also the mount point for `AnalyticsGate` — this footer is
@@ -44,8 +45,9 @@ export function SiteFooter() {
             Admin
           </a>
         </nav>
-        <p className="text-[0.8125rem] text-muted-foreground">
+        <p className="flex items-baseline gap-2 text-[0.8125rem] text-muted-foreground">
           © {new Date().getFullYear()} Backflip
+          <AppVersion />
         </p>
       </div>
       <AnalyticsGate />

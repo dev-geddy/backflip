@@ -207,9 +207,9 @@ export function StepBody({
             certificate and the site won&apos;t be reachable at your domain. If
             DNS is on DigitalOcean: Networking → Domains → your domain →{" "}
             <Mono>A</Mono> record, hostname <Mono>@</Mono> (or a subdomain),
-            directed to the droplet. DNS changes take a few minutes to
-            propagate — adding the record now means it&apos;s live by the time
-            you provision.
+            directed to the droplet. DNS changes take a few minutes to propagate
+            — adding the record now means it&apos;s live by the time you
+            provision.
           </div>
         </div>
         <div className="flex flex-col gap-2">

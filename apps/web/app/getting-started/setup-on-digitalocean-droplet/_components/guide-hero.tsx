@@ -35,8 +35,8 @@ export function GuideHero() {
             DigitalOcean droplet
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            A few guided steps from a bare Ubuntu droplet to Backflip live on your
-            domain, over HTTPS. Fill in your variables once and copy the
+            A few guided steps from a bare Ubuntu droplet to Backflip live on
+            your domain, over HTTPS. Fill in your variables once and copy the
             commands — they run from the repo root on your own machine.
           </p>
           <a

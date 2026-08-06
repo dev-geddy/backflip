@@ -131,7 +131,9 @@ describe("providers (L2-AUTH-05, L2-AUTH-33, L2-AUTH-34)", () => {
   })
 
   it("keeps credentials when disabled without Google (no lockout)", async () => {
-    const ids = providerIds(await loadConfig({ AUTH_CREDENTIALS_ENABLED: "false" }))
+    const ids = providerIds(
+      await loadConfig({ AUTH_CREDENTIALS_ENABLED: "false" })
+    )
     expect(ids).toContain("credentials")
   })
 
@@ -141,8 +143,9 @@ describe("providers (L2-AUTH-05, L2-AUTH-33, L2-AUTH-34)", () => {
 })
 
 describe("signIn callback (L2-AUTH-10, L2-AUTH-11, L2-AUTH-14)", () => {
-  const signIn = (args: Partial<{ account: unknown; user: unknown; profile: unknown }>) =>
-    config.callbacks!.signIn!(args as unknown as SignInArgs)
+  const signIn = (
+    args: Partial<{ account: unknown; user: unknown; profile: unknown }>
+  ) => config.callbacks!.signIn!(args as unknown as SignInArgs)
 
   it("denies Google sign-in for an unknown email", async () => {
     findFirst.mockResolvedValue(undefined)
@@ -204,9 +207,9 @@ describe("signIn callback (L2-AUTH-10, L2-AUTH-11, L2-AUTH-14)", () => {
 
   it("passes through non-Google providers without a lookup", async () => {
     for (const account of [{ provider: "credentials" }, null, undefined]) {
-      await expect(signIn({ account, user: { email: USER_ROW.email } })).resolves.toBe(
-        true
-      )
+      await expect(
+        signIn({ account, user: { email: USER_ROW.email } })
+      ).resolves.toBe(true)
     }
     expect(findFirst).not.toHaveBeenCalled()
   })
@@ -298,7 +301,10 @@ describe("jwt callback — session revocation (L2-AUTH-36)", () => {
   })
 
   it("defaults a missing tokenVersion to 0 at sign-in", async () => {
-    const token = await jwt({ token: {}, user: { ...USER_ROW, tokenVersion: undefined } })
+    const token = await jwt({
+      token: {},
+      user: { ...USER_ROW, tokenVersion: undefined },
+    })
     expect(token?.tokenVersion).toBe(0)
   })
 
@@ -311,13 +317,17 @@ describe("jwt callback — session revocation (L2-AUTH-36)", () => {
 
   it("refreshes the role from the DB", async () => {
     findFirst.mockResolvedValue({ role: "teammate", tokenVersion: 3 })
-    const token = await jwt({ token: { id: USER_ROW.id, role: "owner", tokenVersion: 3 } })
+    const token = await jwt({
+      token: { id: USER_ROW.id, role: "owner", tokenVersion: 3 },
+    })
     expect(token?.role).toBe("teammate")
   })
 
   it("invalidates the token when tokenVersion no longer matches", async () => {
     findFirst.mockResolvedValue({ role: "owner", tokenVersion: 4 })
-    const token = await jwt({ token: { id: USER_ROW.id, role: "owner", tokenVersion: 3 } })
+    const token = await jwt({
+      token: { id: USER_ROW.id, role: "owner", tokenVersion: 3 },
+    })
     expect(token?.invalid).toBe(true)
     expect(token?.role).toBe("owner")
   })

@@ -66,9 +66,10 @@ export default function StartBuildingPage() {
             </div>
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
               The pattern generalizes: describe the feature, where it lives
-              (public site or <span className="font-mono text-[0.8125em]">/backflip</span> admin),
-              and what data it keeps — the agent handles schema, migrations,
-              routes and UI to match what&apos;s already there.
+              (public site or{" "}
+              <span className="font-mono text-[0.8125em]">/backflip</span>{" "}
+              admin), and what data it keeps — the agent handles schema,
+              migrations, routes and UI to match what&apos;s already there.
             </p>
           </div>
         </section>

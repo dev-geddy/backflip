@@ -180,7 +180,10 @@ export function summaryDocument(vars: SetupVars) {
     ["App URL", r.appUrl],
     ["Admin console", `${r.appUrl}/backflip`],
     ["Owner email", r.adminEmail],
-    ["Owner password", vars.adminPassword ? vars.adminPassword : "(not set — Google-only owner)"],
+    [
+      "Owner password",
+      vars.adminPassword ? vars.adminPassword : "(not set — Google-only owner)",
+    ],
   ]
   const pad = Math.max(...rows.map(([k]) => k.length))
 

@@ -30,11 +30,15 @@ test("owner signs in with credentials and reaches the dashboard", async ({
 
   await expect(page).toHaveURL("/backflip")
   await expect(
-    page.getByRole("heading", { name: `Welcome back, ${OWNER.name.split(" ")[0]}` })
+    page.getByRole("heading", {
+      name: `Welcome back, ${OWNER.name.split(" ")[0]}`,
+    })
   ).toBeVisible()
 })
 
-test("wrong password shows an error and grants no session", async ({ page }) => {
+test("wrong password shows an error and grants no session", async ({
+  page,
+}) => {
   await login(page, OWNER.email, "not-the-password")
 
   await expect(page.getByText("Invalid email or password.")).toBeVisible()
@@ -45,7 +49,9 @@ test("wrong password shows an error and grants no session", async ({ page }) => 
   await expect(page).toHaveURL("/backflip/login?from=%2Fbackflip")
 })
 
-test("teammate is redirected away from /backflip/settings", async ({ page }) => {
+test("teammate is redirected away from /backflip/settings", async ({
+  page,
+}) => {
   await login(page, TEAMMATE.email, TEAMMATE.password)
   await expect(page).toHaveURL("/backflip")
 
@@ -53,7 +59,9 @@ test("teammate is redirected away from /backflip/settings", async ({ page }) => 
 
   await expect(page).toHaveURL("/backflip")
   await expect(
-    page.getByRole("heading", { name: `Welcome back, ${TEAMMATE.name.split(" ")[0]}` })
+    page.getByRole("heading", {
+      name: `Welcome back, ${TEAMMATE.name.split(" ")[0]}`,
+    })
   ).toBeVisible()
 })
 

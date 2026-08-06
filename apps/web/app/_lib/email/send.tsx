@@ -51,9 +51,13 @@ function appName(cfg: { fromName: string | null }) {
  * any failure returns `error`, so callers are never blocked by email.
  * (`L2-EMAIL-13`)
  */
-async function send(build: (ctx: {
-  appName: string
-}) => { subject: string; react: React.ReactElement; to: string }): Promise<SendResult> {
+async function send(
+  build: (ctx: { appName: string }) => {
+    subject: string
+    react: React.ReactElement
+    to: string
+  }
+): Promise<SendResult> {
   const [cfg] = await db
     .select()
     .from(emailConfig)

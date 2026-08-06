@@ -46,10 +46,14 @@ export function SiteHeader({
             const last = i === trail.length - 1
             return (
               <span key={c} className="flex items-center gap-1.5">
-                <span className={last ? "font-medium" : "text-muted-foreground"}>
+                <span
+                  className={last ? "font-medium" : "text-muted-foreground"}
+                >
                   {c}
                 </span>
-                {!last ? <span className="text-muted-foreground/50">/</span> : null}
+                {!last ? (
+                  <span className="text-muted-foreground/50">/</span>
+                ) : null}
               </span>
             )
           })}

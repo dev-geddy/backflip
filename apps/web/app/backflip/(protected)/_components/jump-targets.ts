@@ -8,7 +8,11 @@ export const JUMP_GROUPS: {
     heading: "Pages",
     items: [
       { label: "Overview", href: "/backflip", keywords: "dashboard home" },
-      { label: "Members", href: "/backflip/users", keywords: "users people team" },
+      {
+        label: "Members",
+        href: "/backflip/users",
+        keywords: "users people team",
+      },
       {
         label: "Account",
         href: "/backflip/account",
@@ -24,7 +28,11 @@ export const JUMP_GROUPS: {
   {
     heading: "Actions",
     items: [
-      { label: "Add member", href: "/backflip/users", keywords: "new user invite create" },
+      {
+        label: "Add member",
+        href: "/backflip/users",
+        keywords: "new user invite create",
+      },
       {
         label: "Change password",
         href: "/backflip/account",

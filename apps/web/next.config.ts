@@ -1,5 +1,16 @@
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import type { NextConfig } from "next"
+
+/**
+ * Deployed version, read from the monorepo root `package.json` at build time
+ * and inlined as `NEXT_PUBLIC_APP_VERSION`. Inlining (not a runtime read) is
+ * deliberate: the standalone bundle is what ships, and the build-locally deploy
+ * copies no repo source to the droplet, so there is no package.json to read.
+ */
+const { version: APP_VERSION } = JSON.parse(
+  readFileSync(path.resolve(import.meta.dirname, "../../package.json"), "utf8")
+) as { version: string }
 
 /**
  * Baseline security response headers applied to every route. Deliberately
@@ -31,8 +42,11 @@ const SECURITY_HEADERS = [
     : []),
 ]
 
-/** @spec L2-UI-10, L2-DEVOPS-16, L2-DEVOPS-21 */
+/** @spec L2-UI-10, L2-UI-19, L2-DEVOPS-16, L2-DEVOPS-21 */
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: APP_VERSION,
+  },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }]
   },

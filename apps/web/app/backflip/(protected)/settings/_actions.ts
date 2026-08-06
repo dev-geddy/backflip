@@ -78,8 +78,7 @@ export async function saveAiConfig(
 }
 
 export type ListModelsState =
-  | { ok: true; models: ProviderModel[] }
-  | { ok: false; message: string }
+  { ok: true; models: ProviderModel[] } | { ok: false; message: string }
 
 /**
  * Live model list for a provider, fetched from its models API using the stored
@@ -244,8 +243,7 @@ export async function saveSpeechConfig(
 }
 
 export type ListSpeechModelsState =
-  | { ok: true; models: SpeechModel[] }
-  | { ok: false; message: string }
+  { ok: true; models: SpeechModel[] } | { ok: false; message: string }
 
 /**
  * Live STT + TTS model list from Deepgram, fetched with the stored (decrypted

@@ -25,7 +25,11 @@ export const PACKAGE: Record<ProviderConfig["provider"], string> = {
  * list from the provider's models API (`listAiModels`, L2-AI-13).
  */
 export const MODELS: Record<ProviderConfig["provider"], string[]> = {
-  anthropic: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5-20251001"],
+  anthropic: [
+    "claude-opus-4-8",
+    "claude-sonnet-5",
+    "claude-haiku-4-5-20251001",
+  ],
   openai: ["gpt-4.1", "gpt-4o", "o3", "o4-mini"],
   google: ["gemini-2.5-pro", "gemini-2.5-flash"],
 }
