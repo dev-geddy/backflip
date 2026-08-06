@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
-import { CapabilityGrid } from "./_components/capability-grid"
-import { FeatureGrid } from "./_components/feature-grid"
+import { CapabilityList } from "./_components/capability-list"
+import { FeatureList } from "./_components/feature-list"
 import { Hero } from "./_components/hero"
 import { HowItWorks } from "./_components/how-it-works"
 import { SiteFooter } from "./_components/site-footer"
@@ -22,8 +22,8 @@ export default function HomePage() {
       <SiteHeader />
       <main>
         <Hero />
-        <CapabilityGrid />
-        <FeatureGrid />
+        <CapabilityList />
+        <FeatureList />
         <HowItWorks />
         <WordmarkBand />
       </main>

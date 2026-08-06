@@ -1,4 +1,3 @@
-import type { RemixiconComponentType } from "@remixicon/react"
 import {
   RiChat3Line,
   RiKey2Line,
@@ -7,21 +6,15 @@ import {
   RiUserSettingsLine,
 } from "@remixicon/react"
 
-import { Card } from "@workspace/ui/components/card"
-
-type Capability = {
-  icon: RemixiconComponentType
-  title: string
-  body: string
-}
+import { type NumberedItem, NumberedList } from "./numbered-list"
 
 /**
- * The non-technical counterpart to `FEATURES` in `feature-grid.tsx`: same five
+ * The non-technical counterpart to `FEATURES` in `feature-list.tsx`: same five
  * slots, but each one answers "what can I do with this?" rather than "what is
  * it built from". Every line maps to something the platform actually ships —
  * keep it that way; this section is not a wish list.
  */
-const CAPABILITIES: Capability[] = [
+const CAPABILITIES: NumberedItem[] = [
   {
     icon: RiChat3Line,
     title: "Say it, don't code it",
@@ -34,8 +27,8 @@ const CAPABILITIES: Capability[] = [
   },
   {
     icon: RiUserSettingsLine,
-    title: "Invite your team",
-    body: "Add people by email and decide what each of them can touch. Owner, admin, teammate — the permissions are already wired.",
+    title: "Bring people in from day one",
+    body: "Add whoever is helping you build or run it, each with their own sign-in and level of access. Owner, admin and teammate exist before your first feature does, so what you build later can be scoped to them instead of bolting permissions on afterwards.",
   },
   {
     icon: RiPlugLine,
@@ -49,7 +42,7 @@ const CAPABILITIES: Capability[] = [
   },
 ]
 
-export function CapabilityGrid() {
+export function CapabilityList() {
   return (
     <section aria-label="What you can do" className="border-b bg-muted">
       <div className="mx-auto max-w-6xl px-6 py-20">
@@ -65,19 +58,7 @@ export function CapabilityGrid() {
             product to run, and the building happens in conversation.
           </p>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-4">
-          {CAPABILITIES.map(({ icon: Icon, title, body }) => (
-            <Card key={title} className="p-5.5">
-              <div className="inline-flex size-[42px] items-center justify-center rounded-[10px] border bg-background text-primary">
-                <Icon className="size-5" aria-hidden="true" />
-              </div>
-              <h3 className="mt-4 text-base font-semibold">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {body}
-              </p>
-            </Card>
-          ))}
-        </div>
+        <NumberedList items={CAPABILITIES} />
       </div>
     </section>
   )
