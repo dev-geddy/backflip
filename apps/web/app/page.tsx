@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { CapabilityGrid } from "./_components/capability-grid"
 import { FeatureGrid } from "./_components/feature-grid"
 import { Hero } from "./_components/hero"
 import { HowItWorks } from "./_components/how-it-works"
@@ -21,6 +22,7 @@ export default function HomePage() {
       <SiteHeader />
       <main>
         <Hero />
+        <CapabilityGrid />
         <FeatureGrid />
         <HowItWorks />
         <WordmarkBand />
