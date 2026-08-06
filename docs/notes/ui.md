@@ -130,6 +130,7 @@ Both render the real `devops/` commands with the operator's variables substitute
 - Step 5 (database) states the overlap: provisioning already installed Docker, so `setup-droplet-db-docker.sh` is the "adding a dockerized db to a droplet provisioned another way" path. The container itself starts on the first deploy; data lives in the named volume `backflip_pgdata`.
 - Step 6 prints all four `POSTGRES_*` lines + an assembled `DATABASE_URL` + `DOMAIN` (Caddy renders its site config from `DOMAIN`), and warns the password is only read when the volume is first created.
 - Step 7 has no `deploy-for-pm2-build-locally.sh` equivalent; instead it documents **rollback**: there is no `rollback-for-docker.sh` (the existing script hardcodes `NEEDS_NVM=yes`), so the documented path is `git checkout <ref>` + redeploy. It also shows `docker compose ... ps` / `logs db` through ssh, since Postgres is loopback-only.
+- Step 2 (Clone) carries the pm2 guide's Claude-Code note too (it was missing here — only the docker-specific "no Docker needed locally" note was present), extended with the line that ties it to the step-9 handoff: the shipped instructions are what let the agent run the rest of the guide, docker flavour included.
 - Step 8 owner seed drops the `. $HOME/.nvm/nvm.sh` sourcing — Node is system-wide from apt here, so `corepack` is on the app user's PATH.
 
 ## Homepage capability section (non-developer audience)
