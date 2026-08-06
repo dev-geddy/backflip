@@ -5,8 +5,9 @@ import bcrypt from "bcryptjs"
 import { db, users } from "@workspace/db"
 
 import { auth } from "@/app/_lib/auth"
-import { canEditUsers, isRole } from "@/app/_lib/auth/permissions"
+import { canEditUsers } from "@/app/_lib/auth/permissions"
 import { sendWelcomeEmail } from "@/app/_lib/email/send"
+import { createUserSchema, firstError } from "@/app/_lib/validation"
 
 // Uses pg (db) + bcrypt — Node runtime, not edge.
 export const runtime = "nodejs"
@@ -31,7 +32,7 @@ function isUniqueViolation(e: unknown) {
  * 409 duplicate email. Email delivery never changes the status: an unconfigured
  * Resend or a send failure still returns 201 with an informative `message`.
  *
- * @spec L2-AUTH-25
+ * @spec L2-AUTH-25, L2-AUTH-42
  */
 export async function POST(req: Request) {
   const session = await auth()
@@ -42,9 +43,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Forbidden" }, { status: 403 })
   }
 
-  let body: Record<string, unknown>
+  let body: unknown
   try {
-    body = (await req.json()) as Record<string, unknown>
+    body = await req.json()
   } catch {
     return NextResponse.json(
       { ok: false, message: "Invalid JSON body" },
@@ -52,19 +53,14 @@ export async function POST(req: Request) {
     )
   }
 
-  const name = String(body.name ?? "").trim() || null
-  const email = String(body.email ?? "")
-    .trim()
-    .toLowerCase()
-  const role = String(body.role ?? "")
-  const password = String(body.password ?? "")
-
-  if (!email) {
-    return NextResponse.json({ ok: false, message: "Email is required" }, { status: 400 })
+  const parsed = createUserSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { ok: false, message: firstError(parsed.error) },
+      { status: 400 }
+    )
   }
-  if (!isRole(role)) {
-    return NextResponse.json({ ok: false, message: "Unknown role" }, { status: 400 })
-  }
+  const { name, email, role, password } = parsed.data
 
   const passwordHash = password ? await bcrypt.hash(password, 12) : null
 

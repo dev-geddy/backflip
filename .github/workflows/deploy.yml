@@ -1,4 +1,4 @@
-# @spec L2-DEVOPS-08
+# @spec L2-DEVOPS-08, L2-DEVOPS-24
 # Thin wrapper over devops/deploy-for-pm2-build-locally.sh: the build runs on
 # the Actions runner (typecheck → build → pack), only the assembled artifact
 # ships to the droplet; migrations run from the runner via an ssh tunnel.
@@ -16,6 +16,10 @@ on:
   workflow_dispatch: {}
   # push:
   #   branches: [master]
+
+# Least privilege: this workflow never calls the GitHub API, only checks out.
+permissions:
+  contents: read
 
 concurrency:
   group: deploy-production
@@ -41,24 +45,34 @@ jobs:
       - name: Install dependencies
         run: corepack yarn install --immutable
 
+      # Secrets are passed via env (not interpolated into the script text), so a
+      # secret containing shell metacharacters can't inject commands.
       - name: Write SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
           umask 077
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > key.pem
+          printf '%s\n' "$DEPLOY_SSH_KEY" > key.pem
           chmod 600 key.pem
 
       - name: Build deploy args
+        env:
+          DEPLOY_ENV: ${{ secrets.DEPLOY_ENV }}
+          DEPLOY_ENV_LOCAL: ${{ secrets.DEPLOY_ENV_LOCAL }}
         run: |
           ARGS=""
-          if [ -n "${{ secrets.DEPLOY_ENV }}" ]; then
-            printf '%s' "${{ secrets.DEPLOY_ENV }}" > env.deploy
+          if [ -n "$DEPLOY_ENV" ]; then
+            printf '%s' "$DEPLOY_ENV" > env.deploy
             ARGS="$ARGS --env env.deploy"
           fi
-          if [ -n "${{ secrets.DEPLOY_ENV_LOCAL }}" ]; then
-            printf '%s' "${{ secrets.DEPLOY_ENV_LOCAL }}" > env.local.deploy
+          if [ -n "$DEPLOY_ENV_LOCAL" ]; then
+            printf '%s' "$DEPLOY_ENV_LOCAL" > env.local.deploy
             ARGS="$ARGS --env-local env.local.deploy"
           fi
           echo "ARGS=$ARGS" >> "$GITHUB_ENV"
 
       - name: Deploy
-        run: ./devops/deploy-for-pm2-build-locally.sh -h "${{ secrets.DEPLOY_HOST }}" -i key.pem -d "${{ secrets.DEPLOY_DOMAIN }}" $ARGS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
+        run: ./devops/deploy-for-pm2-build-locally.sh -h "$DEPLOY_HOST" -i key.pem -d "$DEPLOY_DOMAIN" $ARGS

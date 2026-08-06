@@ -4,7 +4,7 @@
 
 ## File map
 - `docker-compose.yml` — services `db` (`backflip-db`, no profile → default), `db-migrate` (`backflip-db-migrate`, profiles web+seed, one-shot `corepack yarn db:migrate` off Dockerfile `deps` stage), `web` (`backflip-web`, profile web, waits for db healthy + migrate completed, `AUTH_URL=http://localhost:3071` override), `db-seed` (`backflip-db-seed`, profile seed, one-shot `corepack yarn init-owner`, `.env.init` via optional env_file — never `environment:`, which would override the file with empties). Shared `x-db-url` anchor for the in-network `DATABASE_URL`. Satisfies `L2-INF-01`, `L2-INF-02`, `L2-INF-05`, `L2-INF-14`, `L2-INF-15`. `name: backflip`. Volume `backflip_pgdata`.
-- `apps/web/Dockerfile` — 4-stage (base → deps → build → runner; `deps` = workspace + node_modules for migrate/seed tools), context = repo root. Build stage: `corepack enable`, `yarn install --immutable`, `yarn workspace web build`. Runner ships only the Next standalone bundle, runs `node apps/web/server.js`. Satisfies `L2-INF-04`.
+- `apps/web/Dockerfile` — 4-stage (base → deps → build → runner; `deps` = workspace + node_modules for migrate/seed tools), context = repo root. Build stage: `corepack enable`, `yarn install --immutable`, `yarn workspace web build`. Runner ships only the Next standalone bundle, runs `node apps/web/server.js` as the non-root `node` user (`USER node`, read-only at runtime). Satisfies `L2-INF-04`, `L2-INF-16`.
 - `.dockerignore` — excludes node_modules, `.next`, `.turbo`, `.git`, `.env*` (keeps `.env.example`).
 - `.env.example` — committed template. `.env` — gitignored, local creds. Satisfies `L2-INF-07`, `L2-INF-09`.
 - `apps/web/package.json` — `dev` = `next dev -p 3070`, `start` = `next start -p 3070`. Satisfies `L2-INF-03`.
@@ -27,7 +27,7 @@
 
 ## Ports
 - App: local 3070 / docker host 3071 → container 3070.
-- Postgres: host `${POSTGRES_PORT:-5544}` → container 5432. Default 5544 chosen off 5432 (docker daemon was down at setup — couldn't scan existing images; verify no clash, adjust `POSTGRES_PORT` if needed). Satisfies `L2-INF-08`.
+- Postgres: host `127.0.0.1:${POSTGRES_PORT:-5544}` → container 5432 (loopback-bound, `L2-INF-05`). Default 5544 chosen off 5432 (docker daemon was down at setup — couldn't scan existing images; verify no clash, adjust `POSTGRES_PORT` if needed). Satisfies `L2-INF-08`.
 
 ## TODO
 - Optional: dev-mode app container with source mount if containerized hot reload is ever wanted.

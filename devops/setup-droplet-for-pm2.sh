@@ -97,6 +97,13 @@ remote_script app-dirs.sh "REMOTE_DIR='$REMOTE_DIR' APP_USER='$APP_USER'"
 
 # --- nginx site (rendered locally from the template, pushed to the droplet) ---
 # One site file per instance — other instances' sites are untouched.
+# The shared http-context snippet (rate-limit zone + scrubbed log_format) is
+# host-wide, not per-instance; pushed verbatim to conf.d before the site so the
+# site's `limit_req`/`access_log` references resolve when nginx -t runs.
+log "nginx http snippet (rate-limit zone + scrubbed logs)"
+require_file "$SCRIPT_DIR/nginx/backflip-http.conf" "nginx http snippet missing"
+remote_run "tee /etc/nginx/conf.d/backflip-http.conf >/dev/null" < "$SCRIPT_DIR/nginx/backflip-http.conf"
+
 log "nginx site $APP_NAME.conf for $DOMAIN (app port $APP_PORT)"
 sed -e "s/__DOMAIN__/$DOMAIN/g" -e "s/__PORT__/$APP_PORT/g" "$SCRIPT_DIR/nginx/backflip.conf" \
   | remote_run "tee /etc/nginx/sites-available/$APP_NAME.conf >/dev/null"

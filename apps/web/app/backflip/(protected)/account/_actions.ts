@@ -202,15 +202,15 @@ export async function confirmEmailChange(token: string): Promise<SaveState> {
   const session = await auth()
   if (!session?.user) return { ok: false, message: "Unauthorized" }
 
+  // Pass userId so a token belonging to another account is NOT consumed —
+  // otherwise anyone holding the link could burn a victim's pending change.
   const consumed = await consumeUserToken({
     rawToken: token,
     type: "email_change",
+    userId: session.user.id,
   })
   if (!consumed || !consumed.newEmail) {
     return { ok: false, message: "This link is invalid or has expired." }
-  }
-  if (consumed.userId !== session.user.id) {
-    return { ok: false, message: "This link belongs to a different account." }
   }
 
   const [taken] = await db
@@ -228,10 +228,15 @@ export async function confirmEmailChange(token: string): Promise<SaveState> {
     .from(users)
     .where(eq(users.id, session.user.id))
 
-  // Swap the address + bump tokenVersion → invalidate existing sessions.
+  // Swap the address + mark it verified (the user just proved control of it) +
+  // bump tokenVersion → invalidate existing sessions.
   await db
     .update(users)
-    .set({ email: consumed.newEmail, tokenVersion: sql`${users.tokenVersion} + 1` })
+    .set({
+      email: consumed.newEmail,
+      emailVerified: new Date(),
+      tokenVersion: sql`${users.tokenVersion} + 1`,
+    })
     .where(eq(users.id, session.user.id))
 
   if (me?.email) {

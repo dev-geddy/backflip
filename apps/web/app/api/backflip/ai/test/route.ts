@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm"
 
 import { auth } from "@/app/_lib/auth"
 import { canAccessSettings } from "@/app/_lib/auth/permissions"
+import { createRateLimiter } from "@/app/_lib/rate-limit"
 import {
   MAX_PROMPT_CHARS,
   streamTestPrompt,
@@ -15,6 +16,19 @@ import {
 export const runtime = "nodejs"
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
+
+/**
+ * Per-user throttle on live provider calls — the endpoint spends the org's
+ * stored API key, so an owner session (or a stolen owner cookie) must not be
+ * able to loop it into an unbounded, billed inference proxy. In-process only
+ * (see `rate-limit.ts`); this instance runs as a single Node process.
+ */
+const TEST_MAX_PER_WINDOW = 20
+const TEST_WINDOW_MS = 5 * 60_000
+const testRateLimiter = createRateLimiter({
+  max: TEST_MAX_PER_WINDOW,
+  windowMs: TEST_WINDOW_MS,
+})
 
 /**
  * POST /api/backflip/ai/test — one live round-trip against an enabled AI
@@ -32,7 +46,7 @@ const PROVIDERS = ["anthropic", "openai", "google"] as const
  * Status codes: 200 streaming · 400 validation / provider not testable ·
  * 401 unauth · 403 forbidden · 502 provider call failed.
  *
- * @spec L2-AI-14, L2-AI-17, L2-AI-18, L2-AI-19, L2-AI-20
+ * @spec L2-AI-14, L2-AI-17, L2-AI-18, L2-AI-19, L2-AI-20, L2-AI-22
  */
 export async function POST(req: Request) {
   const session = await auth()
@@ -48,6 +62,16 @@ export async function POST(req: Request) {
       { status: 403 }
     )
   }
+
+  const rlKey = session.user.id
+  if (testRateLimiter.blocked(rlKey)) {
+    const retryAfter = Math.ceil(testRateLimiter.retryAfterMs(rlKey) / 1000)
+    return NextResponse.json(
+      { ok: false, message: "Too many test runs — try again in a moment." },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    )
+  }
+  testRateLimiter.hit(rlKey)
 
   let body: Record<string, unknown>
   try {

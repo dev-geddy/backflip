@@ -28,6 +28,7 @@ AI integration configuration: provider/model/key settings under `/backflip/setti
 - `L2-AI-08` — Blank API-key field on save keeps the existing key (no overwrite).
 - `L2-AI-17` — Only providers that are `enabled` **and** have a saved key are testable (filtered in the modal, re-checked server-side).
 - `L2-AI-18` — Test calls never send the key to the client; provider error bodies are never surfaced (generic message only), same as `L2-AI-13`.
+- `L2-AI-22` _(inv)_ — `POST /api/backflip/ai/test` is per-user rate limited: 20 runs / 5 min keyed on `session.user.id`; over-limit → 429 + `Retry-After`, no provider call. Bounds cost abuse of the org's stored provider key (owner-gated but otherwise unmetered). In-process limiter (`_lib/rate-limit.ts`, shared with `L2-AUTH-40`) — per Node process.
 
 ## Errors
 - `L2-AI-09` — Unauthenticated `saveAiConfig` → `{ ok: false, "Unauthorized" }`, no write.

@@ -19,7 +19,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-backflip}
     ports:
       # Host port off the default 5432 to avoid clashing with other local pg.
-      - "${POSTGRES_PORT:-5544}:5432"
+      # Bound to loopback so the dev db with its default password isn't exposed
+      # on the network if this file is ever run on a non-local host.
+      - "127.0.0.1:${POSTGRES_PORT:-5544}:5432"
     volumes:
       - backflip_pgdata:/var/lib/postgresql/data
     healthcheck:

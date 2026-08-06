@@ -11,6 +11,7 @@ import Link from "next/link"
 import { RiCheckLine } from "@remixicon/react"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
+import { canViewUsers } from "@/app/_lib/auth/permissions"
 import { SectionLabel } from "./_components/page-heading"
 import { OverviewJump } from "./_components/overview-jump"
 
@@ -32,6 +33,9 @@ function initials(value: string) {
  */
 export default async function BackflipOverviewPage() {
   const sessionUser = await requireCapability("dashboard")
+  // The member roster (names + emails) is user data — only `users.view` roles
+  // (owner/admin) see it; teammates get the dashboard without the roster.
+  const canView = canViewUsers(sessionUser.role)
 
   const userRows = await db
     .select({
@@ -200,7 +204,8 @@ export default async function BackflipOverviewPage() {
               </div>
             </div>
 
-            {/* Recent members */}
+            {/* Recent members — names/emails, gated to users.view roles. */}
+            {canView && (
             <div className="rounded-xl border bg-card p-5">
               <div className="text-sm font-semibold">Recent members</div>
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -238,6 +243,7 @@ export default async function BackflipOverviewPage() {
                 })}
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>

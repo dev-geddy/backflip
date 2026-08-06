@@ -220,6 +220,30 @@ describe("consumeUserToken (L2-AUTH-29, L2-AUTH-31)", () => {
     ).resolves.toBeNull()
     expect(h.ops).toEqual([])
   })
+
+  it("does not consume a token belonging to another user", async () => {
+    h.state.rows = [row({ userId: "owner-of-token", type: "email_change" })]
+
+    await expect(
+      consumeUserToken({
+        rawToken: "raw",
+        type: "email_change",
+        userId: "someone-else",
+      })
+    ).resolves.toBeNull()
+    expect(h.updates).toHaveLength(0) // token left valid for its real owner
+  })
+
+  it("consumes when the userId matches the token owner", async () => {
+    h.state.rows = [
+      row({ userId: "user-9", type: "email_change", newEmail: "new@example.com" }),
+    ]
+
+    await expect(
+      consumeUserToken({ rawToken: "raw", type: "email_change", userId: "user-9" })
+    ).resolves.toEqual({ userId: "user-9", newEmail: "new@example.com" })
+    expect(h.updates).toHaveLength(1)
+  })
 })
 
 describe("rate limit (L2-AUTH-37)", () => {

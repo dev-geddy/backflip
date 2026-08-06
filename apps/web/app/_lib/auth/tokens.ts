@@ -62,14 +62,18 @@ export type ConsumedToken = {
 
 /**
  * Validate + consume a raw token. Succeeds only if a matching row exists, is of
- * the given `type`, is un-consumed, and is not expired. Marks it consumed
- * (single use) and returns its `userId`/`newEmail`. Any failure → null.
+ * the given `type`, is un-consumed, not expired, and — when `userId` is given —
+ * belongs to that user. Marks it consumed (single use) and returns its
+ * `userId`/`newEmail`. Any failure → null WITHOUT marking it consumed, so a
+ * wrong-owner attempt can't burn a victim's still-valid token.
  */
 export async function consumeUserToken(params: {
   rawToken: string
   type: UserTokenType
+  /** When set, the token must belong to this user or it is left untouched. */
+  userId?: string
 }): Promise<ConsumedToken | null> {
-  const { rawToken, type } = params
+  const { rawToken, type, userId } = params
   if (!rawToken) return null
 
   const [row] = await db
@@ -81,6 +85,7 @@ export async function consumeUserToken(params: {
   if (row.type !== type) return null
   if (row.consumedAt) return null
   if (row.expiresAt.getTime() < Date.now()) return null
+  if (userId && row.userId !== userId) return null
 
   await db
     .update(userTokens)
