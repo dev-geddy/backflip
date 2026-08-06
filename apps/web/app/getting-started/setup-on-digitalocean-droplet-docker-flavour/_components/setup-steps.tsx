@@ -27,6 +27,7 @@ import {
   envCopyCommands,
   firstDeployCommand,
   googleOAuthLines,
+  claudeHandoffPrompt,
   ownerSeedCommands,
   productionEnvLines,
   productionEnvLocalLines,
@@ -149,6 +150,12 @@ export function StepBody({
             means it&apos;s live by the time you deploy.
           </ChecklistRow>
         </RowCard>
+        <Note>
+          You don&apos;t have to run any of this by hand. Fill in the variables
+          as you go and the last step gives you a summary you can paste into{" "}
+          <strong>Claude Code</strong>, running in your clone of the project —
+          it drives the same <Mono>devops/</Mono> scripts for you.
+        </Note>
         <div className="flex flex-col gap-2">
           <RunOn>your machine — any shell</RunOn>
           <CommandBlock
@@ -520,6 +527,24 @@ export function StepBody({
         label="backflip-setup-summary-docker.txt"
         prompt={false}
       />
+      <SubSection title="Or hand the whole setup to Claude Code">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Open <strong>Claude Code</strong> in your clone of the project (the
+          fork from step 2), paste the prompt below, then paste the summary
+          under it. It reads the repo, runs the same <Mono>devops/</Mono>{" "}
+          scripts in order, and asks before each command.
+        </p>
+        <CommandBlock
+          lines={claudeHandoffPrompt()}
+          label="paste into Claude Code"
+          prompt={false}
+        />
+        <Note>
+          The summary carries your secrets, so pasting it sends them to the
+          model. Fine for a droplet you control; if you&apos;d rather not, leave
+          the password lines out and type them when the agent asks.
+        </Note>
+      </SubSection>
     </div>
   )
 }

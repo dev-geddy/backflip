@@ -162,6 +162,30 @@ function varsAppName(r: Resolved) {
 }
 
 /**
+ * The prompt an operator can paste into Claude Code, in their clone of the
+ * project, instead of running the steps by hand. It names the scripts rather
+ * than the commands: the agent reads the repo (and `devops.md`) for the flags,
+ * so this stays correct when a script signature changes.
+ *
+ * Paired with the summary document below — the values live there.
+ */
+export function claudeHandoffPrompt() {
+  return [
+    "Set up my DigitalOcean droplet for this project and deploy it.",
+    "",
+    "Use the pm2-flavour scripts in devops/ (setup-droplet-for-pm2.sh,",
+    "setup-droplet-db-native.sh, deploy-for-pm2-build-locally.sh) and follow",
+    "devops.md. Take every value from the setup summary pasted below.",
+    "",
+    "Show me each command before you run it, stop on the first failure, and",
+    "tell me what to check if the TLS certificate can't be issued yet.",
+    "",
+    "--- setup summary ---",
+    "<paste the contents of backflip-setup-summary.txt here>",
+  ]
+}
+
+/**
  * Plain-text summary the operator can save after the last step: every value
  * they entered plus the day-two command reference. Contains the owner password
  * when one was set — the document itself carries the warning.
