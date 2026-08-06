@@ -10,6 +10,7 @@ import Link from "next/link"
 
 import { RiCheckLine } from "@remixicon/react"
 
+import { AppVersion } from "@/app/_components/app-version"
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { canViewUsers } from "@/app/_lib/auth/permissions"
 import { SectionLabel } from "./_components/page-heading"
@@ -206,45 +207,48 @@ export default async function BackflipOverviewPage() {
 
             {/* Recent members — names/emails, gated to users.view roles. */}
             {canView && (
-            <div className="rounded-xl border bg-card p-5">
-              <div className="text-sm font-semibold">Recent members</div>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                Newest to join
-              </div>
-              <div className="mt-4 flex flex-col">
-                {recent.map((u, i) => {
-                  const label = u.name || u.email
-                  return (
-                    <div
-                      key={u.id}
-                      className={cn(
-                        "flex items-center gap-3 py-2",
-                        i < recent.length - 1 && "border-b"
-                      )}
-                    >
-                      <Avatar className="size-8 rounded-full">
-                        {u.image ? (
-                          <AvatarImage src={u.image} alt={label} />
-                        ) : null}
-                        <AvatarFallback className="rounded-full text-[10px]">
-                          {initials(label)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px]">
-                          <span className="font-medium">{label}</span> joined
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {JOINED_FMT.format(u.createdAt)}
+              <div className="rounded-xl border bg-card p-5">
+                <div className="text-sm font-semibold">Recent members</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  Newest to join
+                </div>
+                <div className="mt-4 flex flex-col">
+                  {recent.map((u, i) => {
+                    const label = u.name || u.email
+                    return (
+                      <div
+                        key={u.id}
+                        className={cn(
+                          "flex items-center gap-3 py-2",
+                          i < recent.length - 1 && "border-b"
+                        )}
+                      >
+                        <Avatar className="size-8 rounded-full">
+                          {u.image ? (
+                            <AvatarImage src={u.image} alt={label} />
+                          ) : null}
+                          <AvatarFallback className="rounded-full text-[10px]">
+                            {initials(label)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[13px]">
+                            <span className="font-medium">{label}</span> joined
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {JOINED_FMT.format(u.createdAt)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
             )}
           </div>
+
+          {/* Deployed release marker — tells an operator which build is live. */}
+          <AppVersion className="text-center" />
         </div>
       </div>
     </div>
