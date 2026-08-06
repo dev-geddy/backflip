@@ -1,9 +1,8 @@
 # @spec L2-DEVOPS-25
-# Checks on every push / PR. Also the reason push builds exist at all: `deploy`
-# below is promote-only, and a build whose every pipeline is filtered out is not
-# recorded — leaving nothing to `drone build promote`. This pipeline gives each
-# master commit a build number to promote.
-# No secrets, no droplet access.
+# Checks on every push / PR: install → typecheck → lint. No secrets, no droplet
+# access. On a master push this runs alongside `deploy` (below) rather than
+# gating it — `deploy` typechecks internally before it builds or ships anything,
+# so a type error still cannot reach the droplet. Lint is advisory.
 kind: pipeline
 type: docker
 name: ci
@@ -32,19 +31,24 @@ steps:
 #   deploy_host       - droplet host/IP
 #   deploy_domain     - instance domain (deploy dir /var/www/<domain>)
 #   deploy_ssh_key    - private SSH key, no passphrase
-#   deploy_env        - optional, full contents of .env (first deploy / env changes only)
-#   deploy_env_local  - optional, full contents of .env.local (first deploy / env changes only)
+#   deploy_env        - optional, full contents of .env      (uploaded every deploy when set)
+#   deploy_env_local  - optional, full contents of .env.local (uploaded every deploy when set)
 #
-# Manual trigger only: drone build promote <repo> <build> production
+# Triggers:
+#   push to master                                  — automatic deploy, the normal path
+#   drone build promote <repo> <build> production   — manual re-deploy of an older master build
+# The local `./devops/deploy-for-pm2-build-locally.sh` stays the break-glass path
+# for shipping straight from a workstation without waiting on CI.
 kind: pipeline
 type: docker
 name: deploy
 
 trigger:
   event:
+    - push
     - promote
-  target:
-    - production
+  branch:
+    - master
 
 steps:
   - name: deploy
