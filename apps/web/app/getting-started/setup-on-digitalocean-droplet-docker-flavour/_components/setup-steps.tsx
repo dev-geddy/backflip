@@ -1,6 +1,10 @@
 "use client"
 
-import { RiDownloadLine, RiExternalLinkLine } from "@remixicon/react"
+import {
+  RiDownloadLine,
+  RiExternalLinkLine,
+  RiGitForkLine,
+} from "@remixicon/react"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -206,8 +210,39 @@ export function StepBody({
             Windows use WSL.
           </ChecklistRow>
         </RowCard>
+        <div className="flex flex-col gap-3">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Fork it first if you intend to keep what you build. The project then
+            lives in your own repository — your commits, your history — and you
+            can still pull updates from upstream later.
+          </p>
+          <div>
+            <Button
+              variant="outline"
+              render={
+                <a
+                  href="https://github.com/dev-geddy/backflip/fork"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              <RiGitForkLine aria-hidden="true" />
+              Fork it, make it yours
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-col gap-2">
           <RunOn>your machine — any shell</RunOn>
+          <CommandBlock
+            lines={[
+              "git clone https://github.com/<your-github-account>/backflip.git",
+              "cd backflip",
+              "corepack enable",
+              "corepack yarn install",
+            ]}
+            label="clone your fork"
+          />
           <CommandBlock
             lines={[
               "git clone https://github.com/dev-geddy/backflip.git",
@@ -215,6 +250,7 @@ export function StepBody({
               "corepack enable",
               "corepack yarn install",
             ]}
+            label="or clone this repo directly"
           />
         </div>
         <Note>
