@@ -30,7 +30,7 @@ Two droplet flavors; matching setup + deploy script pairs.
 - `devops/nginx/backflip.conf` — nginx site template (`__DOMAIN__`); setup-droplet-for-pm2.sh renders it; certbot injects TLS.
 - `devops/env/*.example` — env templates (source for first deploy's `.env`/`.env.local`).
 - Docs: root `devops.md` (index) → `devops/docs/{droplet-setup,deploy-local,deploy-github-actions,deploy-drone}.md` (one per build setup).
-- CI: `.github/workflows/deploy.yml` (`workflow_dispatch`), `.drone.yml` (promote → production) — call `deploy-for-docker.sh`.
+- CI: `.github/workflows/deploy.yml` (`workflow_dispatch`), `.drone.yml` (pipeline `deploy`, promote → production) — both call `deploy-for-pm2-build-locally.sh` on a glibc runner (matches the droplet's pm2 flavor; alpine would ship musl binaries). `.drone.yml` also has pipeline `ci` (push + PR: install → typecheck → lint) — required, since Drone records no build when every pipeline is filtered out, leaving nothing to promote.
 
 ## Key commands
 - Provision pm2 flavor (once): `./devops/setup-droplet-for-pm2.sh -h <host> -i <ssh-key> -d <domain> -m <email>` then a db script.
