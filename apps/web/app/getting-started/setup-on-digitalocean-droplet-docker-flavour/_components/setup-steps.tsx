@@ -1,6 +1,10 @@
 "use client"
 
-import { RiDownloadLine, RiExternalLinkLine } from "@remixicon/react"
+import {
+  RiDownloadLine,
+  RiExternalLinkLine,
+  RiGitForkLine,
+} from "@remixicon/react"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -23,6 +27,7 @@ import {
   envCopyCommands,
   firstDeployCommand,
   googleOAuthLines,
+  claudeHandoffPrompt,
   ownerSeedCommands,
   productionEnvLines,
   productionEnvLocalLines,
@@ -145,6 +150,12 @@ export function StepBody({
             means it&apos;s live by the time you deploy.
           </ChecklistRow>
         </RowCard>
+        <Note>
+          You don&apos;t have to run any of this by hand. Fill in the variables
+          as you go and the last step gives you a summary you can paste into{" "}
+          <strong>Claude Code</strong>, running in your clone of the project —
+          it drives the same <Mono>devops/</Mono> scripts for you.
+        </Note>
         <div className="flex flex-col gap-2">
           <RunOn>your machine — any shell</RunOn>
           <CommandBlock
@@ -206,8 +217,39 @@ export function StepBody({
             Windows use WSL.
           </ChecklistRow>
         </RowCard>
+        <div className="flex flex-col gap-3">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Fork it first if you intend to keep what you build. The project then
+            lives in your own repository — your commits, your history — and you
+            can still pull updates from upstream later.
+          </p>
+          <div>
+            <Button
+              variant="outline"
+              render={
+                <a
+                  href="https://github.com/dev-geddy/backflip/fork"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              <RiGitForkLine aria-hidden="true" />
+              Fork it, make it yours
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-col gap-2">
           <RunOn>your machine — any shell</RunOn>
+          <CommandBlock
+            lines={[
+              "git clone https://github.com/<your-github-account>/backflip.git",
+              "cd backflip",
+              "corepack enable",
+              "corepack yarn install",
+            ]}
+            label="clone your fork"
+          />
           <CommandBlock
             lines={[
               "git clone https://github.com/dev-geddy/backflip.git",
@@ -215,6 +257,7 @@ export function StepBody({
               "corepack enable",
               "corepack yarn install",
             ]}
+            label="or clone this repo directly"
           />
         </div>
         <Note>
@@ -484,6 +527,24 @@ export function StepBody({
         label="backflip-setup-summary-docker.txt"
         prompt={false}
       />
+      <SubSection title="Or hand the whole setup to Claude Code">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Open <strong>Claude Code</strong> in your clone of the project (the
+          fork from step 2), paste the prompt below, then paste the summary
+          under it. It reads the repo, runs the same <Mono>devops/</Mono>{" "}
+          scripts in order, and asks before each command.
+        </p>
+        <CommandBlock
+          lines={claudeHandoffPrompt()}
+          label="paste into Claude Code"
+          prompt={false}
+        />
+        <Note>
+          The summary carries your secrets, so pasting it sends them to the
+          model. Fine for a droplet you control; if you&apos;d rather not, leave
+          the password lines out and type them when the agent asks.
+        </Note>
+      </SubSection>
     </div>
   )
 }
