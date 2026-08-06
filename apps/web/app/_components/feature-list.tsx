@@ -1,4 +1,3 @@
-import type { RemixiconComponentType } from "@remixicon/react"
 import {
   RiDashboardLine,
   RiDatabase2Line,
@@ -7,15 +6,9 @@ import {
   RiSparkling2Line,
 } from "@remixicon/react"
 
-import { Card } from "@workspace/ui/components/card"
+import { type NumberedItem, NumberedList } from "./numbered-list"
 
-type Feature = {
-  icon: RemixiconComponentType
-  title: string
-  body: string
-}
-
-const FEATURES: Feature[] = [
+const FEATURES: NumberedItem[] = [
   {
     icon: RiShieldKeyholeLine,
     title: "Auth, built in",
@@ -43,7 +36,7 @@ const FEATURES: Feature[] = [
   },
 ]
 
-export function FeatureGrid() {
+export function FeatureList() {
   return (
     <section
       aria-label="What's included"
@@ -51,25 +44,21 @@ export function FeatureGrid() {
     >
       <div className="mb-9 flex flex-col gap-2">
         <span className="font-mono text-xs tracking-[0.08em] text-primary uppercase">
-          Included
+          For developers
         </span>
         <h2 className="text-[clamp(1.625rem,3.4vw,2.125rem)] font-semibold tracking-tight">
-          Everything wired, nothing in your way
+          Decided, documented, and yours to bend
         </h2>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Auth, database, admin and deploys are already decided and running —
+          and the reasoning behind them lives in the repo, in a three-level doc
+          system a coding agent reads before it changes anything. Point it at
+          different infrastructure, bend the conventions to fit the next
+          project, hand it to more people: the baseline holds, so every
+          initiative starts at the feature instead of the scaffolding.
+        </p>
       </div>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-4">
-        {FEATURES.map(({ icon: Icon, title, body }) => (
-          <Card key={title} className="p-5.5">
-            <div className="inline-flex size-[42px] items-center justify-center rounded-[10px] border bg-muted text-primary">
-              <Icon className="size-5" aria-hidden="true" />
-            </div>
-            <h3 className="mt-4 text-base font-semibold">{title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-              {body}
-            </p>
-          </Card>
-        ))}
-      </div>
+      <NumberedList items={FEATURES} />
     </section>
   )
 }
