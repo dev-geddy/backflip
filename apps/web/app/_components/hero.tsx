@@ -1,5 +1,6 @@
 import {
   RiArrowRightLine,
+  RiGitForkLine,
   RiGithubLine,
   RiSparkling2Line,
 } from "@remixicon/react"
@@ -45,16 +46,25 @@ export function Hero() {
             You own everything it makes. No coding knowledge required.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" render={<a href="/backflip" />}>
-              Open Admin
+            <Button size="lg" render={<a href="/getting-started" />}>
+              Getting started
               <RiArrowRightLine className="size-4" aria-hidden="true" />
             </Button>
+            {/* GitHub's /fork route opens the fork dialog (and prompts sign-in
+                when signed out) — the closest thing to a one-click fork. */}
             <Button
               variant="outline"
               size="lg"
-              render={<a href="/getting-started" />}
+              render={
+                <a
+                  href="https://github.com/dev-geddy/backflip/fork"
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              }
             >
-              Getting started
+              <RiGitForkLine className="size-4" aria-hidden="true" />
+              Fork it
             </Button>
           </div>
           <a
