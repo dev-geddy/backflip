@@ -266,6 +266,14 @@ export function StepBody({
           the app itself: the app runs on the host under pm2, exactly like the
           pm2 flavour.
         </Note>
+        <Note>
+          Backflip is developed primarily with <strong>Claude Code</strong> —
+          the repo ships instructions, skills and doc contracts tuned for it
+          (that&apos;s what the Start building phase leans on). Other AI coding
+          agents are untested. That is also what makes the handoff in the last
+          step work: point Claude Code at this clone and it can run the rest of
+          this guide for you, docker flavour included.
+        </Note>
       </div>
     )
   }
