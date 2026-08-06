@@ -220,7 +220,10 @@ export async function confirmEmailChange(token: string): Promise<SaveState> {
       and(eq(users.email, consumed.newEmail), ne(users.id, session.user.id))
     )
   if (taken) {
-    return { ok: false, message: "That email is now in use by another account." }
+    return {
+      ok: false,
+      message: "That email is now in use by another account.",
+    }
   }
 
   const [me] = await db

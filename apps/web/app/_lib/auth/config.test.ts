@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { isCredentialsEnabled, isGoogleConfigured } from "@/app/_lib/auth/config"
+import {
+  isCredentialsEnabled,
+  isGoogleConfigured,
+} from "@/app/_lib/auth/config"
 
 /**
  * Auth-mode flags. Locks L2-AUTH-33 (both Google vars required) and the
@@ -26,12 +29,20 @@ afterEach(() => {
 
 describe("isGoogleConfigured", () => {
   const cases: Array<[string, Env, boolean]> = [
-    ["both id and secret set", { AUTH_GOOGLE_ID: "id", AUTH_GOOGLE_SECRET: "secret" }, true],
+    [
+      "both id and secret set",
+      { AUTH_GOOGLE_ID: "id", AUTH_GOOGLE_SECRET: "secret" },
+      true,
+    ],
     ["id only", { AUTH_GOOGLE_ID: "id" }, false],
     ["secret only", { AUTH_GOOGLE_SECRET: "secret" }, false],
     ["neither", {}, false],
     ["empty strings", { AUTH_GOOGLE_ID: "", AUTH_GOOGLE_SECRET: "" }, false],
-    ["id set, secret empty", { AUTH_GOOGLE_ID: "id", AUTH_GOOGLE_SECRET: "" }, false],
+    [
+      "id set, secret empty",
+      { AUTH_GOOGLE_ID: "id", AUTH_GOOGLE_SECRET: "" },
+      false,
+    ],
   ]
 
   for (const [name, env, expected] of cases) {
@@ -48,11 +59,31 @@ describe("isCredentialsEnabled", () => {
   const cases: Array<[string, Env, boolean]> = [
     ["unset flag, no Google", {}, true],
     ["unset flag, Google configured", { ...google }, true],
-    ['"false" + Google configured → Google-only', { ...google, AUTH_CREDENTIALS_ENABLED: "false" }, false],
-    ['"false" without Google → ignored (fail-safe)', { AUTH_CREDENTIALS_ENABLED: "false" }, true],
-    ['"false" with half-configured Google → ignored', { AUTH_GOOGLE_ID: "id", AUTH_CREDENTIALS_ENABLED: "false" }, true],
-    ['"true" + Google configured', { ...google, AUTH_CREDENTIALS_ENABLED: "true" }, true],
-    ['"FALSE" is not "false"', { ...google, AUTH_CREDENTIALS_ENABLED: "FALSE" }, true],
+    [
+      '"false" + Google configured → Google-only',
+      { ...google, AUTH_CREDENTIALS_ENABLED: "false" },
+      false,
+    ],
+    [
+      '"false" without Google → ignored (fail-safe)',
+      { AUTH_CREDENTIALS_ENABLED: "false" },
+      true,
+    ],
+    [
+      '"false" with half-configured Google → ignored',
+      { AUTH_GOOGLE_ID: "id", AUTH_CREDENTIALS_ENABLED: "false" },
+      true,
+    ],
+    [
+      '"true" + Google configured',
+      { ...google, AUTH_CREDENTIALS_ENABLED: "true" },
+      true,
+    ],
+    [
+      '"FALSE" is not "false"',
+      { ...google, AUTH_CREDENTIALS_ENABLED: "FALSE" },
+      true,
+    ],
     ['"0" is not "false"', { ...google, AUTH_CREDENTIALS_ENABLED: "0" }, true],
   ]
 

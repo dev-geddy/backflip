@@ -67,12 +67,17 @@ const h = vi.hoisted(() => {
 
 vi.mock("@workspace/db", async () => {
   process.env.DATABASE_URL ??= "postgres://test:test@127.0.0.1:5432/test"
-  const actual = await vi.importActual<typeof import("@workspace/db")>("@workspace/db")
+  const actual =
+    await vi.importActual<typeof import("@workspace/db")>("@workspace/db")
   return { ...actual, db: h.db }
 })
 
 /** Every primitive reachable from a Drizzle condition, for asserting on SQL params. */
-function reachable(input: unknown, depth = 0, seen = new Set<object>()): unknown[] {
+function reachable(
+  input: unknown,
+  depth = 0,
+  seen = new Set<object>()
+): unknown[] {
   if (depth > 8) return []
   if (input === null || typeof input !== "object") return [input]
   if (input instanceof Date) return [input]
@@ -126,7 +131,10 @@ describe("createUserToken (L2-AUTH-29)", () => {
   })
 
   it("stores only the hash — the raw token never reaches the database", async () => {
-    const raw = await createUserToken({ userId: "user-1", type: "password_reset" })
+    const raw = await createUserToken({
+      userId: "user-1",
+      type: "password_reset",
+    })
 
     const values = h.inserts[0]!
     expect(raw.length).toBeGreaterThan(20)
@@ -136,8 +144,14 @@ describe("createUserToken (L2-AUTH-29)", () => {
   })
 
   it("mints a distinct token each time", async () => {
-    const first = await createUserToken({ userId: "user-1", type: "password_reset" })
-    const second = await createUserToken({ userId: "user-1", type: "password_reset" })
+    const first = await createUserToken({
+      userId: "user-1",
+      type: "password_reset",
+    })
+    const second = await createUserToken({
+      userId: "user-1",
+      type: "password_reset",
+    })
 
     expect(first).not.toBe(second)
     expect(h.inserts[0]!.tokenHash).not.toBe(h.inserts[1]!.tokenHash)
@@ -152,7 +166,9 @@ describe("createUserToken (L2-AUTH-29)", () => {
     }
 
     for (const values of h.inserts) {
-      expect((values.expiresAt as Date).toISOString()).toBe("2026-01-01T01:00:00.000Z")
+      expect((values.expiresAt as Date).toISOString()).toBe(
+        "2026-01-01T01:00:00.000Z"
+      )
     }
   })
 
@@ -168,13 +184,19 @@ describe("createUserToken (L2-AUTH-29)", () => {
       type: "email_change",
       newEmail: "new@example.com",
     })
-    expect(h.inserts[1]).toMatchObject({ type: "password_reset", newEmail: null })
+    expect(h.inserts[1]).toMatchObject({
+      type: "password_reset",
+      newEmail: null,
+    })
   })
 })
 
 describe("consumeUserToken (L2-AUTH-29, L2-AUTH-31)", () => {
   it("looks the token up by hash, never by the raw value", async () => {
-    const raw = await createUserToken({ userId: "user-1", type: "password_reset" })
+    const raw = await createUserToken({
+      userId: "user-1",
+      type: "password_reset",
+    })
     const storedHash = h.inserts[0]!.tokenHash as string
     h.state.rows = []
 
@@ -188,7 +210,10 @@ describe("consumeUserToken (L2-AUTH-29, L2-AUTH-31)", () => {
   it("consumes a valid token once and marks it consumed", async () => {
     h.state.rows = [row({ userId: "user-9", newEmail: "new@example.com" })]
 
-    const result = await consumeUserToken({ rawToken: "raw", type: "password_reset" })
+    const result = await consumeUserToken({
+      rawToken: "raw",
+      type: "password_reset",
+    })
 
     expect(result).toEqual({ userId: "user-9", newEmail: "new@example.com" })
     expect(h.updates).toHaveLength(1)
@@ -236,11 +261,19 @@ describe("consumeUserToken (L2-AUTH-29, L2-AUTH-31)", () => {
 
   it("consumes when the userId matches the token owner", async () => {
     h.state.rows = [
-      row({ userId: "user-9", type: "email_change", newEmail: "new@example.com" }),
+      row({
+        userId: "user-9",
+        type: "email_change",
+        newEmail: "new@example.com",
+      }),
     ]
 
     await expect(
-      consumeUserToken({ rawToken: "raw", type: "email_change", userId: "user-9" })
+      consumeUserToken({
+        rawToken: "raw",
+        type: "email_change",
+        userId: "user-9",
+      })
     ).resolves.toEqual({ userId: "user-9", newEmail: "new@example.com" })
     expect(h.updates).toHaveLength(1)
   })

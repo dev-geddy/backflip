@@ -31,7 +31,7 @@ export function PageHeading({
 /** Uppercase micro-label used above grouped sections and card headers. */
 export function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
       {children}
     </div>
   )

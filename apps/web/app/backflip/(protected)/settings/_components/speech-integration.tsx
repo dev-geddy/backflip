@@ -74,7 +74,10 @@ function ModelSelect({
   // Keep the saved model selectable even if the live list doesn't include it.
   const opts =
     saved && !options.some((m) => m.id === saved)
-      ? [{ id: saved, label: saved, kind: "stt" as const, languages: [] }, ...options]
+      ? [
+          { id: saved, label: saved, kind: "stt" as const, languages: [] },
+          ...options,
+        ]
       : options
   return (
     <Field>

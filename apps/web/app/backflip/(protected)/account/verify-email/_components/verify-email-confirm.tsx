@@ -36,7 +36,9 @@ export function VerifyEmailConfirm({ token }: { token: string }) {
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm">{state.message}</p>
-        <Button render={<Link href="/backflip/account">Back to account</Link>} />
+        <Button
+          render={<Link href="/backflip/account">Back to account</Link>}
+        />
       </div>
     )
   }

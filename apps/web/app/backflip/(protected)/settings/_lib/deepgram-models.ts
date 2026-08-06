@@ -40,7 +40,10 @@ export async function fetchDeepgramModels(
     tts?: DeepgramModel[]
   }
 
-  const toModel = (m: DeepgramModel, kind: "stt" | "tts"): SpeechModel | null =>
+  const toModel = (
+    m: DeepgramModel,
+    kind: "stt" | "tts"
+  ): SpeechModel | null =>
     m.canonical_name
       ? {
           id: m.canonical_name,

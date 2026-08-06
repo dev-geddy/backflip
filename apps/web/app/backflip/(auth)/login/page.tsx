@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/app/_lib/auth"
-import { isCredentialsEnabled, isGoogleConfigured } from "@/app/_lib/auth/config"
+import {
+  isCredentialsEnabled,
+  isGoogleConfigured,
+} from "@/app/_lib/auth/config"
 import { LoginForm } from "./_components/login-form"
 
 /**

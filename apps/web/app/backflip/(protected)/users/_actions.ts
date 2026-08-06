@@ -50,7 +50,8 @@ export async function updateUser(
 
   const parsed = updateUserSchema.safeParse({
     id: String(formData.get("id") ?? ""),
-    name: formData.get("name") == null ? undefined : String(formData.get("name")),
+    name:
+      formData.get("name") == null ? undefined : String(formData.get("name")),
     email: String(formData.get("email") ?? ""),
     role: String(formData.get("role") ?? ""),
   })

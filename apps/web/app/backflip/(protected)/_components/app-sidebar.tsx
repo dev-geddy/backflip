@@ -129,7 +129,7 @@ export function AppSidebar({
             key={group.label}
             className={group.pinBottom ? "mt-auto" : undefined}
           >
-            <SidebarGroupLabel className="text-[11px] uppercase tracking-wide">
+            <SidebarGroupLabel className="text-[11px] tracking-wide uppercase">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>

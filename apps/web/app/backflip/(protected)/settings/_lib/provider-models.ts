@@ -37,7 +37,10 @@ async function fetchAnthropicModels(apiKey: string): Promise<ProviderModel[]> {
   for (let page = 0; page < 5; page++) {
     const qs = new URLSearchParams({ limit: "100" })
     if (afterId) qs.set("after_id", afterId)
-    const body = await getJson(`https://api.anthropic.com/v1/models?${qs}`, headers)
+    const body = await getJson(
+      `https://api.anthropic.com/v1/models?${qs}`,
+      headers
+    )
     for (const m of body.data ?? []) {
       models.push({ id: m.id, label: m.display_name ?? m.id })
     }

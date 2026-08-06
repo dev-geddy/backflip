@@ -49,13 +49,17 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-xl">Set a new password</CardTitle>
-        <CardDescription>Choose a strong password you’ll remember.</CardDescription>
+        <CardDescription>
+          Choose a strong password you’ll remember.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {state?.ok ? (
           <div className="flex flex-col gap-4 text-center">
             <p className="text-sm text-muted-foreground">{state.message}</p>
-            <Button render={<Link href="/backflip/login">Go to sign in</Link>} />
+            <Button
+              render={<Link href="/backflip/login">Go to sign in</Link>}
+            />
           </div>
         ) : (
           <form action={action}>

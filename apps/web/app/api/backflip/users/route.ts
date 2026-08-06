@@ -37,10 +37,16 @@ function isUniqueViolation(e: unknown) {
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user) {
-    return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { ok: false, message: "Unauthorized" },
+      { status: 401 }
+    )
   }
   if (!canEditUsers(session.user.role)) {
-    return NextResponse.json({ ok: false, message: "Forbidden" }, { status: 403 })
+    return NextResponse.json(
+      { ok: false, message: "Forbidden" },
+      { status: 403 }
+    )
   }
 
   let body: unknown

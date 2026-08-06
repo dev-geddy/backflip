@@ -24,7 +24,9 @@ export function ProfileSection({ name }: { name: string | null }) {
           Full name
         </div>
         <div className="min-w-0 flex-1 truncate text-sm">
-          {name || <span className="text-muted-foreground italic">not set</span>}
+          {name || (
+            <span className="text-muted-foreground italic">not set</span>
+          )}
         </div>
         <Button
           variant="outline"

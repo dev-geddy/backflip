@@ -115,7 +115,10 @@ export default async function AccountPage() {
           again once there is space. `min-w-0` lets its own content shrink. Same
           ui-samples canvas as the main column; its own cards carry bg-card. */}
       <div className="w-full min-w-0 flex-none overflow-y-auto border-t bg-muted p-6 lg:w-64 lg:border-t-0 lg:border-l xl:w-80 dark:bg-background">
-        <AccountRail emailVerified={emailVerified} loginMethods={loginMethods} />
+        <AccountRail
+          emailVerified={emailVerified}
+          loginMethods={loginMethods}
+        />
       </div>
     </div>
   )

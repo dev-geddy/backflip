@@ -50,7 +50,9 @@ export default async function ProtectedLayout({
         />
         {/* No outer padding: master-detail pages go full-bleed edge-to-edge;
             padded pages (dashboard/account) add their own padding. */}
-        <div className="flex min-h-0 flex-1 flex-col bg-muted/40">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/40">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

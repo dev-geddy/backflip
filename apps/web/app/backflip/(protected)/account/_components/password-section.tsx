@@ -77,7 +77,11 @@ export function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
           size="sm"
           onClick={() => setEditing((v) => !v)}
         >
-          {editing ? "Cancel" : hasPassword ? "Change password" : "Set password"}
+          {editing
+            ? "Cancel"
+            : hasPassword
+              ? "Change password"
+              : "Set password"}
         </Button>
       </div>
 
