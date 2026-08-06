@@ -5,8 +5,10 @@ import { type Guidance, GuidancePanel } from "../../_components/guidance-panel"
 import {
   DEFAULT_APP_NAME,
   DEFAULT_APP_PORT,
+  DEFAULT_DB_NAME,
+  DEFAULT_DB_USER,
+  type DockerSetupVars,
   resolve,
-  type SetupVars,
 } from "./setup-vars"
 
 function Mono({ children }: { children: React.ReactNode }) {
@@ -26,7 +28,10 @@ function chmodLine(sshKey: string) {
   return `chmod 600 ${path || "~/.ssh/<your-key>"}`
 }
 
-function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
+function guidanceFor(
+  field: keyof DockerSetupVars,
+  vars: DockerSetupVars
+): Guidance {
   const appUrl = resolve(vars).appUrl
 
   switch (field) {
@@ -71,10 +76,11 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
       return {
         title: "Domain",
         body: [
-          "The public hostname nginx will serve this app on.",
+          "The public hostname Caddy will serve this app on. It also lands in the droplet’s .env as DOMAIN — the deploy renders the Caddyfile from it.",
           <>
             Its DNS <Mono>A</Mono> record must already point at the droplet IP
-            before TLS can be issued — Let’s Encrypt verifies over HTTP.
+            before TLS can be issued — Caddy fetches the certificate on first
+            start and verifies over HTTP.
           </>,
           <>
             If the domain’s DNS is on DigitalOcean: Networking → Domains → your
@@ -89,32 +95,41 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
           label: "DigitalOcean → Networking → Domains",
         },
       }
-    case "certbotEmail":
+    case "dbPassword":
       return {
-        title: "Let’s Encrypt email",
+        title: "Database password",
         body: [
-          "Where Let’s Encrypt sends renewal failures and certificate expiry notices.",
-          "Any mailbox you actually read — it is not published anywhere and nothing else is sent to it.",
+          <>
+            You choose this one. The Postgres container is created with it on
+            first start, as role <Mono>{DEFAULT_DB_USER}</Mono> owning database{" "}
+            <Mono>{DEFAULT_DB_NAME}</Mono>.
+          </>,
+          <>
+            It goes into <Mono>.env.production</Mono> twice — as{" "}
+            <Mono>POSTGRES_PASSWORD</Mono> and inside <Mono>DATABASE_URL</Mono>.
+            The env step below prints both lines filled in.
+          </>,
+          "Set it before the first deploy: changing it afterwards means changing it inside the running database too, since the container only reads it when the data volume is first created.",
         ],
       }
     case "appName":
       return {
         title: "App name",
         body: [
-          "Only needed when one droplet runs several instances. It names the pm2 process and the nginx site.",
+          "Only needed when one droplet runs several instances. It names the pm2 process.",
           <>
             Leave blank for <Mono>{DEFAULT_APP_NAME}</Mono>, the script default.
           </>,
+          "Caddy on this flavour is rendered as a single site, so multi-instance is really a pm2-flavour feature — one app per docker-flavour droplet is the supported path.",
         ],
       }
     case "appPort":
       return {
         title: "App port",
         body: [
-          "The loopback port nginx proxies to. It is never exposed publicly — only nginx talks to it.",
+          "The loopback port Caddy proxies to. It is never exposed publicly — only Caddy talks to it.",
           <>
-            Must be unique per instance on the droplet. Leave blank for{" "}
-            <Mono>{DEFAULT_APP_PORT}</Mono>, the script default.
+            Leave blank for <Mono>{DEFAULT_APP_PORT}</Mono>, the script default.
           </>,
         ],
       }
@@ -140,15 +155,13 @@ function guidanceFor(field: keyof SetupVars, vars: SetupVars): Guidance {
   }
 }
 
-/**
- * Maps the focused field to its guidance and hands it to the shared panel.
- */
+/** Maps the focused field to its guidance and hands it to the shared panel. */
 export function FieldGuidance({
   field,
   vars,
 }: {
-  field: keyof SetupVars | null
-  vars: SetupVars
+  field: keyof DockerSetupVars | null
+  vars: DockerSetupVars
 }) {
   return <GuidancePanel guidance={field ? guidanceFor(field, vars) : null} />
 }

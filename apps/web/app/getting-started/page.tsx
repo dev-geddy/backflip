@@ -45,8 +45,7 @@ const PHASES: { n: string; title: string; lead: string; guides: Guide[] }[] = [
       {
         href: "/getting-started/setup-on-digitalocean-droplet-docker-flavour",
         title: "Droplet setup — Docker flavour",
-        body: "Postgres in Docker and Caddy for automatic TLS. Guide in the works while the flow is verified end-to-end.",
-        soon: true,
+        body: "Same droplet, Postgres in a container and Caddy issuing TLS on its own — a step-by-step wizard with copy-ready commands.",
       },
     ],
   },

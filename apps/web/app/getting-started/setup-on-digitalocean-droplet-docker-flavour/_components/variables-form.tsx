@@ -24,18 +24,19 @@ import { FieldGuidance } from "./field-guidance"
 import {
   DEFAULT_APP_NAME,
   DEFAULT_APP_PORT,
-  type SetupVars,
+  type DockerSetupVars,
 } from "./setup-vars"
 
 /**
  * Per-field "looks right" checks — light validation for the green tick only.
  * Nothing blocks: commands render either way, placeholders fill the gaps.
  */
-const VALID: Record<keyof SetupVars, (value: string) => boolean> = {
+const VALID: Record<keyof DockerSetupVars, (value: string) => boolean> = {
   host: isHost,
   sshKey: isKeyPath,
   domain: isDomain,
-  certbotEmail: isEmail,
+  // Goes into a URL unencoded — reject what would break DATABASE_URL parsing.
+  dbPassword: (v) => v.length >= 12 && !/[@/:\s]/.test(v),
   appName: isAppName,
   appPort: isPort,
   adminEmail: isEmail,
@@ -43,7 +44,7 @@ const VALID: Record<keyof SetupVars, (value: string) => boolean> = {
 }
 
 type FieldSpec = {
-  key: keyof SetupVars
+  key: keyof DockerSetupVars
   label: string
   placeholder: string
   type?: "text" | "email"
@@ -57,12 +58,6 @@ const CORE: FieldSpec[] = [
     placeholder: "~/.ssh/id_ed25519",
   },
   { key: "domain", label: "Domain", placeholder: "app.example.com" },
-  {
-    key: "certbotEmail",
-    label: "Let’s Encrypt email",
-    placeholder: "ops@example.com",
-    type: "email",
-  },
 ]
 
 const OPTIONAL: FieldSpec[] = [
@@ -76,7 +71,7 @@ function overridden(value: string, fallback: string) {
   return trimmed !== "" && trimmed !== fallback
 }
 
-function hasInstanceOverride(vars: SetupVars) {
+function hasInstanceOverride(vars: DockerSetupVars) {
   return (
     overridden(vars.appName, DEFAULT_APP_NAME) ||
     overridden(vars.appPort, DEFAULT_APP_PORT)
@@ -84,22 +79,22 @@ function hasInstanceOverride(vars: SetupVars) {
 }
 
 /**
- * The variables step, and the one form on the page: every command in the later
- * steps reads from this state. Nothing is submitted or fetched; the wizard
- * shell mirrors it into sessionStorage, minus the owner password.
+ * The variables step of the docker-flavour guide. Same shape as the pm2
+ * guide's form, minus the Let's Encrypt email (Caddy issues certificates on
+ * its own) and plus the Postgres password, which this flavour's operator picks
+ * rather than receives.
  *
- * Layout is form-left / guidance-right (stacked below `lg`): per-field help
- * lives in the sidebar, keyed off the focused field, so the form itself stays a
- * single uncluttered column.
+ * Neither password is persisted — the wizard shell only mirrors the keys it is
+ * handed, and both are left out of that list.
  */
 export function VariablesForm({
   vars,
   onChange,
 }: {
-  vars: SetupVars
-  onChange: (key: keyof SetupVars, value: string) => void
+  vars: DockerSetupVars
+  onChange: (key: keyof DockerSetupVars, value: string) => void
 }) {
-  const [focused, setFocused] = useState<keyof SetupVars | null>(null)
+  const [focused, setFocused] = useState<keyof DockerSetupVars | null>(null)
   // `null` = untouched, follow the values: collapsed by default, but already
   // open when a non-default instance name/port is present. Restored values
   // arrive after mount (the shell reads sessionStorage in an effect), so this
@@ -129,6 +124,20 @@ export function VariablesForm({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-4">{CORE.map(renderField)}</div>
 
+          <div className="flex flex-col gap-4 border-t pt-5">
+            <GroupLabel>Database — step 6 only</GroupLabel>
+            <SecretField
+              id="var-dbPassword"
+              label="Postgres password"
+              value={vars.dbPassword}
+              placeholder="a long random password"
+              valid={VALID.dbPassword(vars.dbPassword)}
+              description="Not stored — refill after a reload."
+              onFocus={() => setFocused("dbPassword")}
+              onValue={(value) => onChange("dbPassword", value)}
+            />
+          </div>
+
           <Collapsible
             open={optionalOpen}
             onOpenChange={(open) => setOptionalToggled(open)}
@@ -139,7 +148,7 @@ export function VariablesForm({
                 className="size-4 flex-none text-muted-foreground transition-transform group-data-[panel-open]:rotate-90"
                 aria-hidden="true"
               />
-              <GroupLabel>Optional — multi-instance droplets</GroupLabel>
+              <GroupLabel>Optional — instance name and port</GroupLabel>
             </CollapsibleTrigger>
             <CollapsibleContent className="flex flex-col gap-4">
               {OPTIONAL.map(renderField)}

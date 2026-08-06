@@ -35,7 +35,7 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 - `deploy_env` / `deploy_env_local` secrets are set (2026-08-06), so **every** deploy rewrites the droplet's `.env` and `.env.local` from Drone. Droplet-side hand edits to those files will be clobbered — change the secret, not the file.
 - `devops.md` (root) → `devops/docs/{droplet-setup,deploy-local,deploy-github-actions,deploy-drone}.md`.
 - `.claude/skills/digitalocean-devops/SKILL.md` — explicit-trigger skill.
-- `apps/web/app/getting-started/setup-on-digitalocean-droplet/` — public web guide rendering these commands with operator-supplied variables (client-only, nothing persisted or sent). Every command string lives in `_components/setup-vars.ts` — **update it whenever a script flag, default or deploy path changes here**. Mirrors `L2-DEVOPS-01`, `L2-DEVOPS-02`, `L2-DEVOPS-06`; UI details in ui L3.
+- `apps/web/app/getting-started/setup-on-digitalocean-droplet/` (pm2 flavour) + `…-docker-flavour/` (docker flavour) — public web guides rendering these commands with operator-supplied variables (client-only, nothing persisted or sent). Every command string lives in that guide's `_components/setup-vars.ts` — **update both whenever a script flag, default or deploy path changes here**; the two flavours diverge (no certbot email and a POSTGRES_PASSWORD field on the docker side, `deploy-for-docker.sh` instead of `deploy-for-pm2*.sh`, no nvm in the owner-seed line). Mirrors `L2-DEVOPS-01`, `L2-DEVOPS-02`, `L2-DEVOPS-06`; UI details in ui L3.
 
 ## How it hangs together
 - App runs ON the host (pm2, fork mode, 1 instance); only Postgres is dockerized; Caddy native fronts 80/443 → 127.0.0.1:3070.
@@ -57,7 +57,7 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 - `sync_repo` doesn't support SSH key paths with spaces (rsync `-e` word-splitting).
 - Build-locally deploys ship the build machine's traced `node_modules`. Today that includes `@img/sharp-darwin-arm64` + its libvips `.dylib` (~10M of the 13M tarball) — Next's optional image optimizer, pulled in transitively; nothing renders `next/image`, so it is inert and the script only warns. Once images are optimized (or any other native module lands), use `deploy-for-pm2.sh` (droplet build) or the artifact will carry the wrong binary.
 - Build-locally deploys never rsync the source tree, so a droplet previously deployed the other way keeps a stale copy of it. Only `.env{,.local}`, `shared/`, the slots and `devops/pm2/` (refreshed from every artifact) matter at runtime; the two scripts share the layout and can be alternated on one instance.
-- The public getting-started guide (`setup-vars.ts`) still documents only `deploy-for-pm2.sh` — add the build-locally variant there if it becomes the recommended path.
+- `rollback-for-pm2.sh` is pm2-flavour only: it hardcodes `NEEDS_NVM=yes`, so on a docker-flavour droplet (apt node, no nvm) the slot-switch fragment can't source nvm. There is no `rollback-for-docker.sh`; the docker guide documents `git checkout <ref>` + redeploy instead. Parameterising the flag (or a second thin wrapper) would close the gap — see TODO.
 - pm2 fork-mode restart on deploy = brief blip (~1s); accepted, no blue-green.
 - Health check accepts any HTTP status on :80 (Caddy 308 → https expected).
 - SSH after setup = key-only; password + keyboard-interactive auth off. Keep the droplet key safe — recovery is DO web console.
@@ -65,4 +65,5 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 
 ## TODO
 - Optional: `--rollback` flag in deploy.sh (repoint symlink to previous release).
+- Docker flavour has no rollback script (`rollback-for-pm2.sh` hardcodes `NEEDS_NVM=yes`). Either add `-f/--flavor` to it or ship `rollback-for-docker.sh`; the public docker guide currently documents redeploy-an-older-ref as the rollback path.
 - Optional: pm2 cluster mode + `wait_ready` for zero-downtime reloads if the blip ever matters.

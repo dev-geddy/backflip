@@ -150,7 +150,6 @@ export function logsCommand(r: Resolved) {
 }
 
 export function statusCommand(r: Resolved) {
-  const name = varsAppName(r)
   return [
     `ssh -i ${r.sshKey} root@${r.host} "sudo -H -u backflip bash -c 'cd; . \\$HOME/.nvm/nvm.sh; pm2 status'; readlink ${r.appDir}/current"`,
   ]
@@ -160,6 +159,30 @@ export function statusCommand(r: Resolved) {
 function varsAppName(r: Resolved) {
   const m = r.instance.match(/-n (\S+)/)
   return m?.[1] ?? DEFAULT_APP_NAME
+}
+
+/**
+ * The prompt an operator can paste into Claude Code, in their clone of the
+ * project, instead of running the steps by hand. It names the scripts rather
+ * than the commands: the agent reads the repo (and `devops.md`) for the flags,
+ * so this stays correct when a script signature changes.
+ *
+ * Paired with the summary document below — the values live there.
+ */
+export function claudeHandoffPrompt() {
+  return [
+    "Set up my DigitalOcean droplet for this project and deploy it.",
+    "",
+    "Use the pm2-flavour scripts in devops/ (setup-droplet-for-pm2.sh,",
+    "setup-droplet-db-native.sh, deploy-for-pm2-build-locally.sh) and follow",
+    "devops.md. Take every value from the setup summary pasted below.",
+    "",
+    "Show me each command before you run it, stop on the first failure, and",
+    "tell me what to check if the TLS certificate can't be issued yet.",
+    "",
+    "--- setup summary ---",
+    "<paste the contents of backflip-setup-summary.txt here>",
+  ]
 }
 
 /**
