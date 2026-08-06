@@ -5,9 +5,10 @@ import { Badge } from "@workspace/ui/components/badge"
 const DEVOPS_DOC = "https://github.com/dev-geddy/backflip/blob/master/devops.md"
 
 /**
- * Hero band shared by the setup wizards. Same stripe-texture backdrop as the
- * homepage hero, shorter. Copy comes from the page — one hero, one flavour of
- * chrome, no per-guide fork.
+ * Hero band shared by the setup wizards: CSS stripe texture, shorter than the
+ * homepage hero (which carries the backdrop image — guides stay quiet, the
+ * artwork is a landing-page device). Copy comes from the page — one hero, one
+ * flavour of chrome, no per-guide fork.
  */
 export function GuideHero({
   title,

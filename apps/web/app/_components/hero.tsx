@@ -8,22 +8,30 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 
-// Server Component. Backdrop is a pure CSS stripe texture — no image assets.
+import heroBackground from "./hero-background.webp"
+
+// Server Component. Backdrop is a static-imported image: Next fingerprints it
+// into `.next/static`, which both deploy paths already ship — unlike `public/`,
+// which only the pm2 deploy copies and the Dockerfile skips entirely.
 export function Hero() {
   return (
     <section
       aria-label="Introduction"
       className="relative overflow-hidden border-b"
     >
-      {/* Angled stripe texture — the hero backdrop (no photo). */}
+      {/* Backdrop image. Authored dark: shown as-is in dark mode, inverted in
+          light mode so it reads as a pale technical texture, not a black slab. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-card [background-image:repeating-linear-gradient(135deg,var(--muted)_0_2px,transparent_2px_22px)]"
+        style={{ backgroundImage: `url(${heroBackground.src})` }}
+        className="absolute inset-0 bg-card bg-cover bg-[position:72%_center] invert md:bg-center dark:invert-0"
       />
-      {/* Readability overlay — fades to the theme background where the copy sits. */}
+      {/* Readability overlay — fades to the theme background where the copy sits.
+          Narrow screens get a near-flat scrim (copy spans the full width there);
+          from md the fade turns directional and leaves the artwork on the right. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_34%,transparent_82%),linear-gradient(0deg,var(--background)_2%,transparent_34%)]"
+        className="absolute inset-0 bg-[linear-gradient(0deg,var(--background)_14%,color-mix(in_oklab,var(--background)_78%,transparent)_62%,color-mix(in_oklab,var(--background)_38%,transparent)_100%)] md:bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_34%,transparent_82%),linear-gradient(0deg,var(--background)_2%,transparent_34%)]"
       />
 
       <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-26">
