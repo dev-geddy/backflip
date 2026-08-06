@@ -1,6 +1,17 @@
 # Deploy via Drone CI
 
-Pipeline: `.drone.yml` — a thin wrapper over `devops/deploy-for-pm2-build-locally.sh`. Runs on promotion to `production`.
+`.drone.yml` holds two pipelines:
+
+| Pipeline | Trigger | Does |
+|---|---|---|
+| `ci` | push, pull_request | `yarn install --immutable` → `typecheck` → `lint`. No secrets, no droplet access. |
+| `deploy` | promote → `production` | Builds the artifact and ships it (below). |
+
+`ci` is not only for the checks: Drone does not record a build when every pipeline is filtered out,
+so with a promote-only file alone there is never a build number to promote. `ci` gives each master
+commit one.
+
+Pipeline: `deploy` — a thin wrapper over `devops/deploy-for-pm2-build-locally.sh`. Runs on promotion to `production`.
 
 The build happens **on the Drone runner** (`node:24-bookworm-slim`): `corepack yarn install` → typecheck → Next standalone build → tarball artifact. Only the artifact ships to the droplet; migrations run from the runner through an ssh tunnel (droplet Postgres is loopback-only). The droplet needs no Node deps, no build — same blue/green flip and rollback semantics as every pm2-flavor deploy.
 
@@ -24,9 +35,10 @@ Or under the repo's **Settings → Secrets** in the Drone UI.
 
 ## Run it
 ```bash
+drone build ls <repo> --limit 5                 # find the build for the commit you want live
 drone build promote <repo> <build> production
 ```
-This is the deploy trigger — the pipeline only runs on a `promote` event targeting the `production` environment, not on regular pushes.
+This is the deploy trigger — the `deploy` pipeline only runs on a `promote` event targeting the `production` environment, not on regular pushes. Promote the build number produced by `ci` for that commit.
 
 ## Rollback
 From any machine with the droplet key:
