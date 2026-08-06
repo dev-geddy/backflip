@@ -29,6 +29,20 @@ const loginRateLimiter = createRateLimiter({
   windowMs: LOGIN_WINDOW_MS,
 })
 
+/**
+ * A real (cost-12) bcrypt hash compared against when the account doesn't exist
+ * or has no password, so login response time doesn't reveal whether an email is
+ * registered (timing-based user enumeration). Computed once, lazily, on the
+ * first login attempt (keeps it off module-load / test-import paths).
+ */
+let dummyHashCache: string | undefined
+function dummyPasswordHash(): string {
+  return (dummyHashCache ??= bcrypt.hashSync(
+    "no-such-account-timing-equalizer",
+    12
+  ))
+}
+
 /** Best-effort client IP from the proxy's forwarded headers (edge sets these). */
 function clientIp(request?: Request): string {
   const fwd = request?.headers?.get?.("x-forwarded-for")
@@ -50,7 +64,7 @@ function normalizeEmail(value: string): string {
  * Session strategy is JWT (required by the Credentials provider). The Drizzle
  * adapter persists OAuth accounts. Runs on the Node runtime (uses `pg`).
  *
- * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36, L2-AUTH-40, L2-AUTH-41
+ * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36, L2-AUTH-40, L2-AUTH-41, L2-AUTH-43
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -96,13 +110,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               const user = await db.query.users.findFirst({
                 where: eq(users.email, email),
               })
-              if (!user?.passwordHash) {
-                loginRateLimiter.hit(rlKey)
-                return null
-              }
 
-              const ok = await bcrypt.compare(password, user.passwordHash)
-              if (!ok) {
+              // Always run one bcrypt.compare (dummy hash when there's no real
+              // one) so an unknown / OAuth-only email can't be distinguished by
+              // response time. Enumeration via content is already closed.
+              const ok = await bcrypt.compare(
+                password,
+                user?.passwordHash ?? dummyPasswordHash()
+              )
+              if (!user?.passwordHash || !ok) {
                 loginRateLimiter.hit(rlKey)
                 return null
               }

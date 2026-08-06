@@ -17,7 +17,7 @@ Local dev infrastructure: Docker Compose services (web, postgres, one-shot migra
 - `L2-INF-04` — App Docker image — Next standalone build (`output: "standalone"`), runner ships only the bundle, `node apps/web/server.js` on container 3070. Stage `deps` (workspace + node_modules, no build) is the migrate/seed tool image. (`apps/web/Dockerfile`, context = repo root)
 
 ## Schemas
-- `L2-INF-05` — Postgres service: image `postgres:17-alpine`, container `backflip-db`, host port `${POSTGRES_PORT:-5544}` → 5432, volume `backflip_pgdata`, healthcheck `pg_isready`.
+- `L2-INF-05` — Postgres service: image `postgres:17-alpine`, container `backflip-db`, host port bound to loopback `127.0.0.1:${POSTGRES_PORT:-5544}` → 5432, volume `backflip_pgdata`, healthcheck `pg_isready`. Loopback bind keeps the dev db (default password) off the network even if this file runs on a non-local host.
 - `L2-INF-15` — Fixed container names: `backflip-db`, `backflip-web`, `backflip-db-migrate`, `backflip-db-seed`.
 - `L2-INF-06` — `DATABASE_URL` — app→db connection. Local app: `localhost:${POSTGRES_PORT}`. In-container app: `db:5432` (compose env overrides `.env`).
 - `L2-INF-07` — Env vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `DATABASE_URL`. Defined in `.env` (copy of `.env.example`).
@@ -26,6 +26,7 @@ Local dev infrastructure: Docker Compose services (web, postgres, one-shot migra
 - `L2-INF-08` — Postgres host port kept off default 5432 to avoid clashing with other local pg. Configurable via `POSTGRES_PORT`.
 - `L2-INF-09` — No secrets committed. `.env` gitignored; only `.env.example` tracked (`!.env.example` in `.gitignore`).
 - `L2-INF-10` — One credential source: `.env` seeds the db container AND is read by the local app. No divergent copies.
+- `L2-INF-16` — The app image's `runner` stage runs as the non-root built-in `node` user (`USER node`) — the standalone server writes nothing at runtime, so it runs read-only, limiting the blast radius of an app/dependency RCE. (`apps/web/Dockerfile`)
 
 ## Errors
 - `L2-INF-11` — Host port in use (e.g. 5544 or 3071 taken) → compose bind error. Change `POSTGRES_PORT` in `.env` / free the port.
