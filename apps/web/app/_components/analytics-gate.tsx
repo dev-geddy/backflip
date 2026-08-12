@@ -14,7 +14,7 @@ const SCRIPT_ID = "ga-gtag-js"
  * without an explanation.
  */
 const FALLBACK_TEXT =
-  "We use cookies to measure how this site is used, via Google Analytics. Analytics only runs if you accept."
+  "Can we count your visit? It shows us which pages actually help people — we only ever look at totals, and never use it for ads. It runs on Google Analytics cookies, and only if you accept."
 
 type Consent = "granted" | "denied"
 
