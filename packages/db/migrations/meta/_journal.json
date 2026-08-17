@@ -64,6 +64,13 @@
       "when": 1786079140545,
       "tag": "0008_reword_cookie_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786999327830,
+      "tag": "0009_curious_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

@@ -9,8 +9,11 @@ import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { ROLE_LABELS } from "@/app/_lib/auth/permissions"
+import { isMcpEnabled } from "@/app/_lib/oauth/config"
+import { listGrants } from "@/app/_lib/oauth/tokens"
 import { PageHeading, SectionLabel } from "../_components/page-heading"
 import { AccountRail } from "./_components/account-rail"
+import { ConnectionsSection } from "./_components/connections-section"
 import { AccountEmailSection } from "./_components/email-section"
 import { PasswordSection } from "./_components/password-section"
 import { ProfileSection } from "./_components/profile-section"
@@ -56,6 +59,10 @@ export default async function AccountPage() {
 
   const label = row?.name || row?.email || "Account"
   const emailVerified = Boolean(row?.emailVerified)
+
+  // Connector surface is fully hidden when MCP_ENABLED is off (L2-MCP-37).
+  const mcpEnabled = isMcpEnabled()
+  const grants = mcpEnabled ? await listGrants(sessionUser.id) : []
 
   return (
     // Canvas mirrors ui-samples (bg-muted light / bg-background dark); only
@@ -108,6 +115,8 @@ export default async function AccountPage() {
               </div>
             </div>
           </div>
+
+          {mcpEnabled ? <ConnectionsSection grants={grants} /> : null}
         </div>
       </div>
 
@@ -118,6 +127,7 @@ export default async function AccountPage() {
         <AccountRail
           emailVerified={emailVerified}
           loginMethods={loginMethods}
+          connectionsCount={mcpEnabled ? grants.length : undefined}
         />
       </div>
     </div>

@@ -1,0 +1,80 @@
+# Contract (L2) — mcp
+
+> L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
+> Style: terse. One fact per line.
+
+> **Status:** PROPOSED — awaiting human approval (new domain, per `L1-CON-04`).
+> **Implements L1:** `L1-ARCH-01`, `L1-ARCH-06`, `L1-ARCH-07`, `L1-CON-02`, `L1-CON-03`, `L1-STACK-01`, `L1-STACK-10`
+> **Depends on L2:** `auth` (session, roles, capabilities, `tokenVersion` revocation), `db` (tables, hashing), `devops` (edge proxy, rate limit, log scrub), `infra` (env)
+
+## Owns
+The Claude-compatible connector: a remote MCP server at `/api/mcp` (Streamable HTTP), and the OAuth 2.1 authorization server that gates it (`/api/oauth/*`, `/.well-known/*`, consent at `/backflip/connect`). Read-only tool surface in this phase.
+
+## Interfaces
+
+### MCP server
+- `L2-MCP-01` _(iface)_ — Route `/api/mcp` (`runtime="nodejs"`) — MCP Streamable HTTP endpoint, **stateless** (a fresh `McpServer` per request, no session id). `POST` handles JSON-RPC; `GET`/`DELETE` are answered by the SDK handler. Built on `@modelcontextprotocol/server` `createMcpHandler`. (`apps/web/app/api/mcp/route.ts`)
+- `L2-MCP-02` _(iface)_ — `@/app/_lib/mcp/server` → `buildMcpServer(ctx: McpAuthContext)` — registers the tools that `ctx` is allowed (`L2-MCP-20`). Server identity `{ name: "backflip", version }`.
+- `L2-MCP-03` _(iface)_ — Bearer gate `@/app/_lib/oauth/bearer` → `requireBearer(request)` → `McpAuthContext | Response`. On failure returns `401` with `WWW-Authenticate: Bearer resource_metadata="<PRM url>", error="invalid_token"` — this header is what makes a Claude client start the OAuth flow.
+
+### Read-only tools (phase 1)
+- `L2-MCP-04` _(iface)_ — `whoami` — scope `account`. Returns the connected user's `id`, `email`, `name`, `role`, and the granted scopes.
+- `L2-MCP-05` _(iface)_ — `list_users` — scope `users.view`. Args `{ limit?: 1–100 = 25, offset?: ≥0 = 0, query?: string }` (query matches email/name, case-insensitive). Returns `{ users: [{id, name, email, role, emailVerified, createdAt}], total, limit, offset }`.
+- `L2-MCP-06` _(iface)_ — `get_user` — scope `users.view`. Args `{ userId }` **or** `{ email }`. Same per-user shape as `L2-MCP-05`. Not found → tool error, not a 500.
+- `L2-MCP-07` _(iface)_ — `get_platform_status` — scope `settings`. Integration status only: per-AI-provider `{provider, model, enabled, isDefault, hasKey}`, email `{provider, enabled, hasKey, fromEmail}`, speech `{provider, enabled, hasKey, sttModel, ttsModel}`, analytics `{kind, measurementId, cookieBannerEnabled}`. **Never** keys, hashes, or ciphertext.
+- `L2-MCP-08` _(iface)_ — `get_dashboard_summary` — scope `dashboard`. User counts total + per role, count verified/unverified, and the 5 most recent signups (`id, name, email, role, createdAt`).
+- `L2-MCP-09` _(iface)_ — Every tool declares `readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: false`. No write tools in this phase.
+
+### OAuth authorization server
+- `L2-MCP-10` _(iface)_ — `GET /.well-known/oauth-authorization-server` — RFC 8414 metadata. Served by `app/api/oauth/authorization-server-metadata/route.ts`; the `.well-known` path is mapped by a `next.config` rewrite (App Router does not route dot-prefixed folders). Advertises `issuer` (= `AUTH_URL` origin), `authorization_endpoint` `/api/oauth/authorize`, `token_endpoint` `/api/oauth/token`, `registration_endpoint` `/api/oauth/register`, `revocation_endpoint` `/api/oauth/revoke`, `scopes_supported` (`L2-MCP-18`), `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code","refresh_token"]`, `code_challenge_methods_supported: ["S256"]`, `token_endpoint_auth_methods_supported: ["none"]`.
+- `L2-MCP-11` _(iface)_ — `GET /.well-known/oauth-protected-resource` **and** `/.well-known/oauth-protected-resource/api/mcp` (path-suffixed form) — RFC 9728 metadata: `resource` = `<origin>/api/mcp`, `authorization_servers` = `[<origin>]`, `scopes_supported`, `bearer_methods_supported: ["header"]`.
+- `L2-MCP-12` _(iface)_ — `POST /api/oauth/register` — RFC 7591 Dynamic Client Registration, open (no initial access token) but rate-limited (`L2-MCP-30`). Body `{client_name, redirect_uris[], grant_types?, response_types?, token_endpoint_auth_method?, scope?}`. Registers a **public** client (`token_endpoint_auth_method: "none"`, no secret). Returns `201` `{client_id, client_id_issued_at, client_name, redirect_uris, grant_types, response_types, token_endpoint_auth_method, scope}`.
+- `L2-MCP-13` _(iface)_ — `GET /api/oauth/authorize` — params `response_type=code`, `client_id`, `redirect_uri`, `code_challenge`, `code_challenge_method=S256`, `state`, `scope`, optional `resource`. Validates client + redirect URI **before** any redirect; then requires an admin session and hands off to the consent page. No session → `/backflip/login?from=…` (the `/backflip` gate, `L2-AUTH-01`).
+- `L2-MCP-14` _(iface)_ — Route `/backflip/connect` — consent screen inside the protected admin scope. Shows client name, the requested scopes in plain language, the signed-in account, Allow / Deny. Server actions in `connect/_actions.ts`: `approveAuthorization(params)` → mints a code and redirects to `redirect_uri?code=…&state=…`; `denyAuthorization(params)` → redirects with `error=access_denied`.
+- `L2-MCP-15` _(iface)_ — `POST /api/oauth/token` — accepts **only** `application/x-www-form-urlencoded` (RFC 6749 §4.1.3 — Claude posts both the initial exchange and refreshes this way). Grants `authorization_code` (PKCE `code_verifier` required) and `refresh_token`. Returns `{access_token, token_type:"Bearer", expires_in, refresh_token, scope}`; `Cache-Control: no-store`.
+- `L2-MCP-16` _(iface)_ — `POST /api/oauth/revoke` — RFC 7009, form-encoded `{token, token_type_hint?}`. Always `200`, even for an unknown token. Revoking any token of a grant revokes the whole refresh family.
+- `L2-MCP-17` _(iface)_ — Account UI: `/backflip/account` lists the user's connected clients (name, scopes, connected-at, last-used) with a Disconnect action (`revokeGrant`). Capability `account` — a user manages only their own grants.
+
+## Schemas
+- `L2-MCP-18` _(schema)_ — **Scopes are capabilities** (`L2-AUTH-19`). Grantable in this phase: `account`, `dashboard`, `users.view`, `settings`. `users.edit` is deliberately not grantable (read-only connector). A scope is offered only if the consenting user's role holds that capability.
+- `L2-MCP-19` _(schema)_ — `McpAuthContext = { userId, role, clientId, clientName, scopes, tokenId, expiresAt }` (`apps/web/app/_lib/oauth/types.ts`) — resolved per request from the bearer token; `role` is read live from the DB, never frozen into the token.
+- `L2-MCP-20` _(schema)_ — Tool visibility = token scopes ∩ role capabilities. A tool absent from that intersection is not registered at all, so it never appears in `tools/list`.
+- `L2-MCP-21` _(schema)_ — `oauth_client` (`L2-DB-25`): `clientId` (random, unique), `clientName`, `redirectUris[]`, `grantTypes[]`, `scopes[]`, `tokenEndpointAuthMethod` (`none`), `clientSecretHash` (null for public clients), `createdAt`, `lastUsedAt`.
+- `L2-MCP-22` _(schema)_ — `oauth_auth_code` (`L2-DB-26`): hash-only `codeHash`, `clientId`, `userId`, `redirectUri`, `scopes[]`, `resource`, `codeChallenge`, `codeChallengeMethod`, `expiresAt` (60 s), `consumedAt`.
+- `L2-MCP-23` _(schema)_ — `oauth_token` (`L2-DB-27`): hash-only `tokenHash`, `type` (`access`|`refresh`), `clientId`, `userId`, `scopes[]`, `resource`, `familyId`, `parentId`, `userTokenVersion` (snapshot of `user.tokenVersion`), `expiresAt`, `revokedAt`, `lastUsedAt`.
+- `L2-MCP-24` _(schema)_ — Lifetimes: authorization code 60 s, access token 60 min, refresh token 30 days (sliding — rotation issues a fresh 30-day token).
+- `L2-MCP-25` _(schema)_ — Env: `MCP_ENABLED` (default **off**), issuer/base URL from `AUTH_URL`. No new secrets — token material is random + SHA-256 hashed (`L2-DB-21` pattern), no `ENCRYPTION_KEY` dependency.
+
+## Invariants
+- `L2-MCP-26` _(inv)_ — PKCE is mandatory, `S256` only. A missing/`plain` `code_challenge` is rejected at `/api/oauth/authorize`; a mismatching `code_verifier` is rejected at `/api/oauth/token`.
+- `L2-MCP-27` _(inv)_ — Refresh tokens rotate on every use (OAuth 2.1 requirement for public clients) with **reuse detection**: presenting an already-rotated or revoked refresh token revokes the entire `familyId` — access and refresh alike.
+- `L2-MCP-28` _(inv)_ — Only token **hashes** are stored (SHA-256, `hashToken`), never raw tokens or codes — matching `L2-DB-21`. Codes and tokens are 32 random bytes, base64url.
+- `L2-MCP-29` _(inv)_ — Session revocation covers connectors: a token verifies only while its `userTokenVersion` still equals the user's current `tokenVersion` (`L2-AUTH-36`). Password change, reset, confirmed email change, or an admin role/email edit therefore kills that user's connector tokens too.
+- `L2-MCP-30` _(inv)_ — Rate limits (in-process, `_lib/rate-limit.ts`, same caveat as `L2-AUTH-40`): `POST /api/oauth/register` 10 / hour per IP; `POST /api/oauth/token` 60 / 5 min per IP; `/api/mcp` 240 / 5 min per token. Over-limit → `429` + `Retry-After`, no DB work beyond the counter. Per-IP keys use the **last** `x-forwarded-for` hop (the one our proxy appended) — see `L2-AUTH-40`. `/api/oauth/revoke` is deliberately uncapped: its response is constant for known and unknown tokens, so there is no oracle to grind, and sharing the token bucket would throttle legitimate refreshes.
+- `L2-MCP-31` _(inv)_ — Redirect URIs are matched **exactly** (full-string, no prefix/wildcard) against the registered set. `https` required, except `http://localhost` / `http://127.0.0.1` for local clients. A request whose `redirect_uri` doesn't match is never redirected to — the error renders on our own origin.
+- `L2-MCP-32` _(inv)_ — Authorization codes are single-use, bound to `client_id` + `redirect_uri` + user; a second use revokes the whole token family minted from that code.
+- `L2-MCP-33` _(inv)_ — Tokens carry an audience: `resource` is bound at issue time and `requireBearer` rejects a token whose `resource` isn't the MCP endpoint (RFC 8707).
+- `L2-MCP-34` _(inv)_ — Authorization is enforced **twice** — token scope and the live role capability (`can(role, cap)`) — on every tool call, never scope alone (mirrors `L2-AUTH-22`). A role demotion takes effect on the next call without re-issuing tokens.
+- `L2-MCP-35` _(inv)_ — Tool results never contain secrets: no `passwordHash`, no `apiKeyEnc`/plaintext keys, no token hashes, no `tokenVersion`. Config tools expose booleans + non-secret identifiers only (`L2-AI-06`).
+- `L2-MCP-36` _(inv)_ — Every list tool is bounded (`limit` ≤ 100, default 25) — no unbounded table dumps.
+- `L2-MCP-37` _(inv)_ — `MCP_ENABLED` off (default) → `/api/mcp`, `/api/oauth/*`, the well-known documents and `/backflip/connect` all return `404`. A deployment opts in explicitly.
+- `L2-MCP-38` _(inv)_ — Consent is per (user, client, scope set): re-authorizing an existing grant with the same scopes reuses the grant record; requesting new scopes re-prompts.
+
+## Errors
+- `L2-MCP-39` _(err)_ — `/api/mcp` without a bearer token, or with an invalid/expired/revoked/wrong-audience one → `401` + `WWW-Authenticate` (`L2-MCP-03`). Valid token lacking the tool's scope → the tool isn't registered; a direct call → JSON-RPC error `-32602` "unknown tool".
+- `L2-MCP-40` _(err)_ — OAuth errors follow RFC 6749: parameter errors that pass redirect-URI validation redirect with `error`/`error_description`/`state`; client/redirect-URI errors render a plain error page on our origin (`L2-MCP-31`). Token endpoint → `400` `{error: "invalid_grant"|"invalid_request"|"invalid_client"|"unsupported_grant_type"}`, `Cache-Control: no-store`.
+- `L2-MCP-41` _(err)_ — Error bodies stay generic: no stack traces, no DB errors, no hint about whether a client_id, code, or user exists.
+
+## Acceptance
+- `L2-MCP-42` _(accept)_ — Adding `https://<domain>/api/mcp` as a Claude custom connector: DCR registers the client, the browser lands on `/backflip/connect` (after login when needed), Allow returns to Claude, and `tools/list` shows exactly the tools the account's role permits.
+- `L2-MCP-43` _(accept)_ — An owner sees all five tools; a teammate sees only `whoami` and `get_dashboard_summary`; `list_users` is absent for a teammate and rejected if called directly.
+- `L2-MCP-44` _(accept)_ — Changing the connected user's password invalidates the connector immediately: the next tool call is `401`, and the refresh grant no longer works.
+- `L2-MCP-45` _(accept)_ — Replaying an authorization code, or replaying a rotated refresh token, fails and kills the whole grant family.
+- `L2-MCP-46` _(accept)_ — With `MCP_ENABLED` unset, every connector route is `404` and the admin UI shows no connector surface.
+
+## Constrained L3
+- `/docs/notes/mcp.md`
+
+---
+IDs: `L2-MCP-<NN>`. Permanent, never renumber.
+Change: propose diff + affected-L3 → stop → await human.

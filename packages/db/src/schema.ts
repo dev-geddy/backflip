@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -183,3 +184,110 @@ export const analyticsConfig = pgTable("analytics_config", {
   cookieBannerText: text("cookieBannerText"),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 })
+
+/**
+ * OAuth 2.1 clients for the MCP connector. Registered dynamically (RFC 7591)
+ * by the connecting agent — Claude registers itself on first connect. Public
+ * clients: no secret, PKCE instead (`clientSecretHash` stays null; the column
+ * exists for a future confidential-client flow).
+ *
+ * `redirectUris` is matched exactly at authorize time — no prefix matching.
+ *
+ * @spec L2-DB-25, L2-MCP-21, L2-MCP-31
+ */
+export const oauthClients = pgTable("oauth_client", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  clientId: text("clientId").notNull().unique(),
+  clientSecretHash: text("clientSecretHash"),
+  clientName: text("clientName").notNull(),
+  redirectUris: text("redirectUris").array().notNull(),
+  grantTypes: text("grantTypes")
+    .array()
+    .notNull()
+    .default(["authorization_code", "refresh_token"]),
+  scopes: text("scopes").array().notNull().default([]),
+  tokenEndpointAuthMethod: text("tokenEndpointAuthMethod")
+    .notNull()
+    .default("none"),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  lastUsedAt: timestamp("lastUsedAt", { mode: "date" }),
+})
+
+/**
+ * Authorization codes (PKCE). Very short lived (60s), single use, bound to the
+ * client + redirect URI + user that produced them. Only the SHA-256 hash of
+ * the code is stored — the raw code exists solely in the redirect back to the
+ * client (same discipline as `user_token`, `L2-DB-21`).
+ *
+ * @spec L2-DB-26, L2-MCP-22, L2-MCP-26, L2-MCP-32
+ */
+export const oauthAuthCodes = pgTable("oauth_auth_code", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  codeHash: text("codeHash").notNull().unique(),
+  clientId: text("clientId")
+    .notNull()
+    .references(() => oauthClients.id, { onDelete: "cascade" }),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  redirectUri: text("redirectUri").notNull(),
+  scopes: text("scopes").array().notNull(),
+  resource: text("resource"),
+  codeChallenge: text("codeChallenge").notNull(),
+  codeChallengeMethod: text("codeChallengeMethod").notNull().default("S256"),
+  expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+  consumedAt: timestamp("consumedAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+})
+
+export const oauthTokenType = pgEnum("oauth_token_type", ["access", "refresh"])
+
+/**
+ * Access + refresh tokens for the connector. Hash-only storage; the raw token
+ * is returned once from the token endpoint and never persisted.
+ *
+ * - `familyId` groups every token descended from one authorization code, so a
+ *   replayed refresh token can revoke the entire grant (`L2-MCP-27`).
+ * - `parentId` is the refresh token this one was rotated from.
+ * - `userTokenVersion` snapshots `user.tokenVersion` at issue time; a bump
+ *   (password change, reset, email change, admin role edit) invalidates the
+ *   connector alongside the browser sessions (`L2-AUTH-36`).
+ * - `resource` binds the token's audience to the MCP endpoint (RFC 8707).
+ *
+ * @spec L2-DB-27, L2-MCP-23, L2-MCP-27, L2-MCP-29, L2-MCP-33
+ */
+export const oauthTokens = pgTable(
+  "oauth_token",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    type: oauthTokenType("type").notNull(),
+    tokenHash: text("tokenHash").notNull().unique(),
+    clientId: text("clientId")
+      .notNull()
+      .references(() => oauthClients.id, { onDelete: "cascade" }),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    scopes: text("scopes").array().notNull(),
+    resource: text("resource"),
+    familyId: text("familyId").notNull(),
+    parentId: text("parentId"),
+    userTokenVersion: integer("userTokenVersion").notNull(),
+    expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+    revokedAt: timestamp("revokedAt", { mode: "date" }),
+    lastUsedAt: timestamp("lastUsedAt", { mode: "date" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Family revocation on refresh-token replay (`L2-MCP-27`).
+    index("oauth_token_family_idx").on(t.familyId),
+    // Per-user grant listing + disconnect in the account UI (`L2-MCP-17`).
+    index("oauth_token_user_client_idx").on(t.userId, t.clientId),
+  ]
+)

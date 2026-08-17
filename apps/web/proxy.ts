@@ -49,7 +49,12 @@ export async function proxy(request: NextRequest) {
 
   if (!token) {
     const loginUrl = new URL(LOGIN_PATH, request.url)
-    loginUrl.searchParams.set("from", pathname)
+    // Carry the query string, not just the path: /backflip/connect holds the
+    // entire OAuth authorize request in its params and renders a fatal error
+    // without them, so a logged-out connector handshake would dead-end
+    // (`L2-MCP-42`). The login page still constrains `from` to /backflip/*,
+    // so this cannot become an open redirect.
+    loginUrl.searchParams.set("from", `${pathname}${request.nextUrl.search}`)
     return NextResponse.redirect(loginUrl)
   }
 

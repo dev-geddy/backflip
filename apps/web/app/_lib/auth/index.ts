@@ -43,10 +43,19 @@ function dummyPasswordHash(): string {
   ))
 }
 
-/** Best-effort client IP from the proxy's forwarded headers (edge sets these). */
+/**
+ * Best-effort client IP from the proxy's forwarded headers (edge sets these).
+ * The LAST `x-forwarded-for` hop is the one our own proxy appended; earlier
+ * hops are caller-supplied, so keying the throttle on them would let a
+ * credential-stuffer rotate the header and never hit the cap.
+ */
 function clientIp(request?: Request): string {
   const fwd = request?.headers?.get?.("x-forwarded-for")
-  if (fwd) return fwd.split(",")[0]!.trim()
+  if (fwd) {
+    const hops = fwd.split(",")
+    const last = hops[hops.length - 1]!.trim()
+    if (last) return last
+  }
   return request?.headers?.get?.("x-real-ip")?.trim() || "unknown"
 }
 

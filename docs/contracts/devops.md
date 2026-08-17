@@ -37,6 +37,9 @@ Production deployment: DigitalOcean droplet provisioning, deploy pipeline (local
 - `L2-DEVOPS-23` — nginx access log scrubs one-time tokens: a `map` + `log_format backflip_scrubbed` (in `conf.d/backflip-http.conf`) redacts the query string of any request URI containing `token=`, so reset/verify links don't land in `access.log`. The site template sets `access_log … backflip_scrubbed`.
 - `L2-DEVOPS-24` — Deploy workflow least-privilege: `.github/workflows/deploy.yml` declares `permissions: contents: read` (it only checks out, never calls the API), and every deploy secret is passed via a step `env:` and referenced as `"$VAR"` — never interpolated as `${{ secrets.* }}` into `run:` script text — so a secret with shell metacharacters can't inject commands.
 
+> **Status note:** `L2-DEVOPS-26` — PROPOSED — awaiting human approval.
+- `L2-DEVOPS-26` — nginx (pm2 flavor) rate-limits the OAuth connector endpoints at the edge: one shared `limit_req_zone` (`backflip_oauth`, 60r/m per client IP, `conf.d/backflip-http.conf`, same zone-definition pattern as the login limiter `L2-DEVOPS-22`) applied to both `POST /api/oauth/token` and `POST /api/oauth/register` in the site template — defense-in-depth over the in-process limiter (`L2-MCP-30`). `/api/mcp` is deliberately NOT edge-rate-limited (it's per-token limited in-app, `L2-MCP-30`) and is proxied with buffering off for Streamable HTTP. The access-log scrub `map` (`L2-DEVOPS-23`) is extended to also redact `code=` in query strings alongside `token=`, so authorization-code redirects don't land raw in `access.log`. Caddy (docker flavor) has no equivalent rate-limit zone — the in-process limiter (`L2-MCP-30`) is the only rate limit there; Caddy does disable response buffering on `/api/mcp*` for the same streaming reason.
+
 ## Errors
 - `L2-DEVOPS-12` — Deploy with no `.env`/`.env.local` on droplet → dies with hint to templates + `--env` flags.
 

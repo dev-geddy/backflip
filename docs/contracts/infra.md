@@ -22,6 +22,9 @@ Local dev infrastructure: Docker Compose services (web, postgres, one-shot migra
 - `L2-INF-06` — `DATABASE_URL` — app→db connection. Local app: `localhost:${POSTGRES_PORT}`. In-container app: `db:5432` (compose env overrides `.env`).
 - `L2-INF-07` — Env vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `DATABASE_URL`. Defined in `.env` (copy of `.env.example`).
 
+> **Status note:** `L2-INF-17` — PROPOSED — awaiting human approval.
+- `L2-INF-17` — `MCP_ENABLED` app env var (root `.env`/`.env.local`, same load path as `L2-INF-07`): default unset (off) — an explicit opt-in, not a compose/db var. When unset, every connector route (`/api/mcp`, `/api/oauth/*`, both well-known documents, `/backflip/connect`) 404s in both local dev and docker profiles. Owned by the `mcp` domain (`L2-MCP-25`, `L2-MCP-37`).
+
 ## Invariants
 - `L2-INF-08` — Postgres host port kept off default 5432 to avoid clashing with other local pg. Configurable via `POSTGRES_PORT`.
 - `L2-INF-09` — No secrets committed. `.env` gitignored; only `.env.example` tracked (`!.env.example` in `.gitignore`).
