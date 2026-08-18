@@ -7,7 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
  * has to assert the flag itself — otherwise a connector disabled after clients
  * had already registered could still be handed a fresh authorization code.
  *
- * Everything below the flag is stubbed; the flag is the whole assertion.
+ * `isMcpEnabled()` is DB-backed and async now that enablement is an owner
+ * toggle rather than a static env read (`L2-MCP-25`); it's mocked directly
+ * here rather than exercised end to end — its own resolution logic (DB flag
+ * AND the `MCP_ENABLED=false` override) is covered by `_lib/oauth/config`'s
+ * own tests. What this file asserts is the ordering property: the actions
+ * must 404 on that flag *before* touching the session, every time.
  */
 
 const NOT_FOUND = "NEXT_NOT_FOUND"
@@ -30,7 +35,7 @@ vi.mock("next/navigation", () => ({
   },
 }))
 
-const h = vi.hoisted(() => ({ guardCalls: 0 }))
+const h = vi.hoisted(() => ({ guardCalls: 0, mcpEnabled: false }))
 
 vi.mock("@/app/_lib/auth/guard", () => ({
   requireCapability: async () => {
@@ -38,6 +43,13 @@ vi.mock("@/app/_lib/auth/guard", () => ({
     return { id: "user-1", role: "owner", email: "owner@example.com" }
   },
 }))
+
+vi.mock("@/app/_lib/oauth/config", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/app/_lib/oauth/config")
+  >("@/app/_lib/oauth/config")
+  return { ...actual, isMcpEnabled: async () => h.mcpEnabled }
+})
 
 import {
   approveAuthorization,
@@ -53,6 +65,7 @@ const ACTIONS: Array<[string, (formData: FormData) => Promise<void>]> = [
 
 beforeEach(() => {
   h.guardCalls = 0
+  h.mcpEnabled = false
 })
 
 afterEach(() => {
@@ -60,19 +73,14 @@ afterEach(() => {
 })
 
 describe.each(ACTIONS)("%s", (_name, action) => {
-  it("404s while MCP_ENABLED is unset, before touching the session", async () => {
-    vi.stubEnv("MCP_ENABLED", undefined)
+  it("404s while the connector is disabled, before touching the session", async () => {
+    h.mcpEnabled = false
     await expect(action(new FormData())).rejects.toThrow(NOT_FOUND)
     expect(h.guardCalls).toBe(0)
   })
 
-  it("404s for any value other than the exact opt-in", async () => {
-    vi.stubEnv("MCP_ENABLED", "1")
-    await expect(action(new FormData())).rejects.toThrow(NOT_FOUND)
-  })
-
   it("runs the session check once the connector is enabled", async () => {
-    vi.stubEnv("MCP_ENABLED", "true")
+    h.mcpEnabled = true
     // Empty form → the action bails further down (fatal validation / no
     // clientId); all that matters here is that it got past the switch.
     await action(new FormData()).catch(() => {})

@@ -52,7 +52,9 @@ export function ConnectionsSection({ grants }: { grants: OAuthGrant[] }) {
                   Connected {DATE_FMT.format(grant.connectedAt)}
                   <span className="text-muted-foreground/50"> · </span>
                   Last used{" "}
-                  {grant.lastUsedAt ? DATE_FMT.format(grant.lastUsedAt) : "never"}
+                  {grant.lastUsedAt
+                    ? DATE_FMT.format(grant.lastUsedAt)
+                    : "never"}
                 </div>
               </div>
               <form action={disconnectConnection} className="flex-none">

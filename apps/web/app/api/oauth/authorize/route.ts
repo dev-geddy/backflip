@@ -35,7 +35,7 @@ const CONSENT_PATH = "/backflip/connect"
  * @spec L2-MCP-13, L2-MCP-26, L2-MCP-31, L2-MCP-37, L2-MCP-40
  */
 export async function GET(request: Request) {
-  if (!isMcpEnabled()) return connectorDisabledResponse()
+  if (!(await isMcpEnabled())) return connectorDisabledResponse()
 
   const url = new URL(request.url)
   const result = await validateAuthorizationRequest(url.searchParams)

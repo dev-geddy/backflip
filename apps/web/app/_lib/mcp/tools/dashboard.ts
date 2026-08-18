@@ -30,7 +30,10 @@ function toolError(message: string): CallToolResult {
 }
 
 async function handle(ctx: McpAuthContext): Promise<CallToolResult> {
-  if (!ctx.scopes.includes(DASHBOARD_SCOPE) || !can(ctx.role, DASHBOARD_SCOPE)) {
+  if (
+    !ctx.scopes.includes(DASHBOARD_SCOPE) ||
+    !can(ctx.role, DASHBOARD_SCOPE)
+  ) {
     return toolError("This connection no longer has the dashboard scope.")
   }
 
@@ -42,7 +45,9 @@ async function handle(ctx: McpAuthContext): Promise<CallToolResult> {
     .from(users)
     .groupBy(users.role)
 
-  const byRole: Record<string, number> = Object.fromEntries(ROLES.map((r) => [r, 0]))
+  const byRole: Record<string, number> = Object.fromEntries(
+    ROLES.map((r) => [r, 0])
+  )
   for (const r of roleRows) byRole[r.role] = r.value
 
   const [verifiedRow] = await db
@@ -72,7 +77,10 @@ async function handle(ctx: McpAuthContext): Promise<CallToolResult> {
   })
 }
 
-export function registerDashboardSummary(server: McpServer, ctx: McpAuthContext): void {
+export function registerDashboardSummary(
+  server: McpServer,
+  ctx: McpAuthContext
+): void {
   server.registerTool(
     "get_dashboard_summary",
     {

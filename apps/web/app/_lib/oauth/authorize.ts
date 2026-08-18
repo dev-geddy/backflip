@@ -2,8 +2,10 @@ import { mcpResourceUrl } from "./config"
 import {
   findClientByClientId,
   redirectUriAllowed,
+  redirectUriHost,
   type OAuthClientRecord,
 } from "./clients"
+import { getConnectorSettings, isHostAllowed } from "./connector-config"
 import { isValidCodeChallenge } from "./codes"
 import { parseScopes } from "./scopes"
 import {
@@ -23,7 +25,8 @@ import {
  * upstream of that proof is `fatal` and renders on our own origin
  * (`L2-MCP-31`, `L2-MCP-40`).
  *
- * @spec L2-MCP-13, L2-MCP-26, L2-MCP-31, L2-MCP-33, L2-MCP-34, L2-MCP-40
+ * @spec L2-MCP-13, L2-MCP-26, L2-MCP-31, L2-MCP-33, L2-MCP-34, L2-MCP-40,
+ *       L2-MCP-49
  */
 
 export type AuthorizeValidation =
@@ -87,6 +90,25 @@ export async function validateAuthorizationRequest(
     return fatal({
       error: "invalid_request",
       description: "The redirect_uri is not registered for this client.",
+    })
+  }
+
+  // Second, live enforcement of the host allowlist (`L2-MCP-49`). Registration
+  // already checked it, but the owner may have removed the host since — which
+  // must break that client on its very next attempt, not whenever its tokens
+  // happen to expire. Fatal: a de-allowlisted host is exactly the destination
+  // we must never bounce a user to, so the error renders on our origin.
+  let allowedHosts: string[]
+  try {
+    allowedHosts = (await getConnectorSettings()).redirectHosts
+  } catch {
+    return fatal({ error: "server_error", description: "Lookup failed." })
+  }
+  const host = redirectUriHost(redirectUri)
+  if (!host || !isHostAllowed(host, allowedHosts)) {
+    return fatal({
+      error: "invalid_request",
+      description: "The redirect_uri host is not allowed on this server.",
     })
   }
 

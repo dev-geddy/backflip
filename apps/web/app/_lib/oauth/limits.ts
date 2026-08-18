@@ -59,3 +59,19 @@ export const mcpLimiter: RateLimiter = createRateLimiter({
   max: 240,
   windowMs: FIVE_MIN_MS,
 })
+
+/**
+ * `/api/mcp` without a bearer token — 60 / 5 min per IP (`L2-MCP-54`).
+ *
+ * That path is answered from static data, but it is still an endpoint anyone
+ * can hit; the cap is what stops a prober spraying challenges indefinitely. The
+ * ceiling is generous on purpose: a real client meets this response once per
+ * connection, when it discovers where to authenticate, so 60 is far above
+ * honest use and far below a useful flood.
+ *
+ * Keyed per IP rather than per token for the obvious reason — there is no token.
+ */
+export const mcpChallengeLimiter: RateLimiter = createRateLimiter({
+  max: 60,
+  windowMs: FIVE_MIN_MS,
+})

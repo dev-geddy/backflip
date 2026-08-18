@@ -5,7 +5,7 @@
 ## What this is
 A Claude-compatible **remote MCP connector**: a read-only tool surface at `/api/mcp` (Streamable HTTP, `L2-MCP-01`) protected by an in-app **OAuth 2.1 authorization server** (`/api/oauth/*` + `/.well-known/*`, `L2-MCP-10`–`L2-MCP-17`). Lets a Claude client (claude.ai custom connector, Claude Desktop, Claude Code) authenticate as a Backflip admin user and call a handful of dashboard/user/settings-read tools, scoped to that user's role. No write tools in this phase (`L2-MCP-09`).
 
-Whole domain is opt-in and off by default: `MCP_ENABLED` unset → every connector route 404s (`L2-MCP-37`, `L2-INF-17`).
+Whole domain is opt-in and off by default: until an owner enables it (`connector_config.enabled`, `L2-MCP-25`) every connector route 404s (`L2-MCP-37`, `L2-INF-17`).
 
 ## File map
 Everything below exists on disk — the domain landed in one change (schema + migration `0009`, OAuth server, MCP endpoint + tools, consent + account UI, edge config).
@@ -14,7 +14,9 @@ Everything below exists on disk — the domain landed in one change (schema + mi
 - `apps/web/app/_lib/mcp/server.ts` — `buildMcpServer(ctx: McpAuthContext)` factory. Registers only the tools in the scopes ∩ capability intersection (`L2-MCP-02`, `L2-MCP-20`) — an unauthorized tool is never registered, so it can't appear in `tools/list` or be called.
 - `apps/web/app/_lib/mcp/tools/*.ts` — one file per tool: `whoami`, `list_users`, `get_user`, `get_platform_status`, `get_dashboard_summary` (`L2-MCP-04`–`L2-MCP-08`). Each declares `{readOnlyHint:true, destructiveHint:false, openWorldHint:false}` (`L2-MCP-09`).
 - `apps/web/app/_lib/oauth/types.ts` — Shared types: `MCP_SCOPES` (`L2-MCP-18`), `McpAuthContext` (`L2-MCP-19`), `OAuthGrant`, `AuthorizationRequest`, `OAuthErrorCode`/`OAuthFailure`, `IssuedTokens`. Pure, no runtime deps — safe from routes, libs, tools, tests. `@spec L2-MCP-18, L2-MCP-19`.
-- `apps/web/app/_lib/oauth/config.ts` — `MCP_ENABLED` read, issuer/resource URL derivation from `AUTH_URL`, token/code TTL constants (`L2-MCP-24`, `L2-MCP-25`).
+- `apps/web/app/_lib/oauth/config.ts` — `isMcpEnabled()` (async: DB flag ∧ not force-disabled, short-TTL cached), `isMcpForcedOff()`, issuer/resource URL derivation from `AUTH_URL`, token/code TTL constants (`L2-MCP-24`, `L2-MCP-25`, `L2-MCP-54`).
+- `apps/web/app/_lib/oauth/connector-config.ts` — the `connector_config` row: enabled flag, `dcrMode`, redirect-host allowlist; `isHostAllowed`/`isValidHostEntry`/`isLoopbackHost` primitives (`L2-MCP-47`, `L2-MCP-48`, `L2-MCP-49`).
+- `apps/web/app/backflip/(protected)/settings/_components/connector*-.tsx` — the owner-only Connectors tab: enable toggle, registration mode, host allowlist, client table + create-client dialog with the one-time secret reveal (`L2-MCP-47`, `L2-MCP-50`).
 - `apps/web/app/_lib/oauth/scopes.ts` — scope ↔ capability identity (`L2-MCP-18`) plus human-readable labels for the consent screen (`L2-MCP-14`).
 - `apps/web/app/_lib/oauth/clients.ts` — DCR registration (`L2-MCP-12`) and exact-match redirect-URI validation (`L2-MCP-31`).
 - `apps/web/app/_lib/oauth/codes.ts` — authorization-code issue/consume, PKCE `S256` check (`L2-MCP-26`), single-use + 60 s TTL (`L2-MCP-22`, `L2-MCP-32`).
@@ -35,17 +37,25 @@ Everything below exists on disk — the domain landed in one change (schema + mi
 - `packages/db/src/schema.ts` — new tables `oauth_client`, `oauth_auth_code`, `oauth_token` (`L2-MCP-21`/`L2-MCP-22`/`L2-MCP-23`, `db` counterparts `L2-DB-25`/`L2-DB-26`/`L2-DB-27`).
 
 ## Running it locally
-1. `MCP_ENABLED=true` in root `.env.local` (default is off, `L2-MCP-25`, `L2-INF-17`) — without it every route in this domain 404s, including the well-known documents, so a "connector not found" symptom is usually just this flag.
+1. Turn the connector on: `/backflip/settings` → Connectors → Enable. It is a **database flag** (`connector_config.enabled`, default off, `L2-MCP-25`) like every other integration here, not an env var. While it is off every route in this domain 404s, including the well-known documents — a "connector not found" symptom is usually just this. `MCP_ENABLED=false` in the environment forces it off regardless of the toggle (deploy-level kill switch); unset means the database decides. The resolved flag is cached in-process for ~30s, so a toggle can take that long to reach other processes (`L2-MCP-54`).
 2. `AUTH_URL` must be the origin the Claude client will actually hit — it's both the Auth.js issuer/canonical-URL var (`L2-AUTH-07`) and the OAuth `issuer`/PRM `resource` origin (`L2-MCP-10`, `L2-MCP-11`, `L2-MCP-25`). A mismatch between what's advertised and what's called breaks the resource-audience check (`L2-MCP-33`).
 3. `corepack yarn dev` (app on 3070, `L2-INF-03`) or the docker `web` profile (3071, `L2-INF-01`) — db must be up either way.
 4. `db:migrate` to create `oauth_client`/`oauth_auth_code`/`oauth_token` (migration `0009`, `L2-DB-08`). Locally `AUTH_URL` may be left unset — `issuerOrigin()` falls back to `http://localhost:3070` outside production.
-5. Sanity check without a Claude client: `curl <origin>/.well-known/oauth-authorization-server` and `.../.well-known/oauth-protected-resource` should return metadata (not 404) once `MCP_ENABLED=true`.
+5. Sanity check without a Claude client: `curl <origin>/.well-known/oauth-authorization-server` and `.../.well-known/oauth-protected-resource` should return metadata (not 404) once the connector is enabled.
 
 ## Adding it to Claude
 Claude's custom-connector UI needs a **publicly reachable https origin** — plain `localhost` doesn't work for claude.ai (Claude Desktop/Code may differ; verify per client). For local testing, tunnel 3070/3071 (ngrok, cloudflared, etc.) and point `AUTH_URL` at the tunnel's https URL *before* starting the app, since the issuer identity is baked into every token's `resource` claim (`L2-MCP-33`).
 
-1. claude.ai → Settings → Connectors → Add custom connector → `https://<origin>/api/mcp`.
-2. Claude reads `WWW-Authenticate` off an unauthenticated probe (`L2-MCP-03`), fetches the protected-resource + authorization-server metadata (`L2-MCP-10`, `L2-MCP-11`), then DCRs itself via `POST /api/oauth/register` (`L2-MCP-12`).
+**Default path — manual client (`dcrMode = "off"`).** Dynamic registration is off out of the box, so nobody can create a client without an owner doing it deliberately:
+1. `/backflip/settings` → Connectors → Create client. Name it, give it the redirect URI `https://claude.ai/api/mcp/auth_callback` (and/or the `claude.com` one). For Claude Code instead, tick "Native client" — it redirects to `http://127.0.0.1:<ephemeral>/callback`, so it needs port-agnostic loopback matching (`L2-MCP-51`).
+2. Copy the `client_id` and `client_secret` — **the secret is shown once** (`L2-MCP-50`).
+3. claude.ai → Settings → Connectors → Add custom connector → `https://<origin>/api/mcp`, then expand **Advanced settings** and paste both values. Claude skips registration entirely and goes straight to authorize.
+
+Redirect hosts are allowlisted (`claude.ai`, `claude.com` seeded) and checked both at creation and at every authorize (`L2-MCP-49`) — pulling a host from the list disables its clients on their next attempt.
+
+**Self-registration path** (only if an owner sets `dcrMode` to `allowlist` or `open`):
+1. claude.ai → Settings → Connectors → Add custom connector → `https://<origin>/api/mcp`, Advanced settings left blank.
+2. Claude reads `WWW-Authenticate` off an unauthenticated probe (`L2-MCP-03`), fetches the protected-resource + authorization-server metadata (`L2-MCP-10`, `L2-MCP-11`), then DCRs itself via `POST /api/oauth/register` (`L2-MCP-12`). With `dcrMode = "off"` that endpoint is `404` and this path simply does not exist.
 3. Claude opens `/api/oauth/authorize` in a browser tab. No Backflip session → redirected to `/backflip/login?from=…` (`L2-MCP-13`, the standard `/backflip` gate, `L2-AUTH-01`).
 4. After login, lands on `/backflip/connect` — consent screen: client name, requested scopes in plain language, the signed-in account, Allow/Deny (`L2-MCP-14`).
 5. Allow → `approveAuthorization` mints a single-use authorization code, redirects back to Claude's `redirect_uri` (`L2-MCP-32`).
@@ -90,7 +100,7 @@ Scopes ARE capabilities (`L2-MCP-18`) — there's no separate connector permissi
 7. Update this file's tool list + the scope/tool table above.
 
 ## Gotchas
-- **`MCP_ENABLED` off looks like the feature doesn't exist, not like an auth error** — every route including the well-known documents 404s (`L2-MCP-37`). Check this first before debugging OAuth.
+- **A disabled connector looks like the feature doesn't exist, not like an auth error** — every route including the well-known documents 404s (`L2-MCP-37`). Check the Connectors toggle (and that `MCP_ENABLED` isn't set to `false`) before debugging OAuth. Remember the ~30s settings cache.
 - **Stateless MCP server**: a fresh `McpServer` is built per request, no session id (`L2-MCP-01`) — don't reach for server-side conversation state across calls.
 - **Redirect URI matching is exact-string**, no prefix/wildcard, `https` required except `localhost`/`127.0.0.1` (`L2-MCP-31`). A mismatch never redirects to the bad URI — the error renders on our own origin, so it can look like the flow silently stalled rather than errored.
 - **Refresh rotation is all-or-nothing**: reusing an already-rotated or revoked refresh token kills the *entire* token family, access included (`L2-MCP-27`). Two racing refreshes (e.g. a client retry) can look like a spurious full logout.
@@ -109,6 +119,14 @@ The L2 contract (`docs/contracts/mcp.md`) and the `db`/`auth`/`devops`/`infra` a
 Colocated vitest, no database — pure logic is factored out so it is testable without postgres:
 - `_lib/oauth/*.test.ts` — PKCE `S256` verification, scope parsing + `grantableScopes`, redirect-URI validation and exact matching, authorize-request validation, RFC 6749 error shaping, metadata-document shape + issuer/resource/PRM agreement.
 - `_lib/mcp/tools/*.test.ts` — the scope ∩ capability tool-visibility filter, `list_users` bounds/defaults, the `get_user` exactly-one-selector rule, and serializer shape tests proving `apiKeyEnc` never reaches a tool result.
+
+### Client administration
+Dynamic registration is **off by default** (`dcrMode`), so the anonymous-registration surface does not exist unless an owner opts into it. Clients are created in the Connectors tab instead:
+- A **web** client (claude.ai / Claude Desktop) always gets a generated `client_secret`, shown exactly once and stored only as a bcrypt hash. It is confidential — the token endpoint requires the secret, via `client_secret_post` or `client_secret_basic` (`L2-MCP-52`).
+- A **native** client ("Native client (Claude Code)") gets **no** secret and matches loopback redirect URIs port-agnostically, because Claude Code redirects to `http://127.0.0.1:<ephemeral>/callback`. RFC 8252 §8.5: a native app cannot keep a secret, so issuing one would be false assurance. PKCE alone protects it (`L2-MCP-51`).
+- Loopback detection is an exact-string set (`localhost`, `127.0.0.1`) — `[::1]`, `127.0.0.2`, `0.0.0.0` and `localhost.evil.example` are ordinary remote hosts everywhere.
+- The redirect-host allowlist is checked at creation **and** live at every authorize, so removing a host disables its clients on the next attempt (`L2-MCP-49`).
+- Unknown-client and wrong-secret are indistinguishable by response body *and* by time — an unknown `client_id` presented with a secret burns an equivalent bcrypt compare.
 
 ### Deviations from the contract worth knowing
 - `consumeAuthorizationCode` also returns `familyId` (the auth-code row's `id` doubles as the token family root, so a replayed code revokes exactly the tokens minted from it — `L2-MCP-32`).
@@ -156,5 +174,5 @@ Not applied — constitution is human-only (`L1-CON-04`). Ready-to-paste lines f
 
 **Constraints (non-negotiable)** — new line:
 ```
-- `L1-CON-06` — Connector access is read-only and opt-in (`MCP_ENABLED`, default off); it grants no capability the connected user's role does not already hold.
+- `L1-CON-06` — Connector access is read-only and opt-in (owner-enabled, default off); it grants no capability the connected user's role does not already hold.
 ```

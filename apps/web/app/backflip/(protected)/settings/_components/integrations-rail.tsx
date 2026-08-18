@@ -3,7 +3,7 @@ import { SectionLabel } from "../../_components/page-heading"
 type AboutLink = { label: string; href: string }
 
 const ABOUT: Record<
-  "ai" | "email" | "analytics" | "speech",
+  "ai" | "email" | "analytics" | "speech" | "connectors",
   { title: string; body: string; links: AboutLink[] }
 > = {
   ai: {
@@ -37,13 +37,23 @@ const ABOUT: Record<
       },
     ],
   },
+  connectors: {
+    title: "About the MCP connector",
+    body: "A Claude client authenticates over OAuth and talks to a read-only MCP tool surface, scoped to the signed-in user's role and the token's granted scopes.",
+    links: [
+      {
+        label: "Connector docs",
+        href: "https://github.com/dev-geddy/backflip/blob/master/docs/notes/mcp.md",
+      },
+    ],
+  },
 }
 
 /** Context rail for the integrations detail: about the service + a security note. */
 export function IntegrationsRail({
   selection,
 }: {
-  selection: "ai" | "email" | "analytics" | "speech"
+  selection: "ai" | "email" | "analytics" | "speech" | "connectors"
 }) {
   const about = ABOUT[selection]
   return (
@@ -81,6 +91,14 @@ export function IntegrationsRail({
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               A measurement ID is a public identifier, not a credential — it is
               stored as-is and served to every visitor of the public site.
+            </p>
+          </div>
+        ) : selection === "connectors" ? (
+          <div>
+            <div className="text-sm font-medium">Secrets shown once</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Only a bcrypt hash of a client secret is stored — the raw value is
+              shown right after creation and never again.
             </p>
           </div>
         ) : (

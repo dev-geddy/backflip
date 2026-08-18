@@ -13,9 +13,39 @@ import { GET as protectedResourceMetadata } from "@/app/api/oauth/protected-reso
 
 const ORIGIN = "https://app.example.com"
 
+const h = vi.hoisted(() => ({
+  state: { enabled: true, dcrMode: "off" as "off" | "allowlist" | "open" },
+}))
+
+vi.mock("@workspace/db", async () => {
+  process.env.DATABASE_URL ??= "postgres://test:test@127.0.0.1:5432/test"
+  const actual =
+    await vi.importActual<typeof import("@workspace/db")>("@workspace/db")
+  return { ...actual, db: {} }
+})
+
+vi.mock("@/app/_lib/oauth/connector-config", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/app/_lib/oauth/connector-config")
+  >("@/app/_lib/oauth/connector-config")
+  const settings = () => ({
+    enabled: h.state.enabled,
+    dcrMode: h.state.dcrMode,
+    redirectHosts: ["claude.ai"],
+  })
+  return {
+    ...actual,
+    getConnectorSettings: async () => settings(),
+    // The enabled gate reads through the cache (`L2-MCP-54`).
+    getCachedConnectorSettings: async () => settings(),
+  }
+})
+
 beforeEach(() => {
+  h.state.enabled = true
+  h.state.dcrMode = "off"
   vi.stubEnv("AUTH_URL", `${ORIGIN}/`)
-  vi.stubEnv("MCP_ENABLED", "true")
+  vi.stubEnv("MCP_ENABLED", undefined)
 })
 
 afterEach(() => {
@@ -24,11 +54,12 @@ afterEach(() => {
 
 describe("authorization server metadata", () => {
   it("404s while the connector is disabled", async () => {
-    vi.stubEnv("MCP_ENABLED", undefined)
+    h.state.enabled = false
     expect((await authorizationServerMetadata()).status).toBe(404)
   })
 
   it("advertises every endpoint on the issuer origin", async () => {
+    h.state.dcrMode = "open"
     const res = await authorizationServerMetadata()
     expect(res.status).toBe(200)
     expect(res.headers.get("cache-control")).toBe("public, max-age=3600")
@@ -44,23 +75,40 @@ describe("authorization server metadata", () => {
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
       code_challenge_methods_supported: ["S256"],
-      token_endpoint_auth_methods_supported: ["none"],
+      token_endpoint_auth_methods_supported: [
+        "none",
+        "client_secret_post",
+        "client_secret_basic",
+      ],
       revocation_endpoint_auth_methods_supported: ["none"],
     })
   })
 
-  it("never advertises plain PKCE, implicit, or a client secret method", async () => {
+  it("omits the registration endpoint while DCR is off", async () => {
+    // Advertising a route that answers 404 sends clients down a flow that
+    // cannot complete (`L2-MCP-47`).
+    const doc = await (await authorizationServerMetadata()).json()
+    expect(doc.registration_endpoint).toBeUndefined()
+    expect(doc.token_endpoint).toBe(`${ORIGIN}/api/oauth/token`)
+  })
+
+  it("advertises registration in allowlist mode", async () => {
+    h.state.dcrMode = "allowlist"
+    const doc = await (await authorizationServerMetadata()).json()
+    expect(doc.registration_endpoint).toBe(`${ORIGIN}/api/oauth/register`)
+  })
+
+  it("never advertises plain PKCE or implicit", async () => {
     const doc = await (await authorizationServerMetadata()).json()
     expect(doc.code_challenge_methods_supported).not.toContain("plain")
     expect(doc.grant_types_supported).not.toContain("implicit")
-    expect(doc.token_endpoint_auth_methods_supported).toEqual(["none"])
     expect(doc.scopes_supported).not.toContain("users.edit")
   })
 })
 
 describe("protected resource metadata", () => {
   it("404s while the connector is disabled", async () => {
-    vi.stubEnv("MCP_ENABLED", undefined)
+    h.state.enabled = false
     expect((await protectedResourceMetadata()).status).toBe(404)
   })
 

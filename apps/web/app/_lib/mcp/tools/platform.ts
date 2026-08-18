@@ -1,4 +1,10 @@
-import { aiConfig, analyticsConfig, db, emailConfig, speechConfig } from "@workspace/db"
+import {
+  aiConfig,
+  analyticsConfig,
+  db,
+  emailConfig,
+  speechConfig,
+} from "@workspace/db"
 import { z } from "zod"
 
 import type { CallToolResult, McpServer } from "@modelcontextprotocol/server"
@@ -71,7 +77,13 @@ export function serializeAiConfig(rows: AiConfigRow[]) {
 }
 
 export function serializeEmailConfig(row: EmailConfigRow | undefined) {
-  if (!row) return { provider: "resend", enabled: false, hasKey: false, fromEmail: null }
+  if (!row)
+    return {
+      provider: "resend",
+      enabled: false,
+      hasKey: false,
+      fromEmail: null,
+    }
   return {
     provider: row.provider,
     enabled: row.enabled,
@@ -101,7 +113,11 @@ export function serializeSpeechConfig(row: SpeechConfigRow | undefined) {
 
 export function serializeAnalyticsConfig(row: AnalyticsConfigRow | undefined) {
   if (!row) {
-    return { kind: "google_analytics", measurementId: null, cookieBannerEnabled: true }
+    return {
+      kind: "google_analytics",
+      measurementId: null,
+      cookieBannerEnabled: true,
+    }
   }
   return {
     kind: row.kind,
@@ -163,7 +179,10 @@ async function handle(ctx: McpAuthContext): Promise<CallToolResult> {
   })
 }
 
-export function registerPlatformStatus(server: McpServer, ctx: McpAuthContext): void {
+export function registerPlatformStatus(
+  server: McpServer,
+  ctx: McpAuthContext
+): void {
   server.registerTool(
     "get_platform_status",
     {

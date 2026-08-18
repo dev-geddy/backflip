@@ -1,6 +1,11 @@
 import crypto from "node:crypto"
 
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test"
 import pg from "pg"
 
 import { BASE_URL, OWNER, TEAMMATE, TEST_DATABASE_URL } from "./env"
@@ -11,11 +16,20 @@ import { BASE_URL, OWNER, TEAMMATE, TEST_DATABASE_URL } from "./env"
  * HTTP resource server (`/api/mcp`) it protects, against a real running app
  * and a real (seeded) `backflip_test` database.
  *
- * Requires `MCP_ENABLED=true` and `AUTH_URL` set to this suite's own origin —
- * both are set in `webServer.env` in `playwright.config.ts` rather than any
- * `.env` file, so the flag and the issuer never leak into a normal dev run.
+ * Enablement is DB-driven (`connector_config.enabled`, `L2-MCP-25`), not
+ * `MCP_ENABLED` — `global-setup.ts` seeds that row (`enabled: true`,
+ * `dcrMode: "open"`) before any test runs, and waits for the running app to
+ * actually be serving from it (its enabled-flag read is cached in-process for
+ * up to `CONNECTOR_SETTINGS_CACHE_TTL_MS`). `dcrMode: "open"` is what lets
+ * most of this suite keep using Dynamic Client Registration
+ * (`POST /api/oauth/register`, via `registerClient` below) to stand up
+ * throwaway public clients per test; the dedicated DCR-off coverage flips
+ * that row for the duration of one test only. `AUTH_URL` is set to this
+ * suite's own origin in `webServer.env` in `playwright.config.ts` rather than
+ * any `.env` file, so the issuer never leaks into a normal dev run.
  *
- * @spec L2-MCP-42, L2-MCP-43, L2-MCP-44, L2-MCP-45, L2-MCP-03
+ * @spec L2-MCP-42, L2-MCP-43, L2-MCP-44, L2-MCP-45, L2-MCP-46, L2-MCP-53,
+ *       L2-MCP-54, L2-MCP-03
  */
 
 // ---------------------------------------------------------------------------
@@ -41,7 +55,10 @@ type TokenResponse = {
 function generatePkce(): { verifier: string; challenge: string } {
   // 32 random bytes -> 43-char base64url string, right at RFC 7636's minimum.
   const verifier = crypto.randomBytes(32).toString("base64url")
-  const challenge = crypto.createHash("sha256").update(verifier).digest("base64url")
+  const challenge = crypto
+    .createHash("sha256")
+    .update(verifier)
+    .digest("base64url")
   return { verifier, challenge }
 }
 
@@ -77,7 +94,11 @@ function captureRedirect(page: Page): Promise<URL> {
   return new Promise<URL>((resolve) => {
     void page.route(`${REDIRECT_URI}**`, async (route) => {
       const url = new URL(route.request().url())
-      await route.fulfill({ status: 200, contentType: "text/plain", body: "captured" })
+      await route.fulfill({
+        status: 200,
+        contentType: "text/plain",
+        body: "captured",
+      })
       resolve(url)
     })
   })
@@ -198,7 +219,12 @@ async function runOAuthFlow(
   account: Account,
   opts: OAuthFlowOptions
 ): Promise<{ clientId: string; tokens: TokenResponse }> {
-  const { clientId, code, verifier } = await obtainAuthorizationCode(page, request, account, opts)
+  const { clientId, code, verifier } = await obtainAuthorizationCode(
+    page,
+    request,
+    account,
+    opts
+  )
   const response = await exchangeCode(request, { clientId, code, verifier })
   expect(response.status(), await response.text()).toBe(200)
   const tokens = (await response.json()) as TokenResponse
@@ -227,7 +253,10 @@ async function mcpCall(
   const contentType = response.headers()["content-type"] ?? ""
   const text = await response.text()
   let body: {
-    result?: { tools?: { name: string }[]; structuredContent?: Record<string, unknown> }
+    result?: {
+      tools?: { name: string }[]
+      structuredContent?: Record<string, unknown>
+    }
     error?: { code: number; message: string }
   } | null = null
 
@@ -264,6 +293,160 @@ async function bumpTokenVersion(email: string): Promise<void> {
   }
 }
 
+/**
+ * Direct-DB toggle of `connector_config.dcrMode` — used only by the DCR-off
+ * coverage, which needs the row in a state global setup deliberately doesn't
+ * seed (`"open"`). Unlike `enabled`, every reader of `dcrMode`
+ * (`getConnectorSettings()`, used by the register route, the AS metadata
+ * route and authorize) reads the row live, uncached, so this takes effect on
+ * the very next request — no propagation wait needed, unlike the kill switch.
+ */
+async function setDcrMode(mode: "off" | "allowlist" | "open"): Promise<void> {
+  const client = new pg.Client({ connectionString: TEST_DATABASE_URL })
+  await client.connect()
+  try {
+    await client.query(
+      `update "connector_config" set "dcrMode" = $1 where "kind" = 'mcp'`,
+      [mode]
+    )
+  } finally {
+    await client.end()
+  }
+}
+
+/** Selects the "Connectors" row in `/backflip/settings`'s master list,
+ *  landing on the `ConnectorsIntegration` detail pane. Caller must already be
+ *  authenticated as an owner (`settings` capability) — a teammate never sees
+ *  this page at all. */
+async function openConnectorsTab(page: Page): Promise<void> {
+  await page.goto("/backflip/settings")
+  await page.getByRole("button", { name: "Connectors" }).click()
+}
+
+/**
+ * Drives the "Add client" dialog end to end (`L2-MCP-50`): fills the form,
+ * submits, reads the client id (and, unless `nativeClient`, the one-time
+ * secret) off the reveal screen, acknowledges it, and closes. This is the
+ * only way this suite creates a manual client — deliberately through the UI
+ * rather than a direct insert, so it also proves the reveal-once secret flow
+ * actually works (`L2-MCP-52`, `L2-MCP-53`).
+ */
+async function createManualClientViaUI(
+  page: Page,
+  opts: { clientName: string; redirectUri: string; nativeClient?: boolean }
+): Promise<{ clientId: string; clientSecret: string | null }> {
+  await openConnectorsTab(page)
+  await page.getByRole("button", { name: "Add client" }).click()
+
+  await page.getByLabel("Name").fill(opts.clientName)
+  await page.getByLabel("Redirect URIs").fill(opts.redirectUri)
+  if (opts.nativeClient) {
+    await page.getByRole("checkbox", { name: /Native client/ }).check()
+  }
+  await page.getByRole("button", { name: "Create client" }).click()
+
+  await expect(page.getByText(`${opts.clientName} created`)).toBeVisible()
+  const clientId =
+    (await page.locator("code").nth(0).textContent())?.trim() ?? ""
+  const clientSecret = opts.nativeClient
+    ? null
+    : ((await page.locator("code").nth(1).textContent())?.trim() ?? null)
+
+  await page.getByRole("checkbox", { name: /saved/i }).check()
+  await page.getByRole("button", { name: "Done" }).click()
+
+  return { clientId, clientSecret }
+}
+
+/**
+ * Exchange a code at the token endpoint with an explicit client-authentication
+ * method (`L2-MCP-52`) — `exchangeCode` above always goes public/`none`, which
+ * a confidential client's stored secret hash rejects.
+ */
+function exchangeCodeConfidential(
+  request: APIRequestContext,
+  input: {
+    clientId: string
+    code: string
+    verifier: string
+    secret?: string
+    authMethod: "client_secret_post" | "client_secret_basic" | "none"
+  }
+) {
+  const form: Record<string, string> = {
+    grant_type: "authorization_code",
+    code: input.code,
+    redirect_uri: REDIRECT_URI,
+    client_id: input.clientId,
+    code_verifier: input.verifier,
+  }
+  const headers: Record<string, string> = {}
+
+  if (input.authMethod === "client_secret_post" && input.secret) {
+    form.client_secret = input.secret
+  } else if (input.authMethod === "client_secret_basic" && input.secret) {
+    const basic = Buffer.from(`${input.clientId}:${input.secret}`).toString(
+      "base64"
+    )
+    headers.Authorization = `Basic ${basic}`
+  }
+
+  return request.post("/api/oauth/token", { form, headers })
+}
+
+/** Adds a host to the redirect allowlist through the settings UI, waiting on
+ *  the form actually clearing (`L2-MCP-47`) — the add form gives no success
+ *  toast, only a reset once `addRedirectHost` resolves. */
+async function addAllowlistHostViaUI(page: Page, host: string): Promise<void> {
+  await openConnectorsTab(page)
+  const input = page.getByLabel("Add host")
+  await input.fill(host)
+  await page.getByRole("button", { name: "Add", exact: true }).click()
+  await expect(input).toHaveValue("")
+}
+
+/** Removes a host from the redirect allowlist through the settings UI,
+ *  waiting on the row's own success toast (`L2-MCP-49`). */
+async function removeAllowlistHostViaUI(
+  page: Page,
+  host: string
+): Promise<void> {
+  await openConnectorsTab(page)
+  await page.getByRole("button", { name: `Remove ${host}` }).click()
+  await expect(page.getByText(`Removed ${host}.`)).toBeVisible()
+}
+
+/**
+ * Flips the connector's owner-facing master switch through the settings UI
+ * and waits for the underlying server action's response — not a fixed sleep
+ * — before returning, since `ConnectorEnable` gives no success toast to key
+ * off (only an error one). A no-op if the switch is already in the requested
+ * state. `L2-MCP-25`, `L2-MCP-37`.
+ */
+async function setConnectorEnabledViaUI(
+  page: Page,
+  nextEnabled: boolean
+): Promise<void> {
+  await openConnectorsTab(page)
+  const toggle = page.getByRole("switch", { name: "Enabled" })
+  const isOn = (await toggle.getAttribute("aria-checked")) === "true"
+  if (isOn === nextEnabled) return
+
+  // Scoped to the switch's own <form>: when the connector is reachable,
+  // `ConnectorRegistrationMode` renders its own "Save changes" button right
+  // below `ConnectorEnable`'s, and an unscoped role query is ambiguous
+  // between the two.
+  const form = page.locator("form").filter({ has: toggle })
+  await toggle.click()
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (res) => res.request().method() === "POST" && res.status() < 400
+    ),
+    form.getByRole("button", { name: "Save changes" }).click(),
+  ])
+  expect(response.ok()).toBe(true)
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -272,21 +455,33 @@ test.describe("Claude MCP connector", () => {
   test("discovery: well-known documents advertise a consistent issuer, endpoints and resource", async ({
     request,
   }) => {
-    const asResponse = await request.get("/.well-known/oauth-authorization-server")
+    const asResponse = await request.get(
+      "/.well-known/oauth-authorization-server"
+    )
     expect(asResponse.status()).toBe(200)
     const asBody = await asResponse.json()
     expect(asBody.issuer).toBe(BASE_URL)
-    expect(asBody.authorization_endpoint).toBe(`${BASE_URL}/api/oauth/authorize`)
+    expect(asBody.authorization_endpoint).toBe(
+      `${BASE_URL}/api/oauth/authorize`
+    )
     expect(asBody.token_endpoint).toBe(`${BASE_URL}/api/oauth/token`)
     expect(asBody.registration_endpoint).toBe(`${BASE_URL}/api/oauth/register`)
     expect(asBody.revocation_endpoint).toBe(`${BASE_URL}/api/oauth/revoke`)
     expect(asBody.code_challenge_methods_supported).toEqual(["S256"])
-    expect(asBody.token_endpoint_auth_methods_supported).toEqual(["none"])
+    // Public clients (`none`) plus the two confidential methods a manual web
+    // client's secret can be presented with (`L2-MCP-52`).
+    expect(asBody.token_endpoint_auth_methods_supported).toEqual([
+      "none",
+      "client_secret_post",
+      "client_secret_basic",
+    ])
     expect(asBody.grant_types_supported.sort()).toEqual(
       ["authorization_code", "refresh_token"].sort()
     )
 
-    const prmResponse = await request.get("/.well-known/oauth-protected-resource")
+    const prmResponse = await request.get(
+      "/.well-known/oauth-protected-resource"
+    )
     expect(prmResponse.status()).toBe(200)
     const prmBody = await prmResponse.json()
     expect(prmBody.resource).toBe(`${BASE_URL}/api/mcp`)
@@ -339,7 +534,9 @@ test.describe("Claude MCP connector", () => {
     expect(tokens.refresh_token).toBeTruthy()
     expect(tokens.access_token).not.toBe(tokens.refresh_token)
     expect(tokens.token_type).toBe("Bearer")
-    expect(tokens.scope.split(" ").sort()).toEqual(requestedScope.split(" ").sort())
+    expect(tokens.scope.split(" ").sort()).toEqual(
+      requestedScope.split(" ").sort()
+    )
 
     const { response: listResponse, body: listBody } = await mcpCall(
       request,
@@ -349,7 +546,13 @@ test.describe("Claude MCP connector", () => {
     expect(listResponse.status()).toBe(200)
     const toolNames = (listBody?.result?.tools ?? []).map((t) => t.name).sort()
     expect(toolNames).toEqual(
-      ["get_dashboard_summary", "get_platform_status", "get_user", "list_users", "whoami"].sort()
+      [
+        "get_dashboard_summary",
+        "get_platform_status",
+        "get_user",
+        "list_users",
+        "whoami",
+      ].sort()
     )
 
     const { response: whoamiResponse, body: whoamiBody } = await mcpCall(
@@ -369,9 +572,14 @@ test.describe("Claude MCP connector", () => {
     page,
     request,
   }) => {
-    const { clientId, code, verifier } = await obtainAuthorizationCode(page, request, OWNER, {
-      clientName: "E2E Replay Connector",
-    })
+    const { clientId, code, verifier } = await obtainAuthorizationCode(
+      page,
+      request,
+      OWNER,
+      {
+        clientName: "E2E Replay Connector",
+      }
+    )
 
     const first = await exchangeCode(request, { clientId, code, verifier })
     expect(first.status(), await first.text()).toBe(200)
@@ -462,7 +670,11 @@ test.describe("Claude MCP connector", () => {
       clientName: "E2E Teammate Connector",
     })
 
-    const { response, body } = await mcpCall(request, tokens.access_token, "tools/list")
+    const { response, body } = await mcpCall(
+      request,
+      tokens.access_token,
+      "tools/list"
+    )
     expect(response.status()).toBe(200)
     const toolNames = (body?.result?.tools ?? []).map((t) => t.name).sort()
     expect(toolNames).toEqual(["get_dashboard_summary", "whoami"].sort())
@@ -488,7 +700,10 @@ test.describe("Claude MCP connector", () => {
     // `use` block sets no `storageState`), and that default is exactly what
     // this scenario needs — a first-time Claude connection where the visitor
     // has no session yet (`L2-MCP-42`, `docs/notes/mcp.md` steps 3-4).
-    const { clientId } = await registerClient(request, "E2E Logged-Out Connector")
+    const { clientId } = await registerClient(
+      request,
+      "E2E Logged-Out Connector"
+    )
     const { verifier, challenge } = generatePkce()
     const state = crypto.randomBytes(8).toString("hex")
 
@@ -544,5 +759,295 @@ test.describe("Claude MCP connector", () => {
     expect(tokenResponse.status(), await tokenResponse.text()).toBe(200)
     const tokens = (await tokenResponse.json()) as TokenResponse
     expect(tokens.access_token).toBeTruthy()
+  })
+
+  test("manual confidential client: full authorize -> consent -> code -> token flow works with client_secret_post and client_secret_basic", async ({
+    page,
+    request,
+  }) => {
+    await login(page, OWNER)
+    const { clientId, clientSecret } = await createManualClientViaUI(page, {
+      clientName: "E2E Manual Confidential Connector",
+      redirectUri: REDIRECT_URI,
+    })
+    // A web client (not `nativeClient`) is always confidential (`L2-MCP-52`).
+    expect(clientSecret).toBeTruthy()
+
+    // -- client_secret_post --------------------------------------------------
+    {
+      const { verifier, challenge } = generatePkce()
+      const state = crypto.randomBytes(8).toString("hex")
+      const redirect = await authorizeAndApprove(page, {
+        clientId,
+        challenge,
+        state,
+      })
+      expect(redirect.searchParams.get("error")).toBeNull()
+      const code = redirect.searchParams.get("code")
+      expect(code).toBeTruthy()
+
+      const response = await exchangeCodeConfidential(request, {
+        clientId,
+        code: code as string,
+        verifier,
+        secret: clientSecret as string,
+        authMethod: "client_secret_post",
+      })
+      expect(response.status(), await response.text()).toBe(200)
+      const tokens = (await response.json()) as TokenResponse
+      expect(tokens.access_token).toBeTruthy()
+
+      const { response: listResponse } = await mcpCall(
+        request,
+        tokens.access_token,
+        "tools/list"
+      )
+      expect(listResponse.status()).toBe(200)
+    }
+
+    // -- client_secret_basic --------------------------------------------------
+    {
+      const { verifier, challenge } = generatePkce()
+      const state = crypto.randomBytes(8).toString("hex")
+      const redirect = await authorizeAndApprove(page, {
+        clientId,
+        challenge,
+        state,
+      })
+      expect(redirect.searchParams.get("error")).toBeNull()
+      const code = redirect.searchParams.get("code")
+      expect(code).toBeTruthy()
+
+      const response = await exchangeCodeConfidential(request, {
+        clientId,
+        code: code as string,
+        verifier,
+        secret: clientSecret as string,
+        authMethod: "client_secret_basic",
+      })
+      expect(response.status(), await response.text()).toBe(200)
+      const tokens = (await response.json()) as TokenResponse
+      expect(tokens.access_token).toBeTruthy()
+
+      const { response: listResponse } = await mcpCall(
+        request,
+        tokens.access_token,
+        "tools/list"
+      )
+      expect(listResponse.status()).toBe(200)
+    }
+  })
+
+  test("manual confidential client: omitting the secret at the token endpoint is invalid_client", async ({
+    page,
+    request,
+  }) => {
+    await login(page, OWNER)
+    const { clientId } = await createManualClientViaUI(page, {
+      clientName: "E2E Confidential No-Secret Connector",
+      redirectUri: REDIRECT_URI,
+    })
+
+    const { verifier, challenge } = generatePkce()
+    const state = crypto.randomBytes(8).toString("hex")
+    const redirect = await authorizeAndApprove(page, {
+      clientId,
+      challenge,
+      state,
+    })
+    expect(redirect.searchParams.get("error")).toBeNull()
+    const code = redirect.searchParams.get("code")
+    expect(code).toBeTruthy()
+
+    // No `secret` presented at all — a confidential client must reject this
+    // rather than silently treat it as a public one (`L2-MCP-52`).
+    const response = await exchangeCodeConfidential(request, {
+      clientId,
+      code: code as string,
+      verifier,
+      authMethod: "none",
+    })
+    expect(response.status()).toBe(400)
+    const body = await response.json()
+    expect(body.error).toBe("invalid_client")
+  })
+
+  test("registration mode: DCR off hides registration_endpoint and 404s POST /api/oauth/register", async ({
+    request,
+  }) => {
+    await setDcrMode("off")
+    try {
+      const metaResponse = await request.get(
+        "/.well-known/oauth-authorization-server"
+      )
+      expect(metaResponse.status()).toBe(200)
+      const meta = await metaResponse.json()
+      // Advertising an endpoint that answers 404 would send a client down a
+      // flow that cannot complete (`L2-MCP-47`).
+      expect(meta.registration_endpoint).toBeUndefined()
+
+      const registerResponse = await request.post("/api/oauth/register", {
+        data: {
+          client_name: "Should never register",
+          redirect_uris: [REDIRECT_URI],
+        },
+      })
+      expect(registerResponse.status()).toBe(404)
+    } finally {
+      await setDcrMode("open")
+    }
+  })
+
+  test("allowlist enforcement: removing a client's redirect host breaks authorize on our own origin, restored afterward", async ({
+    page,
+    request,
+  }) => {
+    const redirectUri = "https://claude.ai/e2e-allowlist-callback"
+
+    await login(page, OWNER)
+    const { clientId } = await createManualClientViaUI(page, {
+      clientName: "E2E Allowlist Connector",
+      redirectUri,
+    })
+
+    const { challenge } = generatePkce()
+    const state = crypto.randomBytes(8).toString("hex")
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+      state,
+    })
+
+    // Sanity: claude.ai is on the default allowlist, so this client's
+    // authorize request is currently routed to consent (307), never rendered
+    // as an error.
+    const before = await request.get(
+      `/api/oauth/authorize?${params.toString()}`,
+      { maxRedirects: 0 }
+    )
+    expect(before.status()).toBe(307)
+    expect(before.headers()["location"] ?? "").toContain("/backflip/connect")
+
+    await removeAllowlistHostViaUI(page, "claude.ai")
+    try {
+      const after = await request.get(
+        `/api/oauth/authorize?${params.toString()}`,
+        { maxRedirects: 0 }
+      )
+      // Fatal, not a redirect: a de-allowlisted host is exactly the
+      // destination that must never be bounced to, so this renders on our own
+      // origin instead (`L2-MCP-31`, `L2-MCP-49`).
+      expect(after.status()).toBe(400)
+      expect(after.headers()["location"]).toBeUndefined()
+      expect(after.headers()["content-type"] ?? "").toContain("text/plain")
+      const body = await after.text()
+      expect(body).toContain("Authorization request rejected")
+    } finally {
+      await addAllowlistHostViaUI(page, "claude.ai")
+    }
+  })
+
+  test("kill switch: disabling the connector 404s every route, re-enabling restores it", async ({
+    page,
+    request,
+  }) => {
+    // Two independent propagation waits below (disable, then re-enable) can
+    // each legitimately take close to `PROPAGATION_TIMEOUT_MS` — see why
+    // below — which together can exceed `playwright.config.ts`'s default
+    // per-test timeout.
+    test.setTimeout(120_000)
+
+    await login(page, OWNER)
+
+    // The propagation budget below is NOT "instant, same process" despite
+    // `clearConnectorSettingsCache()` running synchronously in the save's own
+    // request (see the doc comment on `getCachedConnectorSettings` in
+    // `app/_lib/oauth/connector-config.ts`). Measured against this suite's
+    // own `next dev` webServer: a direct DB check right after the toggle
+    // confirms the write lands immediately, but `/api/mcp` kept answering
+    // from the pre-toggle cached value for close to the full
+    // `CONNECTOR_SETTINGS_CACHE_TTL_MS` (~30s) regardless — i.e. the "same
+    // process" propagation guarantee the code comments describe did not hold
+    // here. Budget accordingly and poll on the real condition rather than
+    // assume the fast path (`L2-MCP-54`); a poll that still doesn't resolve
+    // within this budget is a genuine regression, not a flake to retry away.
+    const PROPAGATION_TIMEOUT_MS = 45_000
+
+    try {
+      await setConnectorEnabledViaUI(page, false)
+
+      await expect
+        .poll(async () => (await request.get("/api/mcp")).status(), {
+          message: "/api/mcp should 404 once the connector is disabled",
+          timeout: PROPAGATION_TIMEOUT_MS,
+        })
+        .toBe(404)
+
+      const tokenResponse = await request.post("/api/oauth/token", {
+        form: {
+          grant_type: "authorization_code",
+          code: "irrelevant",
+          redirect_uri: REDIRECT_URI,
+          client_id: "irrelevant",
+          code_verifier: "irrelevant",
+        },
+      })
+      expect(tokenResponse.status()).toBe(404)
+
+      const metaResponse = await request.get(
+        "/.well-known/oauth-authorization-server"
+      )
+      expect(metaResponse.status()).toBe(404)
+    } finally {
+      await setConnectorEnabledViaUI(page, true)
+      await expect
+        .poll(
+          async () =>
+            (await request.get("/.well-known/oauth-authorization-server")).status(),
+          {
+            message: "the connector should come back once re-enabled",
+            timeout: PROPAGATION_TIMEOUT_MS,
+          }
+        )
+        .toBe(200)
+    }
+  })
+
+  test("anonymous path: bearer-less POST /api/mcp matches the invalid-token response exactly", async ({
+    request,
+  }) => {
+    const requestBody = { jsonrpc: "2.0", id: 1, method: "tools/list" }
+
+    const anonymous = await request.post("/api/mcp", {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      data: requestBody,
+    })
+    const invalidToken = await request.post("/api/mcp", {
+      headers: {
+        Authorization: "Bearer not-a-real-token",
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      data: requestBody,
+    })
+
+    expect(anonymous.status()).toBe(401)
+    expect(invalidToken.status()).toBe(401)
+    expect(await anonymous.json()).toEqual(await invalidToken.json())
+    expect(anonymous.headers()["www-authenticate"]).toBe(
+      invalidToken.headers()["www-authenticate"]
+    )
+    expect(anonymous.headers()["content-type"]).toBe(
+      invalidToken.headers()["content-type"]
+    )
+    expect(anonymous.headers()["cache-control"]).toBe(
+      invalidToken.headers()["cache-control"]
+    )
   })
 })

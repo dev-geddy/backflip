@@ -47,8 +47,7 @@ export function ConsentForm({
       </div>
 
       <div className="text-xs text-muted-foreground">
-        Signed in as{" "}
-        <span className="font-mono text-foreground">{email}</span>
+        Signed in as <span className="font-mono text-foreground">{email}</span>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -120,9 +119,7 @@ function ScopeRow({
     >
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium">{label.title}</div>
-        <div className="text-xs text-muted-foreground">
-          {label.description}
-        </div>
+        <div className="text-xs text-muted-foreground">{label.description}</div>
         {!grantable ? (
           <div className="mt-1 text-xs font-medium text-muted-foreground">
             Your role can’t grant this

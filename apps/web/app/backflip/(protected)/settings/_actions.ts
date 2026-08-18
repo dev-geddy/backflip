@@ -12,9 +12,21 @@ import {
   speechConfig,
 } from "@workspace/db"
 import { eq, ne } from "drizzle-orm"
+import { z } from "zod"
 
 import { auth } from "@/app/_lib/auth"
 import { canAccessSettings } from "@/app/_lib/auth/permissions"
+import {
+  createManualClient,
+  deleteClient,
+  isValidRedirectUri,
+} from "@/app/_lib/oauth/clients"
+import {
+  getConnectorSettings,
+  isValidHostEntry,
+  saveConnectorSettings,
+} from "@/app/_lib/oauth/connector-config"
+import { firstError } from "@/app/_lib/validation"
 
 import { fetchDeepgramModels, type SpeechModel } from "./_lib/deepgram-models"
 import { fetchProviderModels, type ProviderModel } from "./_lib/provider-models"
@@ -24,7 +36,8 @@ import { fetchProviderModels, type ProviderModel } from "./_lib/provider-models"
  * encryption, single-default enforcement). All `settings`-gated.
  *
  * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07,
- *       L2-ANALYTICS-02, L2-SPEECH-02, L2-SPEECH-04
+ *       L2-ANALYTICS-02, L2-SPEECH-02, L2-SPEECH-04, L2-MCP-47, L2-MCP-49,
+ *       L2-MCP-50, L2-MCP-52, L2-MCP-53
  */
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
@@ -272,4 +285,239 @@ export async function listSpeechModels(): Promise<ListSpeechModelsState> {
     // Don't leak provider error bodies (may echo request details) to the UI.
     return { ok: false, message: "Could not fetch models — check the API key." }
   }
+}
+
+/**
+ * Connector (MCP) administration — owner-only. The enable/disable master
+ * switch, registration mode, the redirect-host allowlist, and manual OAuth
+ * clients. Every action re-checks the `settings` capability itself; the
+ * tab's visibility in the UI is cosmetic only (`L2-AUTH-22`).
+ *
+ * @spec L2-MCP-25, L2-MCP-47, L2-MCP-49, L2-MCP-50, L2-MCP-52, L2-MCP-53
+ */
+
+export type ConnectorActionState = { ok: boolean; message: string } | null
+
+/**
+ * Enable or disable the connector — the owner-toggled master switch that
+ * replaces the old `MCP_ENABLED` env-only gate (`L2-MCP-25`). The UI control
+ * is cosmetic only: this re-checks `settings` itself, and never trusts a
+ * client-supplied user id (`L2-AUTH-22`). `MCP_ENABLED=false` still vetoes the
+ * resolved enabled state regardless of what gets stored here (`L2-MCP-37`) —
+ * `ConnectorEnable` disables its own switch in that case, but this action
+ * doesn't need to special-case it: storing `enabled: true` while forced off is
+ * harmless and simply takes effect once the override is lifted.
+ */
+export async function setConnectorEnabled(
+  _prev: ConnectorActionState,
+  formData: FormData
+): Promise<ConnectorActionState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const enabled = formData.get("enabled") != null
+  await saveConnectorSettings({ enabled })
+  revalidatePath("/backflip/settings")
+  return {
+    ok: true,
+    message: enabled ? "Connector enabled." : "Connector disabled.",
+  }
+}
+
+const DCR_MODES = ["off", "allowlist", "open"] as const
+const dcrModeSchema = z.enum(DCR_MODES)
+
+/** Save the dynamic-client-registration mode (`L2-MCP-47`). */
+export async function saveDcrMode(
+  _prev: ConnectorActionState,
+  formData: FormData
+): Promise<ConnectorActionState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const parsed = dcrModeSchema.safeParse(formData.get("dcrMode"))
+  if (!parsed.success) {
+    return { ok: false, message: "Unknown registration mode." }
+  }
+
+  await saveConnectorSettings({ dcrMode: parsed.data })
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Saved." }
+}
+
+/**
+ * Add a host to the redirect allowlist. Bare hostname only, validated by the
+ * same `isValidHostEntry` the client-side hint uses, so the two never
+ * disagree.
+ */
+export async function addRedirectHost(
+  _prev: ConnectorActionState,
+  formData: FormData
+): Promise<ConnectorActionState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const host = String(formData.get("host") ?? "")
+    .trim()
+    .toLowerCase()
+  if (!isValidHostEntry(host)) {
+    return {
+      ok: false,
+      message: "Enter a bare hostname — no scheme, port, path or wildcard.",
+    }
+  }
+
+  const current = await getConnectorSettings()
+  if (current.redirectHosts.includes(host)) {
+    return { ok: false, message: "That host is already on the allowlist." }
+  }
+
+  try {
+    await saveConnectorSettings({
+      redirectHosts: [...current.redirectHosts, host],
+    })
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Couldn't add host.",
+    }
+  }
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: `Added ${host}.` }
+}
+
+/**
+ * Remove a host from the redirect allowlist. Takes effect immediately for
+ * any client whose registered redirect URI used that host (`L2-MCP-49`) — the
+ * UI carries its own warning copy, this action just does the removal.
+ */
+export async function removeRedirectHost(
+  _prev: ConnectorActionState,
+  formData: FormData
+): Promise<ConnectorActionState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const host = String(formData.get("host") ?? "")
+    .trim()
+    .toLowerCase()
+  if (!host) return { ok: false, message: "Missing host." }
+
+  const current = await getConnectorSettings()
+  await saveConnectorSettings({
+    redirectHosts: current.redirectHosts.filter((h) => h !== host),
+  })
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: `Removed ${host}.` }
+}
+
+const createClientSchema = z.object({
+  clientName: z.string().trim().min(1, "Name is required.").max(200),
+  redirectUris: z.array(z.string()).min(1, "Add at least one redirect URI."),
+  allowLoopbackPorts: z.boolean(),
+})
+
+export type CreateClientState =
+  | {
+      ok: true
+      message: string
+      client: { clientId: string; clientName: string }
+      /** Native (loopback) clients get no secret — PKCE stands in (RFC 8252). */
+      clientSecret: string | null
+    }
+  | { ok: false; message: string }
+  | null
+
+/**
+ * Create a manual OAuth client. Returns the raw `client_secret` exactly once
+ * — the caller must show it to the owner now, it is never retrievable again
+ * (`L2-MCP-50`). A native client (`allowLoopbackPorts`) gets `clientSecret:
+ * null` instead, since a public native app can't hold one (`L2-MCP-52`).
+ * `createdByUserId` always comes from the session, never the client.
+ */
+export async function createConnectorClient(
+  _prev: CreateClientState,
+  formData: FormData
+): Promise<CreateClientState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+
+  const redirectUris = Array.from(
+    new Set(
+      String(formData.get("redirectUris") ?? "")
+        .split("\n")
+        .map((uri) => uri.trim())
+        .filter(Boolean)
+    )
+  )
+
+  const parsed = createClientSchema.safeParse({
+    clientName: String(formData.get("clientName") ?? ""),
+    redirectUris,
+    allowLoopbackPorts: formData.get("allowLoopbackPorts") != null,
+  })
+  if (!parsed.success) {
+    return { ok: false, message: firstError(parsed.error) }
+  }
+
+  const invalidUri = parsed.data.redirectUris.find(
+    (uri) => !isValidRedirectUri(uri)
+  )
+  if (invalidUri) {
+    return { ok: false, message: `Not a valid redirect URI: ${invalidUri}` }
+  }
+
+  try {
+    const { client, clientSecret } = await createManualClient({
+      clientName: parsed.data.clientName,
+      redirectUris: parsed.data.redirectUris,
+      allowLoopbackPorts: parsed.data.allowLoopbackPorts,
+      createdByUserId: session.user.id,
+    })
+    revalidatePath("/backflip/settings")
+    return {
+      ok: true,
+      message: "Client created.",
+      client: { clientId: client.clientId, clientName: client.clientName },
+      clientSecret: clientSecret || null,
+    }
+  } catch (error) {
+    // `createManualClient` throws user-facing messages by design (invalid
+    // name/URI, or a redirect host that isn't on the allowlist, `L2-MCP-49`)
+    // — surface them as-is rather than a generic fallback.
+    return {
+      ok: false,
+      message:
+        error instanceof Error ? error.message : "Couldn't create the client.",
+    }
+  }
+}
+
+/**
+ * Delete a manual or dynamic client. Immediate: any token already issued to
+ * it stops working on its next use (bearer lookup fails once the client row
+ * is gone).
+ */
+export async function deleteConnectorClient(
+  clientDbId: string
+): Promise<ConnectorActionState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+  if (!clientDbId) return { ok: false, message: "Missing client id." }
+
+  await deleteClient(clientDbId)
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Client deleted." }
 }

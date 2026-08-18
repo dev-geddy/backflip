@@ -62,9 +62,10 @@ export default defineConfig({
       // origin the e2e server actually answers on (`L2-MCP-25`, `L2-MCP-33`).
       AUTH_URL: BASE_URL,
       ENCRYPTION_KEY: "e2e-encryption-key-do-not-use-in-production",
-      // Connector surface is off by default (`L2-MCP-37`) — the connector e2e
-      // spec needs it on.
-      MCP_ENABLED: "true",
+      // Deliberately UNSET: `MCP_ENABLED` is only a forced-off override now
+      // (`"false"` hard-disables regardless of the DB) — it can no longer turn
+      // the connector on. Enablement is the DB-driven `connector_config.enabled`
+      // flag (`L2-MCP-25`), seeded by `global-setup.ts` before any test runs.
       // Own build dir so a dev server on 3070 and the e2e server never share `.next`.
       NEXT_DIST_DIR: ".next-e2e",
       // Credentials-only: no AUTH_GOOGLE_* on purpose.

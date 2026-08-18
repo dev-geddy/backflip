@@ -195,6 +195,44 @@ export const analyticsConfig = pgTable("analytics_config", {
  *
  * @spec L2-DB-25, L2-MCP-21, L2-MCP-31
  */
+/** How `/api/oauth/register` (RFC 7591) behaves. Default `off`. */
+export const connectorDcrMode = pgEnum("connector_dcr_mode", [
+  "off",
+  "allowlist",
+  "open",
+])
+
+/**
+ * Connector (MCP) settings — single row, owner-managed under
+ * `/backflip/settings`. Holds the redirect-host allowlist enforced for every
+ * OAuth client (manual or dynamic) and the dynamic-registration mode.
+ *
+ * `redirectHosts` seeds to Claude's two callback origins; an owner may add
+ * more. With `dcrMode = "off"` (the default) anonymous client registration is
+ * refused outright and clients are created by hand in the admin UI.
+ *
+ * @spec L2-DB-28, L2-MCP-48
+ */
+export const connectorConfig = pgTable("connector_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  kind: text("kind").notNull().unique().default("mcp"),
+  /**
+   * Master switch, owner-toggled in the admin UI — matches how every other
+   * integration here is enabled (`ai_config`, `email_config`, …). Default off.
+   * `MCP_ENABLED=false` in the environment still forces it off regardless, as
+   * a deploy-level kill switch for when the admin UI itself can't be trusted.
+   */
+  enabled: boolean("enabled").notNull().default(false),
+  dcrMode: connectorDcrMode("dcrMode").notNull().default("off"),
+  redirectHosts: text("redirectHosts")
+    .array()
+    .notNull()
+    .default(["claude.ai", "claude.com"]),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
+
 export const oauthClients = pgTable("oauth_client", {
   id: text("id")
     .primaryKey()
@@ -202,6 +240,18 @@ export const oauthClients = pgTable("oauth_client", {
   clientId: text("clientId").notNull().unique(),
   clientSecretHash: text("clientSecretHash"),
   clientName: text("clientName").notNull(),
+  /** `manual` = created by an owner in the admin UI; `dynamic` = RFC 7591. */
+  origin: text("origin").notNull().default("dynamic"),
+  /** Owner who created a manual client; null for dynamic registrations. */
+  createdByUserId: text("createdByUserId").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  /**
+   * Port-agnostic loopback matching for native clients (Claude Code redirects
+   * to `http://127.0.0.1:<ephemeral>/callback`). Per-client opt-in — the
+   * claude.ai web path keeps strict exact-string matching.
+   */
+  allowLoopbackPorts: boolean("allowLoopbackPorts").notNull().default(false),
   redirectUris: text("redirectUris").array().notNull(),
   grantTypes: text("grantTypes")
     .array()

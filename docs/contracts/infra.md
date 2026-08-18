@@ -23,7 +23,7 @@ Local dev infrastructure: Docker Compose services (web, postgres, one-shot migra
 - `L2-INF-07` — Env vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `DATABASE_URL`. Defined in `.env` (copy of `.env.example`).
 
 > **Status note:** `L2-INF-17` — PROPOSED — awaiting human approval.
-- `L2-INF-17` — `MCP_ENABLED` app env var (root `.env`/`.env.local`, same load path as `L2-INF-07`): default unset (off) — an explicit opt-in, not a compose/db var. When unset, every connector route (`/api/mcp`, `/api/oauth/*`, both well-known documents, `/backflip/connect`) 404s in both local dev and docker profiles. Owned by the `mcp` domain (`L2-MCP-25`, `L2-MCP-37`).
+- `L2-INF-17` — `MCP_ENABLED` app env var (root `.env`/`.env.local`, same load path as `L2-INF-07`): a **forced-off override only**, not the enabler. Unset (the default) → the database flag `connector_config.enabled` decides, toggled by an owner in the admin UI; `"false"` → the connector is hard off whatever the database says, for incident response when the admin UI can't be trusted. While off, every connector route (`/api/mcp`, `/api/oauth/*`, both well-known documents, `/backflip/connect`) 404s in both local dev and docker profiles. Owned by the `mcp` domain (`L2-MCP-25`, `L2-MCP-37`). [AMENDED — PROPOSED]
 
 ## Invariants
 - `L2-INF-08` — Postgres host port kept off default 5432 to avoid clashing with other local pg. Configurable via `POSTGRES_PORT`.

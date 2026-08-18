@@ -32,7 +32,7 @@ const FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
  * @spec L2-MCP-16, L2-MCP-27, L2-MCP-37, L2-MCP-41
  */
 export async function POST(request: Request) {
-  if (!isMcpEnabled()) return connectorDisabledResponse()
+  if (!(await isMcpEnabled())) return connectorDisabledResponse()
 
   const contentType = request.headers.get("content-type") ?? ""
   if (!contentType.toLowerCase().includes(FORM_CONTENT_TYPE)) {

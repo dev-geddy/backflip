@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server"
 
-import { isValidRedirectUri, registerClient } from "@/app/_lib/oauth/clients"
+import {
+  isValidRedirectUri,
+  redirectUriHost,
+  registerClient,
+} from "@/app/_lib/oauth/clients"
 import { isMcpEnabled } from "@/app/_lib/oauth/config"
+import {
+  getConnectorSettings,
+  isHostAllowed,
+  type ConnectorSettings,
+} from "@/app/_lib/oauth/connector-config"
 import {
   connectorDisabledResponse,
   NO_STORE_HEADERS,
@@ -38,22 +47,38 @@ function registrationError(
 /**
  * POST /api/oauth/register — Dynamic Client Registration (RFC 7591).
  *
- * Open by design: a Claude client registers itself the first time someone adds
- * the connector, with no credential to hand out beforehand. Open registration
- * is only safe because a client is worthless on its own — it can obtain nothing
- * without a human completing consent — and because it is rate-limited to 10/h
- * per IP (`L2-MCP-30`).
+ * **Off by default** (`dcrMode = "off"`, `L2-MCP-12`, `L2-MCP-47`): anonymous
+ * registration hands any internet caller a `client_id` with an attacker-chosen
+ * `redirect_uri` — a phishing primitive on our own domain — so an owner creates
+ * clients by hand instead. With the mode off this route is a plain `404`,
+ * indistinguishable from a route that was never deployed.
  *
- * Always registers a PUBLIC client: `token_endpoint_auth_method: "none"`, no
+ * When an owner does switch it on: `allowlist` registers only clients whose
+ * redirect hosts are on the owner's list (`L2-MCP-49`); `open` accepts any
+ * valid URI. Either way it stays rate-limited to 10/h per IP (`L2-MCP-30`) and
+ * always registers a PUBLIC client: `token_endpoint_auth_method: "none"`, no
  * secret, PKCE instead (`L2-MCP-26`).
  *
- * Status codes: 201 registered · 400 invalid metadata · 404 connector disabled ·
- * 429 rate limited · 500 storage failure.
+ * Status codes: 201 registered · 400 invalid metadata · 404 connector disabled
+ * or DCR off · 429 rate limited · 500 storage failure.
  *
- * @spec L2-MCP-12, L2-MCP-21, L2-MCP-30, L2-MCP-31, L2-MCP-37, L2-MCP-41
+ * @spec L2-MCP-12, L2-MCP-21, L2-MCP-30, L2-MCP-31, L2-MCP-37, L2-MCP-41,
+ *       L2-MCP-47, L2-MCP-49
  */
 export async function POST(request: Request) {
-  if (!isMcpEnabled()) return connectorDisabledResponse()
+  if (!(await isMcpEnabled())) return connectorDisabledResponse()
+
+  // The mode gate runs BEFORE the limiter and before the body is read: a 404
+  // must cost nothing and reveal nothing — no rate-limit budget consumed, no
+  // parse errors that would distinguish this route from a missing one. A failed
+  // settings read fails closed, for the same reason.
+  let settings: ConnectorSettings
+  try {
+    settings = await getConnectorSettings()
+  } catch {
+    return connectorDisabledResponse()
+  }
+  if (settings.dcrMode === "off") return connectorDisabledResponse()
 
   const ip = clientIp(request)
   if (registerLimiter.blocked(ip)) {
@@ -92,7 +117,19 @@ export async function POST(request: Request) {
         "Each redirect_uri must be an absolute https URL (or http on localhost) with no fragment."
       )
     }
-    if (!redirectUris.includes(uri.trim())) redirectUris.push(uri.trim())
+    const value = uri.trim()
+    // In `allowlist` mode the owner's host list bounds where an authorization
+    // response may land — same rule manual clients are held to (`L2-MCP-49`).
+    if (settings.dcrMode === "allowlist") {
+      const host = redirectUriHost(value)
+      if (!host || !isHostAllowed(host, settings.redirectHosts)) {
+        return registrationError(
+          "invalid_redirect_uri",
+          "That redirect_uri host is not allowed on this server."
+        )
+      }
+    }
+    if (!redirectUris.includes(value)) redirectUris.push(value)
   }
 
   const rawName =

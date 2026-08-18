@@ -20,7 +20,12 @@ function ctx(role: McpAuthContext["role"], scopes: McpScope[]): McpAuthContext {
   }
 }
 
-const ALL_SCOPES: McpScope[] = ["account", "dashboard", "users.view", "settings"]
+const ALL_SCOPES: McpScope[] = [
+  "account",
+  "dashboard",
+  "users.view",
+  "settings",
+]
 
 describe("visibleTools", () => {
   it("registers every tool for TOOL_DEFS", () => {

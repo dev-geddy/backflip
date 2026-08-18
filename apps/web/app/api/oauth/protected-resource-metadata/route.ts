@@ -30,7 +30,7 @@ export const runtime = "nodejs"
  * @spec L2-MCP-11, L2-MCP-18, L2-MCP-33, L2-MCP-37
  */
 export async function GET() {
-  if (!isMcpEnabled()) return connectorDisabledResponse()
+  if (!(await isMcpEnabled())) return connectorDisabledResponse()
 
   let issuer: string
   let resource: string

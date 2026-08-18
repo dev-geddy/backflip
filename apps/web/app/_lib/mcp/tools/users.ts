@@ -99,7 +99,10 @@ async function handleListUsers(
     .limit(limit)
     .offset(offset)
 
-  const [totalRow] = await db.select({ value: count() }).from(users).where(filter)
+  const [totalRow] = await db
+    .select({ value: count() })
+    .from(users)
+    .where(filter)
 
   return toolResult({
     users: rows.map((u) => ({ ...u, emailVerified: Boolean(u.emailVerified) })),
@@ -109,7 +112,10 @@ async function handleListUsers(
   })
 }
 
-export function registerListUsers(server: McpServer, ctx: McpAuthContext): void {
+export function registerListUsers(
+  server: McpServer,
+  ctx: McpAuthContext
+): void {
   server.registerTool(
     "list_users",
     {
@@ -139,8 +145,7 @@ const getUserInputSchema = z.object({
 
 export type GetUserInput = z.infer<typeof getUserInputSchema>
 export type GetUserSelector =
-  | { kind: "userId"; value: string }
-  | { kind: "email"; value: string }
+  { kind: "userId"; value: string } | { kind: "email"; value: string }
 
 /**
  * Exactly one of `userId`/`email` is required — pure rule, unit-tested

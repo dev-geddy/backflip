@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server"
 
-import { findClientByClientId, touchClient } from "@/app/_lib/oauth/clients"
+import {
+  equalizeClientAuthTiming,
+  findClientByClientId,
+  parseClientAuthentication,
+  touchClient,
+  verifyClientSecret,
+} from "@/app/_lib/oauth/clients"
 import { consumeAuthorizationCode } from "@/app/_lib/oauth/codes"
 import { isMcpEnabled } from "@/app/_lib/oauth/config"
 import {
@@ -40,17 +46,23 @@ function tokenResponse(tokens: IssuedTokens): NextResponse {
  * Claude client posts both the initial exchange and every refresh that way, so
  * a JSON-only endpoint would simply never be called successfully.
  *
- * Public clients: the caller identifies itself with `client_id` in the body and
- * proves possession with PKCE — there is no secret to check (`L2-MCP-26`).
+ * Two kinds of caller (`L2-MCP-52`):
+ * - public — `client_id` in the body, possession proven by PKCE alone. Dynamic
+ *   registrations and native (loopback) clients, which cannot keep a secret.
+ * - confidential — a manually created web client, which must additionally
+ *   present its `client_secret` as `client_secret_post` or `client_secret_basic`.
+ *
+ * PKCE is mandatory for both (`L2-MCP-26`); the secret is an extra factor, never
+ * a replacement.
  *
  * Status codes: 200 tokens · 400 invalid request/grant/client ·
  * 404 connector disabled · 429 rate limited. Always `Cache-Control: no-store`.
  *
  * @spec L2-MCP-15, L2-MCP-24, L2-MCP-26, L2-MCP-27, L2-MCP-30, L2-MCP-32,
- *       L2-MCP-33, L2-MCP-37, L2-MCP-40, L2-MCP-41
+ *       L2-MCP-33, L2-MCP-37, L2-MCP-40, L2-MCP-41, L2-MCP-52
  */
 export async function POST(request: Request) {
-  if (!isMcpEnabled()) return connectorDisabledResponse()
+  if (!(await isMcpEnabled())) return connectorDisabledResponse()
 
   const ip = clientIp(request)
   if (tokenLimiter.blocked(ip)) {
@@ -97,21 +109,48 @@ export async function POST(request: Request) {
     })
   }
 
-  const clientId = form.get("client_id")?.trim() ?? ""
-  if (!clientId) {
-    return oauthErrorResponse({
-      error: "invalid_client",
-      description: "Missing client_id.",
-    })
-  }
+  // Identity + optional secret, from the body or an HTTP Basic header.
+  const presented = parseClientAuthentication({
+    authorizationHeader: request.headers.get("authorization"),
+    form,
+  })
+  if (!presented.ok) return oauthErrorResponse(presented.failure)
 
   let client
   try {
-    client = await findClientByClientId(clientId)
+    client = await findClientByClientId(presented.clientId)
   } catch {
     return oauthErrorResponse({ error: "server_error" }, 500)
   }
   if (!client) {
+    // Burn the same bcrypt work a wrong secret would cost, so an unknown
+    // client_id can't be told apart by response time (`L2-MCP-41`).
+    if (presented.secret !== null) {
+      await equalizeClientAuthTiming(presented.secret)
+    }
+    return oauthErrorResponse({
+      error: "invalid_client",
+      description: "Client authentication failed.",
+    })
+  }
+
+  // Client authentication (`L2-MCP-52`). A confidential client (one with a
+  // stored hash) must present a valid secret; a public one must NOT present a
+  // secret at all — ignoring it would let a caller believe it authenticated.
+  // Both failures answer `invalid_client` with the same description, so the
+  // response never says which of the two it was. PKCE is still required below
+  // in every case: a secret never substitutes for it (`L2-MCP-26`).
+  if (presented.secret !== null) {
+    // `verifyClientSecret` returns false for a public client, having done the
+    // same amount of work.
+    const authenticated = await verifyClientSecret(client, presented.secret)
+    if (!authenticated) {
+      return oauthErrorResponse({
+        error: "invalid_client",
+        description: "Client authentication failed.",
+      })
+    }
+  } else if (client.clientSecretHash) {
     return oauthErrorResponse({
       error: "invalid_client",
       description: "Client authentication failed.",

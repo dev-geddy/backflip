@@ -7,14 +7,20 @@ import type { OAuthClientRecord } from "./clients"
  * Authorization request validation. The load-bearing assertion is the fatal /
  * non-fatal split: an error may only be redirected to a URI already proven
  * registered (`L2-MCP-31`), and PKCE S256 is non-negotiable (`L2-MCP-26`).
- * Only the client lookup is stubbed — no database involved.
+ * The live host-allowlist re-check (`L2-MCP-49`) is asserted here too, since
+ * that is the only thing that makes removing a host take effect immediately.
+ * Only the client lookup and the settings read are stubbed — no database.
  */
 
 const REGISTERED = "https://claude.ai/api/mcp/auth_callback"
 const CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
 
 const h = vi.hoisted(() => ({
-  state: { client: null as unknown },
+  state: {
+    client: null as unknown,
+    redirectHosts: ["claude.ai"] as string[],
+    settingsFail: false,
+  },
 }))
 
 vi.mock("@workspace/db", async () => {
@@ -32,12 +38,29 @@ vi.mock("./clients", async () => {
   }
 })
 
+vi.mock("./connector-config", async () => {
+  const actual =
+    await vi.importActual<typeof import("./connector-config")>(
+      "./connector-config"
+    )
+  return {
+    ...actual,
+    getConnectorSettings: async () => {
+      if (h.state.settingsFail) throw new Error("db down")
+      return { dcrMode: "off" as const, redirectHosts: h.state.redirectHosts }
+    },
+  }
+})
+
 function client(overrides: Partial<OAuthClientRecord> = {}): OAuthClientRecord {
   return {
     id: "client-row-1",
     clientId: "public-client-id",
     clientSecretHash: null,
     clientName: "Claude",
+    origin: "manual",
+    createdByUserId: "owner-1",
+    allowLoopbackPorts: false,
     redirectUris: [REGISTERED],
     grantTypes: ["authorization_code", "refresh_token"],
     scopes: ["account", "dashboard", "users.view", "settings"],
@@ -68,6 +91,8 @@ function params(overrides: Record<string, string | null> = {}) {
 
 beforeEach(() => {
   h.state.client = client()
+  h.state.redirectHosts = ["claude.ai"]
+  h.state.settingsFail = false
   vi.stubEnv("AUTH_URL", "https://app.example.com")
 })
 
@@ -112,6 +137,27 @@ describe("validateAuthorizationRequest — fatal (never redirect)", () => {
       params({ redirect_uri: null })
     )
     expect(result).toMatchObject({ ok: false, fatal: true })
+  })
+
+  it("breaks a registered client once its host leaves the allowlist", async () => {
+    // The client and its redirect URI are unchanged — only the owner's list is.
+    h.state.redirectHosts = ["claude.com"]
+    const result = await validateAuthorizationRequest(params())
+    expect(result).toMatchObject({
+      ok: false,
+      fatal: true,
+      failure: { error: "invalid_request" },
+    })
+  })
+
+  it("fails closed when the allowlist cannot be read", async () => {
+    h.state.settingsFail = true
+    const result = await validateAuthorizationRequest(params())
+    expect(result).toMatchObject({
+      ok: false,
+      fatal: true,
+      failure: { error: "server_error" },
+    })
   })
 })
 
@@ -209,6 +255,20 @@ describe("validateAuthorizationRequest — success", () => {
       "users.view",
       "settings",
     ])
+  })
+
+  it("accepts an ephemeral loopback port for a native client, unlisted host and all", async () => {
+    h.state.redirectHosts = []
+    h.state.client = client({
+      allowLoopbackPorts: true,
+      redirectUris: ["http://127.0.0.1:8080/callback"],
+    })
+    const result = await validateAuthorizationRequest(
+      params({ redirect_uri: "http://127.0.0.1:54321/callback" })
+    )
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.request.redirectUri).toBe("http://127.0.0.1:54321/callback")
   })
 
   it("accepts and normalizes the MCP resource indicator", async () => {

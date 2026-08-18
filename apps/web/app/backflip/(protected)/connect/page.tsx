@@ -1,6 +1,10 @@
 import { notFound, redirect } from "next/navigation"
 
-import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert"
 import { Card } from "@workspace/ui/components/card"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
@@ -32,7 +36,7 @@ export default async function ConnectPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  if (!isMcpEnabled()) notFound()
+  if (!(await isMcpEnabled())) notFound()
 
   const sessionUser = await requireCapability("account")
 

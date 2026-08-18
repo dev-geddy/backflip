@@ -60,8 +60,10 @@ export default async function AccountPage() {
   const label = row?.name || row?.email || "Account"
   const emailVerified = Boolean(row?.emailVerified)
 
-  // Connector surface is fully hidden when MCP_ENABLED is off (L2-MCP-37).
-  const mcpEnabled = isMcpEnabled()
+  // Connector surface is fully hidden when the connector is off — the owner
+  // toggle, DB-backed, folding in the `MCP_ENABLED=false` kill switch
+  // (`L2-MCP-25`, `L2-MCP-37`).
+  const mcpEnabled = await isMcpEnabled()
   const grants = mcpEnabled ? await listGrants(sessionUser.id) : []
 
   return (

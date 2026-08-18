@@ -5,8 +5,36 @@ import type { Capability, Role } from "@/app/_lib/auth/permissions"
  * server it protects. Pure types — no runtime deps, safe to import from any
  * layer (routes, libs, tools, tests).
  *
- * @spec L2-MCP-18, L2-MCP-19
+ * @spec L2-MCP-18, L2-MCP-19, L2-MCP-47
  */
+
+/**
+ * How `POST /api/oauth/register` (RFC 7591) behaves:
+ * - `off` — the route 404s; an owner creates clients by hand (the default);
+ * - `allowlist` — anonymous registration, but every `redirect_uri` host must be
+ *   on the owner's allowlist;
+ * - `open` — anonymous registration with no host restriction.
+ */
+export const DCR_MODES = ["off", "allowlist", "open"] as const
+
+export type DcrMode = (typeof DCR_MODES)[number]
+
+/** Owner-managed connector settings — the single `connector_config` row. */
+export type ConnectorSettings = {
+  /**
+   * The master switch (`L2-MCP-25`), toggled by an owner in the admin UI.
+   * Default off, so a fresh deployment exposes no connector surface until
+   * someone opts in. `MCP_ENABLED=false` still forces it off on top of this.
+   */
+  enabled: boolean
+  dcrMode: DcrMode
+  /** Bare hostnames, lowercase. Loopback is always allowed on top of these. */
+  redirectHosts: string[]
+}
+
+/** Client authentication methods the token endpoint accepts (`L2-MCP-52`). */
+export type ClientAuthMethod =
+  "none" | "client_secret_post" | "client_secret_basic"
 
 /**
  * Grantable connector scopes. Deliberately a subset of `Capability`: the

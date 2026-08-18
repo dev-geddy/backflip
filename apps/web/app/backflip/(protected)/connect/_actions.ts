@@ -18,8 +18,8 @@ import { revokeGrant } from "@/app/_lib/oauth/tokens"
  * consent form as hidden fields) — the form fields are only the transport,
  * never trusted directly for anything security-relevant.
  *
- * @spec L2-MCP-13, L2-MCP-14, L2-MCP-17, L2-MCP-26, L2-MCP-31, L2-MCP-37,
- *       L2-MCP-38
+ * @spec L2-MCP-13, L2-MCP-14, L2-MCP-17, L2-MCP-25, L2-MCP-26, L2-MCP-31,
+ *       L2-MCP-37, L2-MCP-38
  */
 
 /**
@@ -27,10 +27,14 @@ import { revokeGrant } from "@/app/_lib/oauth/tokens"
  * directly by POSTing its action id — it does NOT inherit the consent page's
  * `isMcpEnabled()` guard, so without this a connector that was disabled after
  * clients had registered could still be handed a fresh authorization code
- * (`L2-MCP-37`).
+ * (`L2-MCP-37`). `isMcpEnabled()` is DB-backed (short-TTL cached) and async
+ * now that enablement is an owner toggle rather than a static env read
+ * (`L2-MCP-25`) — this must still run, and 404, before any session or DB
+ * work in every caller below, which is the security property under test in
+ * `_actions.test.ts`.
  */
-function requireConnectorEnabled(): void {
-  if (!isMcpEnabled()) notFound()
+async function requireConnectorEnabled(): Promise<void> {
+  if (!(await isMcpEnabled())) notFound()
 }
 
 /** Raw `/api/oauth/authorize` query keys carried through the consent form. */
@@ -64,7 +68,7 @@ function paramsFromForm(formData: FormData): URLSearchParams {
  * client-supplied URI we haven't just validated (`L2-MCP-31`).
  */
 export async function approveAuthorization(formData: FormData): Promise<void> {
-  requireConnectorEnabled()
+  await requireConnectorEnabled()
   const sessionUser = await requireCapability("account")
   const usp = paramsFromForm(formData)
   const result = await validateAuthorizationRequest(usp)
@@ -119,7 +123,7 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
  * an unregistered URI) then redirects back with `error=access_denied`.
  */
 export async function denyAuthorization(formData: FormData): Promise<void> {
-  requireConnectorEnabled()
+  await requireConnectorEnabled()
   await requireCapability("account")
   const usp = paramsFromForm(formData)
   const result = await validateAuthorizationRequest(usp)
@@ -147,7 +151,7 @@ export async function denyAuthorization(formData: FormData): Promise<void> {
  * `session.user.id` — never a client-supplied user id (`L2-AUTH-27`).
  */
 export async function disconnectConnection(formData: FormData): Promise<void> {
-  requireConnectorEnabled()
+  await requireConnectorEnabled()
   const sessionUser = await requireCapability("account")
   const clientId = String(formData.get("clientId") ?? "")
   if (!clientId) return

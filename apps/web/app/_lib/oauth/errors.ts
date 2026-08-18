@@ -114,8 +114,9 @@ export function fatalAuthorizeResponse(
 }
 
 /**
- * The kill-switch response. Plain `404` with no body detail — with
- * `MCP_ENABLED` off the connector surface simply does not exist (`L2-MCP-37`).
+ * The kill-switch response. Plain `404` with no body detail — while the
+ * connector is off (the `connector_config.enabled` flag, or the `MCP_ENABLED`
+ * forced-off override) its surface simply does not exist (`L2-MCP-37`).
  */
 export function connectorDisabledResponse(): NextResponse {
   return new NextResponse("Not Found", {
