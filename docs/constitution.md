@@ -31,6 +31,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-CON-03` — Foundation ships baseline + guidelines; features stay generic/extensible, not project-specific. [NEEDS HUMAN CONFIRMATION]
 - `L1-CON-04` — Three-level doc system maintained with every code change (see project CLAUDE.md).
 - `L1-CON-05` — Credentials (email + password) login may be disabled per-deployment for Google-only sign-in. The toggle is honored only when Google is configured, so at least one sign-in method always remains. Refines `L1-CON-01` (both methods are still supported; a deployment may turn one off).
+- `L1-CON-06` — Connector access is read-only and opt-in (owner-enabled, default off); it grants no capability the connected user's role does not already hold.
 
 ## Stack + rationale
 - `L1-STACK-01` — Next.js 16 (App Router) — unified SSR/RSC + API routes for both surfaces.
@@ -44,6 +45,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `L1-STACK-09` — Drizzle ORM + drizzle-kit — type-safe schema, queries, migrations over Postgres. Lives in shared `packages/db` (`@workspace/db`).
 - `L1-STACK-10` — Auth.js v5 (next-auth) — authentication (Credentials + Google), Drizzle adapter, JWT sessions.
 - `L1-STACK-11` — Vercel AI SDK (`ai` + `@ai-sdk/*`) — provider-agnostic AI integration (Anthropic default, OpenAI, Google). Config-driven provider/model.
+- `L1-STACK-12` — Model Context Protocol SDK (`@modelcontextprotocol/server`) — remote MCP connector surface, Streamable HTTP, OAuth 2.1 protected.
 
 ## Governed domains (L2)
 - `auth` → `/docs/contracts/auth.md`
@@ -53,6 +55,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `ai` → `/docs/contracts/ai.md`
 - `email` → `/docs/contracts/email.md`
 - `devops` → `/docs/contracts/devops.md`
+- `mcp` → `/docs/contracts/mcp.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.

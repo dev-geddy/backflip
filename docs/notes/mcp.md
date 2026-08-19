@@ -8,7 +8,7 @@ A Claude-compatible **remote MCP connector**: a read-only tool surface at `/api/
 Whole domain is opt-in and off by default: until an owner enables it (`connector_config.enabled`, `L2-MCP-25`) every connector route 404s (`L2-MCP-37`, `L2-INF-17`).
 
 ## File map
-Everything below exists on disk — the domain landed in one change (schema + migration `0009`, OAuth server, MCP endpoint + tools, consent + account UI, edge config).
+Everything below exists on disk — the domain landed across migrations `0009`–`0011` (OAuth server, MCP endpoint + tools, consent + account UI, owner-managed clients, edge config).
 
 - `apps/web/app/api/mcp/route.ts` — the MCP endpoint. `POST` = JSON-RPC over Streamable HTTP; `GET`/`DELETE` answered by the SDK handler. Stateless: a fresh `McpServer` per request (no MCP session id) — simplest match for Next's request-scoped model. `runtime="nodejs"` (needs `pg`). Satisfies `L2-MCP-01`.
 - `apps/web/app/_lib/mcp/server.ts` — `buildMcpServer(ctx: McpAuthContext)` factory. Registers only the tools in the scopes ∩ capability intersection (`L2-MCP-02`, `L2-MCP-20`) — an unauthorized tool is never registered, so it can't appear in `tools/list` or be called.
@@ -18,13 +18,13 @@ Everything below exists on disk — the domain landed in one change (schema + mi
 - `apps/web/app/_lib/oauth/connector-config.ts` — the `connector_config` row: enabled flag, `dcrMode`, redirect-host allowlist; `isHostAllowed`/`isValidHostEntry`/`isLoopbackHost` primitives (`L2-MCP-47`, `L2-MCP-48`, `L2-MCP-49`).
 - `apps/web/app/backflip/(protected)/settings/_components/connector*-.tsx` — the owner-only Connectors tab: enable toggle, registration mode, host allowlist, client table + create-client dialog with the one-time secret reveal (`L2-MCP-47`, `L2-MCP-50`).
 - `apps/web/app/_lib/oauth/scopes.ts` — scope ↔ capability identity (`L2-MCP-18`) plus human-readable labels for the consent screen (`L2-MCP-14`).
-- `apps/web/app/_lib/oauth/clients.ts` — DCR registration (`L2-MCP-12`) and exact-match redirect-URI validation (`L2-MCP-31`).
+- `apps/web/app/_lib/oauth/clients.ts` — dynamic registration (`L2-MCP-12`), owner-created manual clients with bcrypt-hashed secrets (`L2-MCP-50`, `L2-MCP-52`), client authentication parsing (`client_secret_post`/`client_secret_basic`), and redirect-URI validation — exact match, plus port-agnostic loopback for native clients (`L2-MCP-31`, `L2-MCP-51`).
 - `apps/web/app/_lib/oauth/codes.ts` — authorization-code issue/consume, PKCE `S256` check (`L2-MCP-26`), single-use + 60 s TTL (`L2-MCP-22`, `L2-MCP-32`).
 - `apps/web/app/_lib/oauth/tokens.ts` — access/refresh issue, rotation with reuse detection (`L2-MCP-27`), revocation, per-user grant listing for the account UI (`L2-MCP-17`).
 - `apps/web/app/_lib/oauth/bearer.ts` — `requireBearer(request)` → `McpAuthContext | Response`. Resolves the live role from the DB (`L2-MCP-19`), checks `userTokenVersion` against `user.tokenVersion` (`L2-MCP-29`) and `resource` audience (`L2-MCP-33`). Failure → `401` + `WWW-Authenticate` (`L2-MCP-03`, `L2-MCP-39`).
 - `apps/web/app/_lib/oauth/authorize.ts` — `/authorize` request validation: client + redirect URI first, then PKCE params, before any redirect happens (`L2-MCP-13`, `L2-MCP-31`).
 - `apps/web/app/_lib/oauth/errors.ts` — RFC 6749 error shaping — redirect-with-error vs on-origin error page vs token-endpoint `400` body (`L2-MCP-40`, `L2-MCP-41`).
-- `apps/web/app/_lib/oauth/limits.ts` — in-process rate limiters (register/token/mcp) + `clientIp` helper (`L2-MCP-30`).
+- `apps/web/app/_lib/oauth/limits.ts` — in-process rate limiters (register/token/mcp, plus the bearer-less challenge cap) + the last-hop `clientIp` helper (`L2-MCP-30`, `L2-MCP-54`).
 - `apps/web/app/api/oauth/register/route.ts` — `POST`, DCR (`L2-MCP-12`).
 - `apps/web/app/api/oauth/token/route.ts` — `POST`, form-encoded only, `authorization_code` + `refresh_token` grants (`L2-MCP-15`).
 - `apps/web/app/api/oauth/revoke/route.ts` — `POST`, RFC 7009 (`L2-MCP-16`).
@@ -34,13 +34,13 @@ Everything below exists on disk — the domain landed in one change (schema + mi
 - `apps/web/next.config.ts` — `rewrites()` maps `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (bare **and** `/:path*`-suffixed, so the `/api/mcp` form resolves) onto the two metadata routes above. The App Router does not route dot-prefixed folders, so the documents cannot live at `app/.well-known/…` — this rewrite is the reason the well-known URLs work.
 - `apps/web/app/backflip/(protected)/connect/` — consent screen + `_actions.ts` (`approveAuthorization`, `denyAuthorization`) (`L2-MCP-14`).
 - `apps/web/app/backflip/(protected)/account/_components/connections-section.tsx` — connected-clients list + Disconnect, on the existing self-service account page (`account/_actions.ts` already hosts `saveProfile`/`changePassword`/email-change per `L2-AUTH-27` — this adds a grants section alongside; capability `account`, `L2-MCP-17`).
-- `packages/db/src/schema.ts` — new tables `oauth_client`, `oauth_auth_code`, `oauth_token` (`L2-MCP-21`/`L2-MCP-22`/`L2-MCP-23`, `db` counterparts `L2-DB-25`/`L2-DB-26`/`L2-DB-27`).
+- `packages/db/src/schema.ts` — new tables `oauth_client`, `oauth_auth_code`, `oauth_token` (`L2-MCP-21`/`L2-MCP-22`/`L2-MCP-23`, `db` counterparts `L2-DB-25`/`L2-DB-26`/`L2-DB-27`) and `connector_config` (`L2-MCP-48`, `L2-DB-28`).
 
 ## Running it locally
 1. Turn the connector on: `/backflip/settings` → Connectors → Enable. It is a **database flag** (`connector_config.enabled`, default off, `L2-MCP-25`) like every other integration here, not an env var. While it is off every route in this domain 404s, including the well-known documents — a "connector not found" symptom is usually just this. `MCP_ENABLED=false` in the environment forces it off regardless of the toggle (deploy-level kill switch); unset means the database decides. The resolved flag is cached in-process for ~30s, so a toggle can take that long to reach other processes (`L2-MCP-54`).
 2. `AUTH_URL` must be the origin the Claude client will actually hit — it's both the Auth.js issuer/canonical-URL var (`L2-AUTH-07`) and the OAuth `issuer`/PRM `resource` origin (`L2-MCP-10`, `L2-MCP-11`, `L2-MCP-25`). A mismatch between what's advertised and what's called breaks the resource-audience check (`L2-MCP-33`).
 3. `corepack yarn dev` (app on 3070, `L2-INF-03`) or the docker `web` profile (3071, `L2-INF-01`) — db must be up either way.
-4. `db:migrate` to create `oauth_client`/`oauth_auth_code`/`oauth_token` (migration `0009`, `L2-DB-08`). Locally `AUTH_URL` may be left unset — `issuerOrigin()` falls back to `http://localhost:3070` outside production.
+4. `db:migrate` to create the connector tables (migrations `0009`–`0011`, `L2-DB-08`). Locally `AUTH_URL` may be left unset — `issuerOrigin()` falls back to `http://localhost:3070` outside production.
 5. Sanity check without a Claude client: `curl <origin>/.well-known/oauth-authorization-server` and `.../.well-known/oauth-protected-resource` should return metadata (not 404) once the connector is enabled.
 
 ## Adding it to Claude
@@ -113,7 +113,7 @@ Scopes ARE capabilities (`L2-MCP-18`) — there's no separate connector permissi
 ## State
 Implemented end to end. On disk: the three tables + migration `0009_curious_rumiko_fujikawa.sql` (applied locally), the full `_lib/oauth/*` module set, the six `/api/oauth/*` route handlers, the `.well-known` rewrites in `next.config.ts`, `/api/mcp` + `_lib/mcp/*` with five read-only tools, `/backflip/connect`, the account connections section, and the nginx/Caddy edge config.
 
-The L2 contract (`docs/contracts/mcp.md`) and the `db`/`auth`/`devops`/`infra` additions are still status **PROPOSED** — they need human approval, per `L1-CON-04`.
+The L2 contract (`docs/contracts/mcp.md`) and the `db`/`auth`/`devops`/`infra` additions are **approved**, and the three L1 lines (governed domain `mcp`, `L1-STACK-12`, `L1-CON-06`) are in the constitution.
 
 ### Unit tests
 Colocated vitest, no database — pure logic is factored out so it is testable without postgres:
@@ -151,7 +151,6 @@ Accepted, not defects:
 - Consent CSRF is covered by Next's server-action origin check; nginx passes `Host` and sets no `X-Forwarded-Host`.
 
 ## TODO
-- Get the `mcp.md` L2 contract and the `db`/`auth`/`devops`/`infra` additions approved (currently `PROPOSED`).
 - Close the rotation race properly (family row lock or a family-level revoked flag + migration) if connectors ever hold write scopes.
 - Verify the full `register → … → tools` flow against a real Claude client over a public https origin — the local suite proves the protocol, not the claude.ai UI.
 - `L2-MCP-38` (consent reuse per user/client/scope set) is only partly realised: the consent screen re-prompts every time rather than short-circuiting an identical existing grant.
@@ -159,20 +158,9 @@ Accepted, not defects:
 - The docker/Caddy flavour has no edge rate-limit equivalent, so `/api/oauth/register` (unauthenticated by design) relies solely on the in-process limiter there.
 - Write tools are out of scope for this phase (`L2-MCP-09`); adding any is an L2 change.
 
-## Pending L1 proposal (human decision)
-Not applied — constitution is human-only (`L1-CON-04`). Ready-to-paste lines for a human to add to `/docs/constitution.md`:
+## L1 lines applied
+Approved and merged into `/docs/constitution.md` — recorded here for traceability:
 
-**Governed domains (L2)** — add to the list:
-```
-- `mcp` → `/docs/contracts/mcp.md`
-```
-
-**Stack + rationale** — new line:
-```
+- Governed domains (L2): `mcp` → `/docs/contracts/mcp.md`
 - `L1-STACK-12` — Model Context Protocol SDK (`@modelcontextprotocol/server`) — remote MCP connector surface, Streamable HTTP, OAuth 2.1 protected.
-```
-
-**Constraints (non-negotiable)** — new line:
-```
 - `L1-CON-06` — Connector access is read-only and opt-in (owner-enabled, default off); it grants no capability the connected user's role does not already hold.
-```

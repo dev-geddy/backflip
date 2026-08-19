@@ -3,7 +3,6 @@
 > L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
 > Style: terse. One fact per line.
 
-> **Status:** PROPOSED — awaiting human approval (new domain, per `L1-CON-04`).
 > **Implements L1:** `L1-ARCH-01`, `L1-ARCH-06`, `L1-ARCH-07`, `L1-CON-02`, `L1-CON-03`, `L1-STACK-01`, `L1-STACK-10`
 > **Depends on L2:** `auth` (session, roles, capabilities, `tokenVersion` revocation), `db` (tables, hashing), `devops` (edge proxy, rate limit, log scrub), `infra` (env)
 
@@ -26,7 +25,7 @@ The Claude-compatible connector: a remote MCP server at `/api/mcp` (Streamable H
 - `L2-MCP-09` _(iface)_ — Every tool declares `readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: false`. No write tools in this phase.
 
 ### OAuth authorization server
-- `L2-MCP-10` _(iface)_ — `GET /.well-known/oauth-authorization-server` — RFC 8414 metadata. Served by `app/api/oauth/authorization-server-metadata/route.ts`; the `.well-known` path is mapped by a `next.config` rewrite (App Router does not route dot-prefixed folders). Advertises `issuer` (= `AUTH_URL` origin), `authorization_endpoint` `/api/oauth/authorize`, `token_endpoint` `/api/oauth/token`, `registration_endpoint` `/api/oauth/register`, `revocation_endpoint` `/api/oauth/revoke`, `scopes_supported` (`L2-MCP-18`), `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code","refresh_token"]`, `code_challenge_methods_supported: ["S256"]`, `token_endpoint_auth_methods_supported: ["none"]`.
+- `L2-MCP-10` _(iface)_ — `GET /.well-known/oauth-authorization-server` — RFC 8414 metadata. Served by `app/api/oauth/authorization-server-metadata/route.ts`; the `.well-known` path is mapped by a `next.config` rewrite (App Router does not route dot-prefixed folders). Advertises `issuer` (= `AUTH_URL` origin), `authorization_endpoint` `/api/oauth/authorize`, `token_endpoint` `/api/oauth/token`, `registration_endpoint` `/api/oauth/register`, `revocation_endpoint` `/api/oauth/revoke`, `scopes_supported` (`L2-MCP-18`), `response_types_supported: ["code"]`, `grant_types_supported: ["authorization_code","refresh_token"]`, `code_challenge_methods_supported: ["S256"]`, `token_endpoint_auth_methods_supported: ["none", "client_secret_post", "client_secret_basic"]` (`L2-MCP-52`). `registration_endpoint` is advertised only while dynamic registration is enabled — advertising a `404` would mislead clients (`L2-MCP-47`).
 - `L2-MCP-11` _(iface)_ — `GET /.well-known/oauth-protected-resource` **and** `/.well-known/oauth-protected-resource/api/mcp` (path-suffixed form) — RFC 9728 metadata: `resource` = `<origin>/api/mcp`, `authorization_servers` = `[<origin>]`, `scopes_supported`, `bearer_methods_supported: ["header"]`.
 - `L2-MCP-12` _(iface)_ — `POST /api/oauth/register` — RFC 7591 Dynamic Client Registration, **gated by `dcrMode` (`L2-MCP-47`, default `off` → `404`)**, unauthenticated when enabled but rate-limited (`L2-MCP-30`). Body `{client_name, redirect_uris[], grant_types?, response_types?, token_endpoint_auth_method?, scope?}`. Registers a **public** client (`token_endpoint_auth_method: "none"`, no secret). Returns `201` `{client_id, client_id_issued_at, client_name, redirect_uris, grant_types, response_types, token_endpoint_auth_method, scope}`.
 - `L2-MCP-13` _(iface)_ — `GET /api/oauth/authorize` — params `response_type=code`, `client_id`, `redirect_uri`, `code_challenge`, `code_challenge_method=S256`, `state`, `scope`, optional `resource`. Validates client + redirect URI **before** any redirect; then requires an admin session and hands off to the consent page. No session → `/backflip/login?from=…` (the `/backflip` gate, `L2-AUTH-01`).
@@ -39,7 +38,7 @@ The Claude-compatible connector: a remote MCP server at `/api/mcp` (Streamable H
 - `L2-MCP-18` _(schema)_ — **Scopes are capabilities** (`L2-AUTH-19`). Grantable in this phase: `account`, `dashboard`, `users.view`, `settings`. `users.edit` is deliberately not grantable (read-only connector). A scope is offered only if the consenting user's role holds that capability.
 - `L2-MCP-19` _(schema)_ — `McpAuthContext = { userId, role, clientId, clientName, scopes, tokenId, expiresAt }` (`apps/web/app/_lib/oauth/types.ts`) — resolved per request from the bearer token; `role` is read live from the DB, never frozen into the token.
 - `L2-MCP-20` _(schema)_ — Tool visibility = token scopes ∩ role capabilities. A tool absent from that intersection is not registered at all, so it never appears in `tools/list`.
-- `L2-MCP-21` _(schema)_ — `oauth_client` (`L2-DB-25`): `clientId` (random, unique), `clientName`, `redirectUris[]`, `grantTypes[]`, `scopes[]`, `tokenEndpointAuthMethod` (`none`), `clientSecretHash` (null for public clients), `createdAt`, `lastUsedAt`.
+- `L2-MCP-21` _(schema)_ — `oauth_client` (`L2-DB-25`): `clientId` (random, unique), `clientName`, `redirectUris[]`, `grantTypes[]`, `scopes[]`, `tokenEndpointAuthMethod`, `clientSecretHash` (null for public clients), `origin` (`manual` | `dynamic`), `createdByUserId` (the owner who created a manual client; null for dynamic), `allowLoopbackPorts` (`L2-MCP-51`), `createdAt`, `lastUsedAt`.
 - `L2-MCP-22` _(schema)_ — `oauth_auth_code` (`L2-DB-26`): hash-only `codeHash`, `clientId`, `userId`, `redirectUri`, `scopes[]`, `resource`, `codeChallenge`, `codeChallengeMethod`, `expiresAt` (60 s), `consumedAt`.
 - `L2-MCP-23` _(schema)_ — `oauth_token` (`L2-DB-27`): hash-only `tokenHash`, `type` (`access`|`refresh`), `clientId`, `userId`, `scopes[]`, `resource`, `familyId`, `parentId`, `userTokenVersion` (snapshot of `user.tokenVersion`), `expiresAt`, `revokedAt`, `lastUsedAt`.
 - `L2-MCP-24` _(schema)_ — Lifetimes: authorization code 60 s, access token 60 min, refresh token 30 days (sliding — rotation issues a fresh 30-day token).
@@ -61,8 +60,6 @@ The Claude-compatible connector: a remote MCP server at `/api/mcp` (Streamable H
 - `L2-MCP-38` _(inv)_ — Consent is per (user, client, scope set): re-authorizing an existing grant with the same scopes reuses the grant record; requesting new scopes re-prompts.
 
 ## Client administration (owner)
-
-> **Status note:** `L2-MCP-47` … `L2-MCP-53` are PROPOSED — awaiting human approval.
 
 - `L2-MCP-47` _(iface)_ — Connector settings, owner-only (capability `settings`), a tab on `/backflip/settings`. Owner manages: the **redirect-host allowlist**, the **DCR mode** (`off` | `allowlist` | `open`, default `off`), and the **manual OAuth clients**. Backed by `connector_config` (`L2-MCP-48`); read-or-create-defaults on first read, no seed migration.
 - `L2-MCP-48` _(schema)_ — `connector_config` (`L2-DB-28`): single row keyed `kind = "mcp"` — `enabled` (`L2-MCP-25`), `dcrMode`, `redirectHosts[]` (seeded `claude.ai`, `claude.com`), `updatedAt`.
