@@ -12,7 +12,7 @@ import { visibleTools } from "./tools"
  *
  * @spec L2-MCP-02
  */
-const SERVER_VERSION = "0.3.0"
+const SERVER_VERSION = "1.0.0"
 
 export function buildMcpServer(ctx: McpAuthContext): McpServer {
   const server = new McpServer({ name: "backflip", version: SERVER_VERSION })
