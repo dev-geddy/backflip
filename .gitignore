@@ -26,6 +26,9 @@ out/
 build
 dist
 
+# deploy artifacts exported by devops/deploy-for-pm2-build-docker.sh
+.artifacts
+
 # turbo
 .turbo
 
