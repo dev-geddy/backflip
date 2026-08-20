@@ -42,13 +42,45 @@ const SECURITY_HEADERS = [
     : []),
 ]
 
-/** @spec L2-UI-10, L2-UI-19, L2-DEVOPS-16, L2-DEVOPS-21 */
+/**
+ * OAuth discovery documents live at `/.well-known/*`, which the App Router
+ * can't express as a folder (a leading dot is not a valid route segment), so
+ * they are rewritten onto ordinary API routes. The `/:path*` variants cover the
+ * RFC 9728 path-suffixed form (`/.well-known/oauth-protected-resource/api/mcp`)
+ * and the equivalent issuer-path form for the authorization server — clients
+ * probe both spellings.
+ *
+ * @spec L2-MCP-10, L2-MCP-11
+ */
+const WELL_KNOWN_REWRITES = [
+  {
+    source: "/.well-known/oauth-authorization-server",
+    destination: "/api/oauth/authorization-server-metadata",
+  },
+  {
+    source: "/.well-known/oauth-authorization-server/:path*",
+    destination: "/api/oauth/authorization-server-metadata",
+  },
+  {
+    source: "/.well-known/oauth-protected-resource",
+    destination: "/api/oauth/protected-resource-metadata",
+  },
+  {
+    source: "/.well-known/oauth-protected-resource/:path*",
+    destination: "/api/oauth/protected-resource-metadata",
+  },
+]
+
+/** @spec L2-UI-10, L2-UI-19, L2-DEVOPS-16, L2-DEVOPS-21, L2-MCP-10, L2-MCP-11 */
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: APP_VERSION,
   },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }]
+  },
+  async rewrites() {
+    return WELL_KNOWN_REWRITES
   },
   // Self-contained server bundle (.next/standalone) — run with `node server.js`,
   // not `next start`. Prod runtime: pm2 on the droplet, node in Docker locally.

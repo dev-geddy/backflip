@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { CapabilityList } from "./_components/capability-list"
+import { ClaudeConnector } from "./_components/claude-connector"
 import { FeatureList } from "./_components/feature-list"
 import { Hero } from "./_components/hero"
 import { HowItWorks } from "./_components/how-it-works"
@@ -25,6 +26,7 @@ export default function HomePage() {
         <CapabilityList />
         <FeatureList />
         <HowItWorks />
+        <ClaudeConnector />
         <WordmarkBand />
       </main>
       <SiteFooter />

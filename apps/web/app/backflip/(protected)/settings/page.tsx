@@ -8,8 +8,19 @@ import {
 import { eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
+import { listClients } from "@/app/_lib/oauth/clients"
+import { getConnectorSettings } from "@/app/_lib/oauth/connector-config"
+import {
+  isMcpEnabled,
+  isMcpForcedOff,
+  mcpResourceUrl,
+} from "@/app/_lib/oauth/config"
 import { type ProviderConfig } from "./_components/ai-config-form"
 import { type AnalyticsConfig } from "./_components/analytics-integration"
+import {
+  type ConnectorClientRow,
+  type ConnectorSettingsData,
+} from "./_components/connectors-integration"
 import { type EmailConfig } from "./_components/email-config-form"
 import { IntegrationsView } from "./_components/integrations-view"
 import { type SpeechConfig } from "./_components/speech-integration"
@@ -17,14 +28,21 @@ import { keyPreview } from "./_lib/mask"
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 
+const CONNECTOR_DATE_FMT = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+})
+
 /**
- * /backflip/settings — admin Integrations (owner only). Master-detail over the
- * four real integrations: AI providers (per provider), Email (Resend), Google
- * Analytics and Speech (Deepgram). Secrets are never sent to the client; only
- * whether a key is set + its masked preview. The GA measurement id is public,
- * so it round-trips in the clear.
+ * /backflip/settings — admin Integrations (owner only). Master-detail over
+ * five surfaces: AI providers (per provider), Email (Resend), Google
+ * Analytics, Speech (Deepgram), and the Connectors (MCP OAuth client) admin.
+ * Secrets are never sent to the client; only whether a key is set + its
+ * masked preview (or, for a freshly created OAuth client, the raw secret
+ * exactly once — `L2-MCP-50`). The GA measurement id is public, so it
+ * round-trips in the clear.
  *
- * @spec L2-AI-01, L2-EMAIL-01, L2-ANALYTICS-05, L2-SPEECH-01
+ * @spec L2-AI-01, L2-EMAIL-01, L2-ANALYTICS-05, L2-SPEECH-01, L2-MCP-25,
+ *       L2-MCP-37, L2-MCP-47
  */
 export default async function SettingsPage() {
   await requireCapability("settings")
@@ -76,12 +94,48 @@ export default async function SettingsPage() {
     keyPreview: keyPreview(speechRow?.apiKeyEnc),
   }
 
+  // The connector tab always renders — it explains itself when off, and the
+  // enable switch (`ConnectorEnable`) is how an owner turns it on in the
+  // first place. Settings are read unconditionally (cheap: a single row,
+  // created with defaults on first use); the management sections' data
+  // (clients) is only fetched once the connector is actually reachable —
+  // `enabled` resolved through `isMcpEnabled()`, which folds in the
+  // `MCP_ENABLED=false` kill switch (`L2-MCP-25`, `L2-MCP-37`).
+  const [connectorsEnabled, connectorSettingsRow] = await Promise.all([
+    isMcpEnabled(),
+    getConnectorSettings(),
+  ])
+  const connectorSettings: ConnectorSettingsData = {
+    enabled: connectorSettingsRow.enabled,
+    forcedOff: isMcpForcedOff(),
+    dcrMode: connectorSettingsRow.dcrMode,
+    redirectHosts: connectorSettingsRow.redirectHosts,
+  }
+  let connectorClients: ConnectorClientRow[] = []
+  if (connectorsEnabled) {
+    const clientRows = await listClients()
+    connectorClients = clientRows.map((c) => ({
+      id: c.id,
+      clientId: c.clientId,
+      clientName: c.clientName,
+      origin: c.origin,
+      redirectUris: c.redirectUris,
+      allowLoopbackPorts: c.allowLoopbackPorts,
+      createdAt: CONNECTOR_DATE_FMT.format(c.createdAt),
+      lastUsedAt: c.lastUsedAt ? CONNECTOR_DATE_FMT.format(c.lastUsedAt) : null,
+    }))
+  }
+
   return (
     <IntegrationsView
       ai={ai}
       email={email}
       analytics={analytics}
       speech={speech}
+      connectorsEnabled={connectorsEnabled}
+      connectorSettings={connectorSettings}
+      connectorClients={connectorClients}
+      connectorMcpUrl={mcpResourceUrl()}
     />
   )
 }

@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -19,6 +19,7 @@
     "@ai-sdk/google": "^4.0.28",
     "@ai-sdk/openai": "^4.0.24",
     "@auth/drizzle-adapter": "^1.11.3",
+    "@modelcontextprotocol/server": "^2.0.0",
     "@react-email/components": "^1.0.12",
     "@remixicon/react": "^4.9.0",
     "@workspace/db": "workspace:^",

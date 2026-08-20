@@ -1,4 +1,5 @@
 import { Badge } from "@workspace/ui/components/badge"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { SectionLabel } from "../../_components/page-heading"
 
@@ -6,14 +7,17 @@ import { SectionLabel } from "../../_components/page-heading"
  * Account security rail (design 4a) — real data only: email verification state
  * + linked sign-in methods, plus a static "why verify twice" explainer.
  * Two-factor / last-sign-in / session list / danger-zone are omitted (no
- * backend today).
+ * backend today). `connectionsCount` is omitted entirely when the connector is
+ * disabled (`L2-MCP-37`) — the page passes `undefined` in that case.
  */
 export function AccountRail({
   emailVerified,
   loginMethods,
+  connectionsCount,
 }: {
   emailVerified: boolean
   loginMethods: string[]
+  connectionsCount?: number
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -33,7 +37,12 @@ export function AccountRail({
               </span>
             )}
           </div>
-          <div className="flex items-start justify-between gap-3 pt-3">
+          <div
+            className={cn(
+              "flex items-start justify-between gap-3 pt-3",
+              connectionsCount !== undefined && "border-b pb-3"
+            )}
+          >
             <span className="text-sm text-muted-foreground">Sign-in</span>
             <div className="flex flex-wrap justify-end gap-1.5">
               {loginMethods.length ? (
@@ -49,6 +58,18 @@ export function AccountRail({
               )}
             </div>
           </div>
+          {connectionsCount !== undefined ? (
+            <div className="flex items-center justify-between pt-3">
+              <span className="text-sm text-muted-foreground">
+                Connected apps
+              </span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {connectionsCount > 0
+                  ? `${connectionsCount} connected`
+                  : "None"}
+              </span>
+            </div>
+          ) : null}
         </div>
       </section>
 

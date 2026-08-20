@@ -11,12 +11,17 @@ import {
   AnalyticsIntegration,
   type AnalyticsConfig,
 } from "./analytics-integration"
+import {
+  ConnectorsIntegration,
+  type ConnectorClientRow,
+  type ConnectorSettingsData,
+} from "./connectors-integration"
 import type { EmailConfig } from "./email-config-form"
 import { EmailIntegration } from "./email-integration"
 import { IntegrationsRail } from "./integrations-rail"
 import { SpeechIntegration, type SpeechConfig } from "./speech-integration"
 
-type Selection = "ai" | "email" | "analytics" | "speech"
+type Selection = "ai" | "email" | "analytics" | "speech" | "connectors"
 
 /** One row in the integrations master list. */
 function ListRow({
@@ -70,11 +75,19 @@ export function IntegrationsView({
   email,
   analytics,
   speech,
+  connectorsEnabled,
+  connectorSettings,
+  connectorClients,
+  connectorMcpUrl,
 }: {
   ai: ProviderConfig[]
   email: EmailConfig
   analytics: AnalyticsConfig
   speech: SpeechConfig
+  connectorsEnabled: boolean
+  connectorSettings: ConnectorSettingsData | null
+  connectorClients: ConnectorClientRow[]
+  connectorMcpUrl: string
 }) {
   const [selection, setSelection] = useState<Selection>("ai")
   const [mobileDetail, setMobileDetail] = useState(false)
@@ -156,6 +169,22 @@ export function IntegrationsView({
             title="Speech"
             subtitle="Deepgram · speech-to-text & TTS"
           />
+          <ListRow
+            active={selection === "connectors"}
+            onClick={() => select("connectors")}
+            connected={connectorsEnabled}
+            tile={
+              <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold">
+                Cn
+              </span>
+            }
+            title="Connectors"
+            subtitle={
+              connectorsEnabled
+                ? `${connectorClients.length} client${connectorClients.length === 1 ? "" : "s"}`
+                : "Disabled"
+            }
+          />
         </div>
       </div>
 
@@ -183,8 +212,15 @@ export function IntegrationsView({
             analytics={analytics}
             connected={analyticsConnected}
           />
-        ) : (
+        ) : selection === "speech" ? (
           <SpeechIntegration speech={speech} connected={speechConnected} />
+        ) : (
+          <ConnectorsIntegration
+            enabled={connectorsEnabled}
+            settings={connectorSettings}
+            clients={connectorClients}
+            mcpUrl={connectorMcpUrl}
+          />
         )}
       </div>
 

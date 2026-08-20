@@ -32,6 +32,50 @@ non-portable native binaries (fall back to `deploy-for-pm2.sh`).
 ./devops/deploy-for-pm2-build-locally.sh -h <host> -i <ssh-key> -d <domain>
 ```
 
+## Correct deploys: build in a droplet-like container
+`deploy-for-pm2-build-docker.sh` (same flags) runs the build inside a
+`linux/amd64` glibc Node 24 container, so the artifact's native modules are the
+ones the droplet can actually load — not your machine's. Everything after the
+build (upload, extract, tunnel migrations, flip, pm2, health) is identical to
+the build-locally flow, including blue/green and rollback.
+
+```bash
+./devops/deploy-for-pm2-build-docker.sh -h <host> -i <ssh-key> -d <domain>
+```
+
+Extra flags:
+
+| Flag | Meaning |
+|---|---|
+| `--build-only` | Build, verify and print the artifact path + size. Contacts no remote host. |
+| `--platform <p>` | Build platform, default `linux/amd64`. Set `linux/arm64` for an arm droplet. |
+| `--no-cache` | Ignore the BuildKit cache (cold build; useful for measuring). |
+
+Verify without deploying:
+```bash
+./devops/deploy-for-pm2-build-docker.sh --build-only
+tar -tzf .artifacts/backflip-artifact.tgz | head
+```
+
+### Which one should I use?
+Speed is roughly a wash — pick on correctness.
+
+| | build-locally | build-docker | on the droplet |
+|---|---|---|---|
+| Artifact native binaries | your OS/arch | **the droplet's** | the droplet's |
+| Cold build (measured, Apple Silicon) | ~9s | ~47s | minutes (1-2 vCPU) |
+| Warm build, source changed | ~8s | ~13s | minutes |
+| Needs Docker | no | yes | no |
+
+`build-docker` is the right default **as soon as any native module stops being
+inert**. Today the only one is `sharp` (Next's image optimizer) and nothing
+renders `next/image`, so `build-locally` still gets away with shipping macOS
+binaries — its guard warns about exactly this and hard-fails on anything else.
+
+On Apple Silicon the container build is only ~2x native because Docker Desktop
+emulates amd64 with Rosetta. Keep **Settings → General → "Use Rosetta for
+x86_64/amd64 emulation"** on; under plain QEMU this flow is much slower.
+
 ## What happens (blue/green)
 1. rsyncs the repo to `/var/www/<domain>` on the droplet (droplet-build flavor only)
 2. `yarn install`
