@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @spec L2-DEVOPS-02, L2-DEVOPS-07, L2-DEVOPS-15, L2-DEVOPS-16
+# @spec L2-DEVOPS-02, L2-DEVOPS-07, L2-DEVOPS-15, L2-DEVOPS-16, L2-DEVOPS-27
 # Deploy to a pm2-flavor droplet with the build done in a DOCKER CONTAINER that
 # matches the droplet (linux/amd64, glibc, Node 24), then ship only the
 # assembled release as a tarball. Third member of the deploy family:
