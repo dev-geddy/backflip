@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/alert"
 
 import { ConnectorClients } from "./connector-clients"
+import { ConnectorCopyField } from "./connector-copy-field"
 import { ConnectorEnable } from "./connector-enable"
 import { ConnectorRedirectHosts } from "./connector-redirect-hosts"
 import { ConnectorRegistrationMode } from "./connector-registration-mode"
@@ -53,11 +54,14 @@ export function ConnectorsIntegration({
   enabled,
   settings,
   clients,
+  mcpUrl,
 }: {
   /** Resolved: `settings.enabled && !settings.forcedOff` (`isMcpEnabled()`). */
   enabled: boolean
   settings: ConnectorSettingsData | null
   clients: ConnectorClientRow[]
+  /** The connector endpoint Claude is pointed at (`L2-MCP-11`). */
+  mcpUrl: string
 }) {
   return (
     <div className="flex flex-col gap-5 p-5">
@@ -100,11 +104,17 @@ export function ConnectorsIntegration({
         </Alert>
       ) : (
         <>
+          <ConnectorCopyField
+            label="Remote MCP server URL"
+            value={mcpUrl}
+            description="Paste this into Claude → Add custom connector. It comes from AUTH_URL, so it is always the origin tokens are bound to."
+          />
+          <div className="h-px bg-border" />
           <ConnectorRegistrationMode dcrMode={settings.dcrMode} />
           <div className="h-px bg-border" />
           <ConnectorRedirectHosts hosts={settings.redirectHosts} />
           <div className="h-px bg-border" />
-          <ConnectorClients clients={clients} />
+          <ConnectorClients clients={clients} mcpUrl={mcpUrl} />
         </>
       )}
     </div>

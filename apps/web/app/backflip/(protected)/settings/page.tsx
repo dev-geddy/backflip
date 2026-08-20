@@ -10,7 +10,11 @@ import { eq } from "drizzle-orm"
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { listClients } from "@/app/_lib/oauth/clients"
 import { getConnectorSettings } from "@/app/_lib/oauth/connector-config"
-import { isMcpEnabled, isMcpForcedOff } from "@/app/_lib/oauth/config"
+import {
+  isMcpEnabled,
+  isMcpForcedOff,
+  mcpResourceUrl,
+} from "@/app/_lib/oauth/config"
 import { type ProviderConfig } from "./_components/ai-config-form"
 import { type AnalyticsConfig } from "./_components/analytics-integration"
 import {
@@ -131,6 +135,7 @@ export default async function SettingsPage() {
       connectorsEnabled={connectorsEnabled}
       connectorSettings={connectorSettings}
       connectorClients={connectorClients}
+      connectorMcpUrl={mcpResourceUrl()}
     />
   )
 }

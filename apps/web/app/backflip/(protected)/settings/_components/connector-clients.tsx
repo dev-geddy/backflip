@@ -47,13 +47,17 @@ import {
   deleteConnectorClient,
   type CreateClientState,
 } from "../_actions"
+import { ConnectorCopyField } from "./connector-copy-field"
 import type { ConnectorClientRow } from "./connectors-integration"
 
 /** Client table + create-client dialog (`L2-MCP-50`). */
 export function ConnectorClients({
   clients,
+  mcpUrl,
 }: {
   clients: ConnectorClientRow[]
+  /** Shown alongside the generated credentials — all three are pasted together. */
+  mcpUrl: string
 }) {
   const [createOpen, setCreateOpen] = useState(false)
 
@@ -101,7 +105,11 @@ export function ConnectorClients({
         </div>
       )}
 
-      <CreateClientDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateClientDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mcpUrl={mcpUrl}
+      />
     </div>
   )
 }
@@ -195,6 +203,9 @@ function ClientRow({ client }: { client: ConnectorClientRow }) {
 
 /* --------------------------- Create client dialog ------------------------- */
 
+/** Claude's fixed web callback — the redirect URI almost every client needs. */
+const CLAUDE_CALLBACK_URL = "https://claude.ai/api/mcp/auth_callback"
+
 type Reveal = {
   clientId: string
   clientName: string
@@ -204,9 +215,11 @@ type Reveal = {
 function CreateClientDialog({
   open,
   onOpenChange,
+  mcpUrl,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  mcpUrl: string
 }) {
   const [reveal, setReveal] = useState<Reveal | null>(null)
 
@@ -221,7 +234,11 @@ function CreateClientDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-lg">
         {reveal ? (
-          <SecretReveal reveal={reveal} onDone={() => close(false)} />
+          <SecretReveal
+            reveal={reveal}
+            mcpUrl={mcpUrl}
+            onDone={() => close(false)}
+          />
         ) : (
           <CreateClientForm
             onCreated={setReveal}
@@ -244,6 +261,21 @@ function CreateClientForm({
     createConnectorClient,
     null
   )
+  const [redirectUris, setRedirectUris] = useState("")
+
+  /**
+   * Fill in Claude's fixed web callback. Appends rather than replaces, and is
+   * a no-op when it is already listed — an owner may be adding it alongside a
+   * second URI, and clobbering typed input would be worse than doing nothing.
+   */
+  function addClaudeCallback() {
+    setRedirectUris((current) => {
+      const lines = current.split("\n").map((line) => line.trim())
+      if (lines.includes(CLAUDE_CALLBACK_URL)) return current
+      const kept = lines.filter(Boolean)
+      return [...kept, CLAUDE_CALLBACK_URL].join("\n")
+    })
+  }
 
   useEffect(() => {
     if (state?.ok) {
@@ -278,17 +310,32 @@ function CreateClientForm({
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="client-redirects">Redirect URIs</FieldLabel>
+          <div className="flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="client-redirects">Redirect URIs</FieldLabel>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={addClaudeCallback}
+              className="h-6 flex-none px-1.5 text-[11px]"
+            >
+              Use Claude&rsquo;s callback
+            </Button>
+          </div>
           <Textarea
             id="client-redirects"
             name="redirectUris"
             rows={3}
             required
-            placeholder={"https://claude.ai/api/mcp/auth_callback"}
+            value={redirectUris}
+            onChange={(event) => setRedirectUris(event.target.value)}
+            placeholder={CLAUDE_CALLBACK_URL}
             className="font-mono text-xs"
           />
           <FieldDescription>
-            One per line. Must match exactly what the client sends.
+            One per line. Must match exactly what the client sends — claude.ai
+            and Claude Desktop use the callback above; Claude Code redirects to
+            a loopback port instead (tick the box below).
           </FieldDescription>
         </Field>
 
@@ -336,9 +383,11 @@ function CreateClientForm({
 
 function SecretReveal({
   reveal,
+  mcpUrl,
   onDone,
 }: {
   reveal: Reveal
+  mcpUrl: string
   onDone: () => void
 }) {
   const [acknowledged, setAcknowledged] = useState(false)
@@ -364,24 +413,18 @@ function SecretReveal({
           </div>
 
           <div className="mt-3 flex flex-col gap-3">
-            <div>
-              <div className="text-[11px] font-medium text-muted-foreground">
-                Client ID
-              </div>
-              <code className="mt-1 block rounded-md border bg-card px-2.5 py-2 font-mono text-xs break-all select-all">
-                {reveal.clientId}
-              </code>
-            </div>
+            <ConnectorCopyField
+              label="Remote MCP server URL"
+              value={mcpUrl}
+            />
+
+            <ConnectorCopyField label="Client ID" value={reveal.clientId} />
 
             {hasSecret ? (
-              <div>
-                <div className="text-[11px] font-medium text-muted-foreground">
-                  Client secret
-                </div>
-                <code className="mt-1 block rounded-md border bg-card px-2.5 py-2 font-mono text-xs break-all select-all">
-                  {reveal.clientSecret}
-                </code>
-              </div>
+              <ConnectorCopyField
+                label="Client secret"
+                value={reveal.clientSecret as string}
+              />
             ) : (
               <p className="text-xs text-amber-800 dark:text-amber-300">
                 No secret for native clients — that&rsquo;s expected, not a

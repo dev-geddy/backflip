@@ -78,6 +78,7 @@ export function IntegrationsView({
   connectorsEnabled,
   connectorSettings,
   connectorClients,
+  connectorMcpUrl,
 }: {
   ai: ProviderConfig[]
   email: EmailConfig
@@ -86,6 +87,7 @@ export function IntegrationsView({
   connectorsEnabled: boolean
   connectorSettings: ConnectorSettingsData | null
   connectorClients: ConnectorClientRow[]
+  connectorMcpUrl: string
 }) {
   const [selection, setSelection] = useState<Selection>("ai")
   const [mobileDetail, setMobileDetail] = useState(false)
@@ -217,6 +219,7 @@ export function IntegrationsView({
             enabled={connectorsEnabled}
             settings={connectorSettings}
             clients={connectorClients}
+            mcpUrl={connectorMcpUrl}
           />
         )}
       </div>
