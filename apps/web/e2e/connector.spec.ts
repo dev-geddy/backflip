@@ -331,6 +331,21 @@ async function openConnectorsTab(page: Page): Promise<void> {
  * rather than a direct insert, so it also proves the reveal-once secret flow
  * actually works (`L2-MCP-52`, `L2-MCP-53`).
  */
+/**
+ * Read one `ConnectorCopyField`'s value off the reveal screen by its label.
+ *
+ * Positional lookups (`code` nth(0)/nth(1)) silently pick the wrong field the
+ * moment one is added — which is exactly what happened when the dialog grew a
+ * "Remote MCP server URL" row above the credentials, handing the tests the MCP
+ * URL as a client id. Anchor on the field's own copy button instead: the
+ * component renders `<div><div>…<button aria-label="Copy {label}"></div><code>`.
+ */
+function revealedValue(page: Page, label: string) {
+  return page
+    .locator(`div:has(> div > button[aria-label="Copy ${label}"]) > code`)
+    .first()
+}
+
 async function createManualClientViaUI(
   page: Page,
   opts: { clientName: string; redirectUri: string; nativeClient?: boolean }
@@ -347,10 +362,11 @@ async function createManualClientViaUI(
 
   await expect(page.getByText(`${opts.clientName} created`)).toBeVisible()
   const clientId =
-    (await page.locator("code").nth(0).textContent())?.trim() ?? ""
+    (await revealedValue(page, "Client ID").textContent())?.trim() ?? ""
   const clientSecret = opts.nativeClient
     ? null
-    : ((await page.locator("code").nth(1).textContent())?.trim() ?? null)
+    : ((await revealedValue(page, "Client secret").textContent())?.trim() ??
+      null)
 
   await page.getByRole("checkbox", { name: /saved/i }).check()
   await page.getByRole("button", { name: "Done" }).click()
@@ -1006,7 +1022,9 @@ test.describe("Claude MCP connector", () => {
       await expect
         .poll(
           async () =>
-            (await request.get("/.well-known/oauth-authorization-server")).status(),
+            (
+              await request.get("/.well-known/oauth-authorization-server")
+            ).status(),
           {
             message: "the connector should come back once re-enabled",
             timeout: PROPAGATION_TIMEOUT_MS,

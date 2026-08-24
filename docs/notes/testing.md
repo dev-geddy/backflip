@@ -22,5 +22,6 @@
 - `webServer` calls the `next` binary directly — the dotenv-cli `dev` script would load root `.env` and dotenv never overrides preset vars, but bypassing it entirely keeps dev credentials out (`L2-TEST-02`).
 - `NEXT_DIST_DIR=.next-e2e`: honored by two lines in `next.config.ts`; without it the e2e server corrupts a running 3070 dev server's `.next`. `.next-e2e` ignored in git/eslint/prettier.
 - Login page shadcn `CardTitle` renders a `div`, not a heading — assert on the "Sign in" button instead.
+- Never read `ConnectorCopyField` values positionally (`page.locator("code").nth(n)`). The manual-client reveal dialog grew a "Remote MCP server URL" row above the credentials, which silently shifted every index — `createManualClientViaUI` then handed back the MCP URL as the client id and 3 connector tests failed at `/api/oauth/authorize` with an unknown client. `revealedValue(page, label)` anchors on the field's own `aria-label="Copy {label}"` button instead (`L2-MCP-50`, `L2-MCP-52`).
 - Setup truncates + reseeds, never drops `backflip_test` — a reused dev server keeps live pool connections (`reuseExistingServer: !CI`).
 - `postgres` superuser rights: compose `backflip` user owns the cluster, so `create database` from globalSetup just works.
