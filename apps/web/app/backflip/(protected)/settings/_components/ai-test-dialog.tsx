@@ -18,7 +18,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { useProviderModels } from "../_hooks/use-provider-models"
 import { LABEL, type ProviderConfig } from "./ai-config-form"
-import { Markdown } from "./markdown"
+import { Markdown } from "../../_components/markdown"
 
 /** Mirrors the server-side cap in `_lib/ai-test.ts` (`L2-AI-16`). */
 const MAX_PROMPT_CHARS = 4000

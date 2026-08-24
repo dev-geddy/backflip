@@ -19,6 +19,11 @@ export const JUMP_GROUPS: {
         keywords: "profile email password my account",
       },
       {
+        label: "Docs",
+        href: "/backflip/docs",
+        keywords: "documentation constitution contracts notes spec l1 l2 l3",
+      },
+      {
         label: "Integrations",
         href: "/backflip/settings",
         keywords: "settings ai providers email resend keys",
