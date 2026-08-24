@@ -10928,6 +10928,7 @@ __metadata:
     remark-gfm: "npm:^4.0.1"
     resend: "npm:^6.18.0"
     server-only: "npm:^0.0.1"
+    tsx: "npm:^4.23.1"
     typescript: "npm:^5"
     vitest: "npm:^4.1.10"
     zod: "npm:^4.4.3"

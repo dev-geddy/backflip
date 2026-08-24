@@ -72,3 +72,23 @@ test("admin account page", async ({ page }) => {
 
   await shot(page, "admin-account")
 })
+
+test("admin docs page", async ({ page }) => {
+  await loginAsOwner(page)
+  await page.goto("/backflip/docs")
+  await expect(page.getByRole("heading", { name: "Docs" })).toBeVisible()
+
+  await shot(page, "admin-docs")
+
+  // Cascade: an invariant narrows contracts, which narrows notes.
+  await page
+    .getByRole("button", { name: /L1-ARCH-05/ })
+    .first()
+    .click()
+  await page
+    .getByRole("button", { name: /L2-UI-01/ })
+    .first()
+    .click()
+
+  await shot(page, "admin-docs-cascade")
+})

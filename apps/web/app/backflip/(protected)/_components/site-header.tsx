@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
@@ -12,6 +13,10 @@ import { HeaderSearch } from "./header-search"
 const CRUMBS: { match: (p: string) => boolean; trail: string[] }[] = [
   { match: (p) => p === "/backflip", trail: ["Overview"] },
   { match: (p) => p.startsWith("/backflip/users"), trail: ["Members"] },
+  {
+    match: (p) => p.startsWith("/backflip/docs"),
+    trail: ["Platform", "Docs"],
+  },
   {
     match: (p) => p.startsWith("/backflip/account"),
     trail: ["Settings", "My account"],
@@ -61,14 +66,12 @@ export function SiteHeader({
 
         <div className="ml-auto flex min-w-0 shrink items-center gap-3">
           <HeaderSearch />
-          <a
-            href="https://github.com/dev-geddy/backflip#readme"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/backflip/docs"
             className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
           >
             Docs
-          </a>
+          </Link>
           <ThemeToggle
             variant="ghost"
             className="size-7 text-muted-foreground hover:text-foreground"
