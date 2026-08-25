@@ -112,7 +112,10 @@ export function AppSidebar({
               <div className="flex aspect-square size-7 flex-none items-center justify-center rounded-md border bg-card">
                 <BrandIcon size={14} className="text-primary" />
               </div>
-              <div className="grid flex-1 text-left leading-tight">
+              {/* Collapsed rail = icon only: the label block leaves the flow
+                  entirely, otherwise `flex-1` keeps its intrinsic width and
+                  shoves the tile out of the 32px button (overflow-hidden). */}
+              <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="text-sm font-semibold">Backflip</span>
                 <span className="text-xs text-muted-foreground">
                   Admin console

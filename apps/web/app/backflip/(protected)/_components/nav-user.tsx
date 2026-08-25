@@ -52,13 +52,15 @@ export function NavUser({ user }: { user: SessionUser }) {
                 {initials(label)}
               </AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            {/* Collapsed rail = avatar only; the label + chevron leave the
+                flow, else `flex-1` shoves the avatar out of the 32px button. */}
+            <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-medium">{label}</span>
               <span className="truncate text-xs text-muted-foreground capitalize">
                 {user.role ?? "Member"}
               </span>
             </div>
-            <RiMore2Line className="ml-auto size-4" />
+            <RiMore2Line className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
