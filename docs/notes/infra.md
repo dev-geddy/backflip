@@ -15,7 +15,7 @@
 - Preferred dev: app local (3070) + db in Docker — plain `docker compose up -d` starts ONLY `backflip-db` (web/seed are behind profiles). Full-docker (app 3071): `docker compose --profile web up -d --build`; both can run at once against the same db.
 - A pre-existing stopped `backflip-db` container (postgres:16, volume `cv_backflip-db-data`, from an older setup) held the fixed name and was removed 2026-07-30; its volume was left untouched.
 - App Docker = prod build, no hot reload (local is the dev driver).
-- `DATABASE_URL` consumed by `@workspace/db` (app + seed).
+- `DATABASE_URL` consumed by `@workspace/db` (app + seed) — `localhost:${POSTGRES_PORT}` for a local app, `db:5432` inside compose (`L2-INF-06`).
 - `next start` no longer used in prod paths — prod runs the standalone server (`node apps/web/server.js`), on the droplet via pm2. `corepack yarn workspace web start` still serves (verified) but warns about `output: "standalone"`; kept for quick local checks.
 
 ## Env loading (monorepo)

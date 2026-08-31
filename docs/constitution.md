@@ -18,9 +18,9 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 ## Boundaries
 - `L1-ARCH-01` — Two surfaces: Public (open) and Admin (`/backflip/*`, gated). Distinct rendering strategies.
 - `L1-ARCH-02` — Public pages: mostly SSR.
-- `L1-ARCH-03` — Admin pages: driven by API endpoints (client fetch + loaders), not direct SSR data. [NEEDS HUMAN CONFIRMATION]
+- `L1-ARCH-03` — Admin pages: server components reading data directly server-side; mutations go through server actions. API routes exist only for consumers outside the app (the MCP connector, public config endpoints), not as the admin's own data layer.
 - `L1-ARCH-04` — Admin scope owns its auth boundary. Unauthenticated → redirect to admin login.
-- `L1-ARCH-05` — Shared UI lives in `packages/ui`; apps consume, never fork components. [NEEDS HUMAN CONFIRMATION]
+- `L1-ARCH-05` — Shared UI lives in `packages/ui`; apps consume, never fork components.
 - `L1-ARCH-06` — Monorepo: `apps/*` (deployables) + `packages/*` (shared libs/config).
 - `L1-ARCH-07` — Non-route code (components, hooks, utils, contexts, etc.) lives in underscore-prefixed dirs: `_components`, `_hooks`, `_utils`, `_contexts`, `_lib`, … Underscore = Next.js private folder, opted out of routing.
 - `L1-ARCH-08` — Colocate by scope proximity. App-wide → `app/_components/…`. Layout-scoped → in that layout's dir. Page-scoped → in that page's dir. Cross-app/shared → `packages/*` (per `L1-ARCH-05`).
@@ -28,7 +28,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 ## Constraints (non-negotiable)
 - `L1-CON-01` — Admin auth supports two methods: credentials (email + password) and Google login. Google sign-in is allowed only for emails already registered on the platform.
 - `L1-CON-02` — `/backflip/*` requires a valid session; only the admin login route is public within scope.
-- `L1-CON-03` — Foundation ships baseline + guidelines; features stay generic/extensible, not project-specific. [NEEDS HUMAN CONFIRMATION]
+- `L1-CON-03` — Foundation ships baseline + guidelines; features stay generic/extensible, not project-specific.
 - `L1-CON-04` — Three-level doc system maintained with every code change (see project CLAUDE.md).
 - `L1-CON-05` — Credentials (email + password) login may be disabled per-deployment for Google-only sign-in. The toggle is honored only when Google is configured, so at least one sign-in method always remains. Refines `L1-CON-01` (both methods are still supported; a deployment may turn one off).
 - `L1-CON-06` — Connector access is read-only and opt-in (owner-enabled, default off); it grants no capability the connected user's role does not already hold.

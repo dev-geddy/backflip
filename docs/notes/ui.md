@@ -86,6 +86,32 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - Omitted (no backend): Reveal key, Analytics/PostHog, usage metrics, sending-domain verification, org-id/base-url.
 
 ## Docs explorer — `L2-UI-20`
+
+### Navigation
+- **State lives in the URL** (`L2-UI-38`): `domain`/`l1`/`l2`/`l3`/`clause`/`view`/`q`. `navigate(patch, mode)` merges into the existing params; picks and jumps `push` (so browser back retraces them), search `replace`s. Nothing about the view is held in component state any more except the ephemeral "only these lines" toggle and the search input draft. `page.tsx` wraps the explorer in `Suspense` — `useSearchParams` requires it.
+- The search input keeps a local `draft` and follows the URL through a render-time adjustment (`if (query !== lastQuery)`), not an effect — back/forward changes `q` externally and the box has to follow without a second render pass.
+- Entry points on the Guide tab are filtered through `graph.byId`, so a retired ID disappears from the list rather than rendering a dead link.
+- The detail pane *replaces* the overview pane (they share the bottom slot, switched on `detailKey`). Opening a clause from the drift list therefore had no way back: the cascade above only swaps one detail for another, and Reset was hidden because a drift-list jump sets no selection. `ClauseDetail` now carries an **Overview** back button (`onBack` → `setDetailKey(null)`), and `filtering` counts `detailKey`, so Reset shows there too.
+
+### Making the model legible (`L2-UI-35`–`L2-UI-39`)
+The explorer was built as a filter tool for someone who already knew the doc system; a newcomer met three identical columns, silent filtering and a defect list. Five changes, in the order they matter:
+1. **Orientation strip** — the levels and the citation direction, one line, dismissible per browser.
+2. **Guide tab** (default landing) — level cards with live counts, the cite-upward/conflict rule, worked entry points, the domain map. Drift moved to a **Health** tab; it is a maintainer's view, not an on-ramp.
+3. **Trace bar + column constraint chips** — the cascade filters bidirectionally, which used to look like lists changing for no reason. Both are one click to undo.
+4. **Search** — 324 L2 clauses across 14 domains is not browsable by scrolling.
+5. **Trace promoted** out of the 260px right rail to under the clause title; the reading pane took the full width.
+
+Settled after testing:
+- **Content above navigation.** The guide/reading pane sits directly under the orientation strip; domain chips, trace bar and columns moved below it. The old order buried the guide three scrolls down and opened clause detail below the fold.
+- **Trace rows are single lines, scrolled — never wrapped.** `L1-ARCH-01` has fourteen implementers; as a wrapping chip cloud they filled the pane and pushed the clause text out of view. Fixed label column, uniform 176px chips, `overflow-x-auto`, and the bar is `flex-none` so it can never grow into the reading area.
+- **The guide no longer lists domains** — the chip row sits a few pixels below it; two selectors for one thing.
+- **Curated entry points were replaced by a derived one** (`L2-UI-40`). Four hand-picked IDs with hand-written blurbs had no principle behind them and taught nothing; one real chain, labelled why/what/how and loadable into the cascade, demonstrates the model instead.
+- **Kind-tag titles** (`L2-UI-41`): `titleFrom` took `_(inv)_` as the clause title, so concern-grouped contracts (auth, mcp) listed rows reading `_(inv)_`. Stripped — index-wide, zero clauses still title as their tag.
+
+### Drift legend + marker parsing (`L2-UI-23`)
+- The landing view leads with a legend: one row per badge — pill, count, one-line meaning — including badges at zero, so the pills further down the list are always decodable. `no code` is the one that reads as alarming and usually isn't: it means no file carries an `@spec` tag for that ID, which for env/compose/script clauses is expected (JSON has no comments, and the doc rules say not to force tags onto invariant/error/acceptance IDs).
+- `needsConfirm` used to match the literal marker anywhere in a clause, so the two docs that *describe* the rule (`L2-UI-23` and this notes section) flagged themselves. `carriesNeedsConfirm()` in `parse-docs.ts` strips inline-code spans first — quoting the marker is not carrying it.
+
 `/backflip/docs` — the repo's three-level docs, browsable in-app. Domain chips + an L1 | L2 | L3 cascade over a markdown reading pane. Header "Docs" link points here (was the GitHub README, which is now an in-page link); `⌘K` jump target added. **No sidebar entry** — reference surface, not daily nav.
 - `docs/page.tsx` — RSC, `metadata.title` "Docs"; awaits `getDocsIndex()` → `DocsExplorer`. Capability `dashboard` (shell already gates the subtree). Satisfies `L2-UI-20`.
 - `docs/_lib/parse-docs.ts` — pure parser, no fs/Next: raw file contents → `DocsIndex`. Clause = one ID'd bullet (``- `L2-UI-05` — …``, continuation lines folded in) or, for L3 and prose, a whole `##` section. Cite edges: L2→L1 from inline L1 IDs, else the header's `Implements L1:`; L3→L2 from every L2 ID in the section; L2→L2 from `Depends on L2:`. `specIdsIn()` pulls IDs off `@spec` lines in any comment syntax. Satisfies `L2-UI-21`, `L2-UI-24`.

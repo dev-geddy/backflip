@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { getDocsIndex } from "./_lib/docs-index"
@@ -14,5 +15,11 @@ export const metadata: Metadata = { title: "Docs" }
  */
 export default async function DocsPage() {
   const index = await getDocsIndex()
-  return <DocsExplorer index={index} />
+  // The explorer reads its whole state from the query string
+  // (`L2-UI-38`), so it needs a Suspense boundary around `useSearchParams`.
+  return (
+    <Suspense>
+      <DocsExplorer index={index} />
+    </Suspense>
+  )
 }

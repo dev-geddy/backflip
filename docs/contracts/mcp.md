@@ -3,7 +3,7 @@
 > L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
 > Style: terse. One fact per line.
 
-> **Implements L1:** `L1-ARCH-01`, `L1-ARCH-06`, `L1-ARCH-07`, `L1-CON-02`, `L1-CON-03`, `L1-STACK-01`, `L1-STACK-10`
+> **Implements L1:** `L1-ARCH-01`, `L1-ARCH-06`, `L1-ARCH-07`, `L1-CON-02`, `L1-CON-03`, `L1-CON-06` (read-only, opt-in), `L1-STACK-01`, `L1-STACK-10`, `L1-STACK-12` (MCP SDK)
 > **Depends on L2:** `auth` (session, roles, capabilities, `tokenVersion` revocation), `db` (tables, hashing), `devops` (edge proxy, rate limit, log scrub), `infra` (env)
 
 ## Owns

@@ -3,7 +3,7 @@
 > L2 = contract / what. AI proposes, human approves. Cite ≥1 L1.
 > Style: terse. One fact per line.
 
-> **Implements L1:** `L1-ARCH-06`, `L1-STACK-07`, `L1-STACK-08`
+> **Implements L1:** `L1-ARCH-06`, `L1-STACK-04` (turborepo + corepack yarn), `L1-STACK-07`, `L1-STACK-08`
 > **Depends on L2:** none
 
 ## Owns
