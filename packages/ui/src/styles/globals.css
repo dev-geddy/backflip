@@ -77,6 +77,302 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ------------------------------------------------------------------ *
+ * Admin chrome themes — sidebar + header palette, picked per user in
+ * `/backflip/account`. Ids here must match `apps/web/app/_lib/theme/
+ * chrome-themes.ts`; that module is the catalog, this file is the paint.
+ *
+ * Named themes are fixed palettes: they do NOT follow the light/dark
+ * toggle, so a platform keeps its identity in either mode. `default`
+ * defines no block at all — it simply leaves the tokens above alone.
+ *
+ * Chroma is held ≤ 0.06: enough hue to tell six dark themes apart at a
+ * glance, far short of anything that competes with page content.
+ *
+ * Borders sit close to their surface (≈0.045 L apart) on purpose. The
+ * sidebar and header share one tint, so the seam between them should be
+ * a hairline, not a rule — the surface change already does the dividing.
+ *
+ * @spec L2-UI-25, L2-UI-26
+ * ------------------------------------------------------------------ */
+
+/* Header tokens, defaulting to the untouched look so `default` is a no-op.
+ *
+ * `--stock-*` snapshot the unthemed palette at the root, where no theme block
+ * can reach them (theme blocks live on the shell wrapper, a descendant). They
+ * exist for one job: previewing the *default* theme from inside a themed
+ * shell — `bg-sidebar` there would render the active theme's sidebar, not the
+ * stock one. They follow the light/dark toggle, because `.dark` redefines the
+ * tokens they capture. */
+:root,
+.dark {
+    --chrome-header: var(--background);
+    --chrome-header-foreground: var(--foreground);
+    --chrome-header-muted: var(--muted-foreground);
+    --chrome-header-border: var(--border);
+    --chrome-header-accent: var(--accent);
+    --stock-sidebar: var(--sidebar);
+    --stock-sidebar-foreground: var(--sidebar-foreground);
+    --stock-sidebar-accent: var(--sidebar-accent);
+    --stock-sidebar-border: var(--sidebar-border);
+    --stock-background: var(--background);
+    --stock-foreground: var(--foreground);
+    --stock-muted-foreground: var(--muted-foreground);
+    --stock-border: var(--border);
+    --stock-accent: var(--accent);
+}
+
+[data-chrome-theme="slate"] {
+    --sidebar: oklch(0.247 0.026 258);
+    --sidebar-foreground: oklch(0.966 0.006 258);
+    --sidebar-primary: oklch(0.966 0.006 258);
+    --sidebar-primary-foreground: oklch(0.247 0.026 258);
+    --sidebar-accent: oklch(0.309 0.031 258);
+    --sidebar-accent-foreground: oklch(0.985 0.004 258);
+    --sidebar-border: oklch(0.292 0.028 258);
+    --sidebar-ring: oklch(0.63 0.036 258);
+    --chrome-header: oklch(0.247 0.026 258);
+    --chrome-header-foreground: oklch(0.966 0.006 258);
+    --chrome-header-muted: oklch(0.742 0.02 258);
+    --chrome-header-border: oklch(0.292 0.028 258);
+    --chrome-header-accent: oklch(0.309 0.031 258);
+}
+
+[data-chrome-theme="graphite"] {
+    --sidebar: oklch(0.216 0 0);
+    --sidebar-foreground: oklch(0.968 0 0);
+    --sidebar-primary: oklch(0.968 0 0);
+    --sidebar-primary-foreground: oklch(0.216 0 0);
+    --sidebar-accent: oklch(0.278 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.262 0 0);
+    --sidebar-ring: oklch(0.6 0 0);
+    --chrome-header: oklch(0.216 0 0);
+    --chrome-header-foreground: oklch(0.968 0 0);
+    --chrome-header-muted: oklch(0.727 0 0);
+    --chrome-header-border: oklch(0.262 0 0);
+    --chrome-header-accent: oklch(0.278 0 0);
+}
+
+[data-chrome-theme="pine"] {
+    --sidebar: oklch(0.244 0.047 173);
+    --sidebar-foreground: oklch(0.964 0.011 173);
+    --sidebar-primary: oklch(0.964 0.011 173);
+    --sidebar-primary-foreground: oklch(0.244 0.047 173);
+    --sidebar-accent: oklch(0.306 0.054 173);
+    --sidebar-accent-foreground: oklch(0.984 0.008 173);
+    --sidebar-border: oklch(0.289 0.049 173);
+    --sidebar-ring: oklch(0.628 0.062 173);
+    --chrome-header: oklch(0.244 0.047 173);
+    --chrome-header-foreground: oklch(0.964 0.011 173);
+    --chrome-header-muted: oklch(0.739 0.035 173);
+    --chrome-header-border: oklch(0.289 0.049 173);
+    --chrome-header-accent: oklch(0.306 0.054 173);
+}
+
+[data-chrome-theme="plum"] {
+    --sidebar: oklch(0.251 0.051 328);
+    --sidebar-foreground: oklch(0.967 0.011 328);
+    --sidebar-primary: oklch(0.967 0.011 328);
+    --sidebar-primary-foreground: oklch(0.251 0.051 328);
+    --sidebar-accent: oklch(0.313 0.058 328);
+    --sidebar-accent-foreground: oklch(0.986 0.008 328);
+    --sidebar-border: oklch(0.296 0.053 328);
+    --sidebar-ring: oklch(0.635 0.066 328);
+    --chrome-header: oklch(0.251 0.051 328);
+    --chrome-header-foreground: oklch(0.967 0.011 328);
+    --chrome-header-muted: oklch(0.745 0.036 328);
+    --chrome-header-border: oklch(0.296 0.053 328);
+    --chrome-header-accent: oklch(0.313 0.058 328);
+}
+
+[data-chrome-theme="garnet"] {
+    --sidebar: oklch(0.249 0.049 22);
+    --sidebar-foreground: oklch(0.967 0.011 22);
+    --sidebar-primary: oklch(0.967 0.011 22);
+    --sidebar-primary-foreground: oklch(0.249 0.049 22);
+    --sidebar-accent: oklch(0.311 0.056 22);
+    --sidebar-accent-foreground: oklch(0.986 0.008 22);
+    --sidebar-border: oklch(0.294 0.051 22);
+    --sidebar-ring: oklch(0.633 0.064 22);
+    --chrome-header: oklch(0.249 0.049 22);
+    --chrome-header-foreground: oklch(0.967 0.011 22);
+    --chrome-header-muted: oklch(0.744 0.035 22);
+    --chrome-header-border: oklch(0.294 0.051 22);
+    --chrome-header-accent: oklch(0.311 0.056 22);
+}
+
+[data-chrome-theme="rust"] {
+    --sidebar: oklch(0.247 0.045 55);
+    --sidebar-foreground: oklch(0.965 0.01 55);
+    --sidebar-primary: oklch(0.965 0.01 55);
+    --sidebar-primary-foreground: oklch(0.247 0.045 55);
+    --sidebar-accent: oklch(0.309 0.052 55);
+    --sidebar-accent-foreground: oklch(0.985 0.007 55);
+    --sidebar-border: oklch(0.292 0.047 55);
+    --sidebar-ring: oklch(0.631 0.06 55);
+    --chrome-header: oklch(0.247 0.045 55);
+    --chrome-header-foreground: oklch(0.965 0.01 55);
+    --chrome-header-muted: oklch(0.741 0.033 55);
+    --chrome-header-border: oklch(0.292 0.047 55);
+    --chrome-header-accent: oklch(0.309 0.052 55);
+}
+
+[data-chrome-theme="gold"] {
+    --sidebar: oklch(0.961 0.021 84);
+    --sidebar-foreground: oklch(0.271 0.019 84);
+    --sidebar-primary: oklch(0.271 0.019 84);
+    --sidebar-primary-foreground: oklch(0.961 0.021 84);
+    --sidebar-accent: oklch(0.921 0.032 84);
+    --sidebar-accent-foreground: oklch(0.244 0.022 84);
+    --sidebar-border: oklch(0.929 0.028 84);
+    --sidebar-ring: oklch(0.68 0.038 84);
+    --chrome-header: oklch(0.961 0.021 84);
+    --chrome-header-foreground: oklch(0.271 0.019 84);
+    --chrome-header-muted: oklch(0.528 0.025 84);
+    --chrome-header-border: oklch(0.929 0.028 84);
+    --chrome-header-accent: oklch(0.921 0.032 84);
+}
+
+[data-chrome-theme="sky-blue"] {
+    --sidebar: oklch(0.959 0.018 246);
+    --sidebar-foreground: oklch(0.268 0.019 246);
+    --sidebar-primary: oklch(0.268 0.019 246);
+    --sidebar-primary-foreground: oklch(0.959 0.018 246);
+    --sidebar-accent: oklch(0.918 0.028 246);
+    --sidebar-accent-foreground: oklch(0.242 0.022 246);
+    --sidebar-border: oklch(0.926 0.024 246);
+    --sidebar-ring: oklch(0.674 0.036 246);
+    --chrome-header: oklch(0.959 0.018 246);
+    --chrome-header-foreground: oklch(0.268 0.019 246);
+    --chrome-header-muted: oklch(0.525 0.024 246);
+    --chrome-header-border: oklch(0.926 0.024 246);
+    --chrome-header-accent: oklch(0.918 0.028 246);
+}
+
+[data-chrome-theme="sage"] {
+    --sidebar: oklch(0.957 0.021 154);
+    --sidebar-foreground: oklch(0.266 0.021 154);
+    --sidebar-primary: oklch(0.266 0.021 154);
+    --sidebar-primary-foreground: oklch(0.957 0.021 154);
+    --sidebar-accent: oklch(0.915 0.031 154);
+    --sidebar-accent-foreground: oklch(0.24 0.024 154);
+    --sidebar-border: oklch(0.923 0.027 154);
+    --sidebar-ring: oklch(0.67 0.039 154);
+    --chrome-header: oklch(0.957 0.021 154);
+    --chrome-header-foreground: oklch(0.266 0.021 154);
+    --chrome-header-muted: oklch(0.522 0.026 154);
+    --chrome-header-border: oklch(0.923 0.027 154);
+    --chrome-header-accent: oklch(0.915 0.031 154);
+}
+
+[data-chrome-theme="rose-gold"] {
+    --sidebar: oklch(0.96 0.02 22);
+    --sidebar-foreground: oklch(0.27 0.02 22);
+    --sidebar-primary: oklch(0.27 0.02 22);
+    --sidebar-primary-foreground: oklch(0.96 0.02 22);
+    --sidebar-accent: oklch(0.92 0.03 22);
+    --sidebar-accent-foreground: oklch(0.243 0.023 22);
+    --sidebar-border: oklch(0.928 0.026 22);
+    --sidebar-ring: oklch(0.678 0.038 22);
+    --chrome-header: oklch(0.96 0.02 22);
+    --chrome-header-foreground: oklch(0.27 0.02 22);
+    --chrome-header-muted: oklch(0.527 0.025 22);
+    --chrome-header-border: oklch(0.928 0.026 22);
+    --chrome-header-accent: oklch(0.92 0.03 22);
+}
+
+[data-chrome-theme="lilac"] {
+    --sidebar: oklch(0.958 0.019 312);
+    --sidebar-foreground: oklch(0.267 0.02 312);
+    --sidebar-primary: oklch(0.267 0.02 312);
+    --sidebar-primary-foreground: oklch(0.958 0.019 312);
+    --sidebar-accent: oklch(0.917 0.029 312);
+    --sidebar-accent-foreground: oklch(0.241 0.023 312);
+    --sidebar-border: oklch(0.925 0.025 312);
+    --sidebar-ring: oklch(0.672 0.037 312);
+    --chrome-header: oklch(0.958 0.019 312);
+    --chrome-header-foreground: oklch(0.267 0.02 312);
+    --chrome-header-muted: oklch(0.524 0.025 312);
+    --chrome-header-border: oklch(0.925 0.025 312);
+    --chrome-header-accent: oklch(0.917 0.029 312);
+}
+
+[data-chrome-theme="iris"] {
+    --sidebar: oklch(0.957 0.02 288);
+    --sidebar-foreground: oklch(0.266 0.021 288);
+    --sidebar-primary: oklch(0.266 0.021 288);
+    --sidebar-primary-foreground: oklch(0.957 0.02 288);
+    --sidebar-accent: oklch(0.916 0.03 288);
+    --sidebar-accent-foreground: oklch(0.24 0.024 288);
+    --sidebar-border: oklch(0.924 0.026 288);
+    --sidebar-ring: oklch(0.671 0.038 288);
+    --chrome-header: oklch(0.957 0.02 288);
+    --chrome-header-foreground: oklch(0.266 0.021 288);
+    --chrome-header-muted: oklch(0.523 0.026 288);
+    --chrome-header-border: oklch(0.924 0.026 288);
+    --chrome-header-accent: oklch(0.916 0.03 288);
+}
+
+/* The header paints itself from the chrome tokens and re-points the base
+   tokens its children use (ghost buttons, dividers, muted crumbs), so a
+   themed header doesn't need every child to know about theming.
+
+   Scoped under `[data-chrome-theme]` — an attribute only the admin shell
+   stamps — so this cannot reach a public-site header that happens to carry
+   the same `data-slot`. One stylesheet serves both surfaces; every rule in
+   this section has to gate itself. */
+[data-chrome-theme] [data-slot="site-header"] {
+    background-color: var(--chrome-header);
+    color: var(--chrome-header-foreground);
+    --foreground: var(--chrome-header-foreground);
+    --muted: var(--chrome-header-accent);
+    --muted-foreground: var(--chrome-header-muted);
+    --accent: var(--chrome-header-accent);
+    --accent-foreground: var(--chrome-header-foreground);
+    --border: var(--chrome-header-border);
+    --input: var(--chrome-header-border);
+    --ring: var(--chrome-header-muted);
+}
+
+/* Header opt-out. With the toggle off the sidebar stays themed and the header
+   returns to the plain light/dark chrome — the theme tokens are simply pointed
+   back at the stock palette, so `site-header` needs no second code path.
+   Declared after the theme blocks: same specificity, later wins. */
+[data-chrome-header="plain"] {
+    --chrome-header: var(--stock-background);
+    --chrome-header-foreground: var(--stock-foreground);
+    --chrome-header-muted: var(--stock-muted-foreground);
+    --chrome-header-border: var(--stock-border);
+    --chrome-header-accent: var(--stock-accent);
+}
+
+/* The sidebar's right edge lives on `sidebar-container`, which sits OUTSIDE
+   `sidebar-inner` — so the token re-point below never reached it and it kept
+   painting the app's neutral `--border`: a pale gray rule against a dark
+   themed sidebar. It takes `--sidebar-border`, which every theme block sets
+   to the same value as `--chrome-header-border`: the vertical edge and the
+   header's bottom edge are then literally one color, and the chrome reads as
+   a single surface with one hairline around it. */
+[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-container"] {
+    --border: var(--sidebar-border);
+    border-color: var(--sidebar-border);
+}
+
+/* Same idea inside the sidebar, derived from its own token family. Scoped to
+   a non-default theme so the stock shell keeps exactly the look it has. */
+[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
+[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar"][data-mobile="true"] {
+    --foreground: var(--sidebar-foreground);
+    --muted: var(--sidebar-accent);
+    --muted-foreground: color-mix(in oklab, var(--sidebar-foreground) 64%, var(--sidebar));
+    --accent: var(--sidebar-accent);
+    --accent-foreground: var(--sidebar-accent-foreground);
+    --border: var(--sidebar-border);
+    --input: var(--sidebar-border);
+    --ring: var(--sidebar-ring);
+}
+
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);

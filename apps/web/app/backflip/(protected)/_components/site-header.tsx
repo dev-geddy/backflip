@@ -42,7 +42,14 @@ export function SiteHeader({
   const trail = crumbsFor(pathname)
 
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b">
+    // `data-slot` is the hook the chrome-theme CSS paints through — it repoints
+    // the base tokens inside this subtree, so children keep using plain
+    // `text-muted-foreground` / `bg-border` and still follow the theme
+    // (`L2-UI-25`).
+    <header
+      data-slot="site-header"
+      className="flex h-(--header-height) shrink-0 items-center gap-2 border-b"
+    >
       <div className="flex w-full items-center gap-2 px-4 lg:px-5">
         <SidebarTrigger className="-ml-1" />
         <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border" />

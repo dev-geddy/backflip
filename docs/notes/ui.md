@@ -85,6 +85,42 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - Removed: `ai-section.tsx`, `email-section.tsx` (view/edit-toggle wrappers superseded).
 - Omitted (no backend): Reveal key, Analytics/PostHog, usage metrics, sending-domain verification, org-id/base-url.
 
+## Chrome themes (sidebar + header) — `L2-UI-25`, `L2-UI-26`
+
+Slack-style per-user chrome, so several Backflip platforms are distinguishable at a glance. Light palettes take MacBook colour names where one fits (Gold, Sky Blue, Rose Gold); Sage, Lilac and Iris keep evocative names because Apple ships no green or purple laptop.
+
+- `apps/web/app/_lib/theme/chrome-themes.ts` — catalog: `default` + dark `slate`/`graphite`/`pine`/`plum`/`garnet`/`rust` + light `gold`/`sky-blue`/`sage`/`rose-gold`/`lilac`/`iris`, each with a label, a group and swatch colors. `resolveChromeTheme()` narrows unknown values to `default`. Satisfies `L2-UI-26`.
+- `apps/web/app/_lib/theme/preferences.ts` — `server-only`; `getChromePreferences` (returns `{theme, headerThemed}`) + `setChromeTheme` / `setChromeHeaderThemed` over `user_preference` (`L2-DB-33`). Satisfies `L2-UI-27`.
+- `packages/ui/src/styles/globals.css` — one `[data-chrome-theme="<id>"]` block per named theme setting `--sidebar-*` + `--chrome-header-*`; `--chrome-header-*` defaults in `:root`/`.dark` point at the untouched colors, which is why `default` needs no block at all.
+- `(protected)/layout.tsx` — resolves the preferences server-side, stamps `data-chrome-theme` + `data-chrome-header` on `SidebarProvider`. Server-rendered, so no flash. Satisfies `L2-UI-25`, `L2-UI-32`.
+- `(protected)/_components/site-header.tsx` — carries `data-slot="site-header"`, the hook the CSS paints through.
+- Custom theme (`L2-UI-33`): `customChromeVars()` in `chrome-themes.ts` derives the full variable set from two hex picks; the layout emits it inline (no CSS block exists for `custom`). Ink flips on WCAG luminance at 0.45 — not 0.5, because mid greens read brighter than their luminance suggests and light ink is the safer miss. The card spans two grid columns beside Default; colour inputs commit on `change`, not `input`, so dragging a colour wheel is one write, not one per frame.
+- **Inline style outranks the header opt-out.** The custom palette ships as inline `style` on the wrapper, so `[data-chrome-header="plain"]` could not override `--chrome-header-*` and Custom stayed tinted while every built-in theme obeyed the switch. `customChromeVars(surface, accent, headerThemed)` now *omits* those five variables when the header is plain, and the client `removeProperty`s them before re-emitting — absent, not overridden, is the only thing that works here.
+- The header-tint switch sits between the Default/Custom row and the Dark row: it qualifies how every palette below is applied, so it reads first.
+- `account/_components/appearance-section.tsx` — tile grid grouped Default / Dark / Light, 1 / 2 / 3 columns at base / `sm` / `lg`. Each tile is a miniature of the real shell (themed sidebar with brand row, one accent-filled active nav row and idle rows; themed header strip; neutral content). The `default` tile paints from live CSS tokens (`bg-sidebar`, `bg-background`) rather than fixed swatch colors, so it tracks the light/dark toggle like the real chrome. Selecting sets the attribute on the live shell immediately, then persists; a failed save rolls both back. Satisfies `L2-UI-31`.
+- `account/_actions.ts` → `saveChromeTheme` (catalog-validated) + `saveChromeHeaderThemed` — both self-scoped, both `revalidatePath("/backflip", "layout")`. Satisfies `L2-UI-28`, `L2-UI-32`.
+- Header opt-out is one CSS block: `[data-chrome-header="plain"]` re-points `--chrome-header-*` at the `--stock-*` snapshot, declared after the theme blocks so it wins at equal specificity. `site-header.tsx` needs no second code path, and the tile preview mirrors the same state.
+- `app/_lib/theme/chrome-themes.test.ts` — locks catalog ↔ stylesheet both ways, and that every theme sets header tokens as well as sidebar ones.
+
+### Why token re-pointing rather than themed classes
+The header and sidebar contain children that use plain `text-muted-foreground`, `bg-border`, ghost buttons and an avatar. Rather than teaching each one about theming, the CSS re-points the base tokens **inside those two subtrees** (`[data-slot="site-header"]`, `[data-slot="sidebar-inner"]`). Because shadcn declares its palette with `@theme inline`, utilities compile to `var(--foreground)` etc. directly, so a subtree redefinition retints everything under it. The sidebar rule is scoped to `:not([data-chrome-theme="default"])` so the stock shell is bit-for-bit unchanged.
+
+### One stylesheet, two surfaces
+`@workspace/ui/globals.css` is imported once in the root layout, so the public site and the admin share a single stylesheet — there is no per-surface CSS split. Every chrome-theme rule therefore gates itself on `[data-chrome-theme]`, an attribute stamped only by the admin protected layout:
+- theme blocks — `[data-chrome-theme="<id>"]`, inert with no attribute present;
+- sidebar rules — scoped `[data-chrome-theme]:not([data-chrome-theme="default"]) …`;
+- the header rule — `[data-chrome-theme] [data-slot="site-header"]`. It was briefly unscoped; the public header (`app/_components/site-header.tsx`) does not carry that `data-slot`, so nothing leaked, but the collision was one component away.
+The `--chrome-*` / `--stock-*` declarations at `:root` do ship to public pages. They are inert definitions — no public rule consumes them — and cost a few hundred bytes.
+
+### Gotchas
+- **The picker renders inside the themed shell.** `--sidebar` on the account page is whatever theme is *active*, so a Default tile drawn with `bg-sidebar` showed a dark sidebar while a dark theme was selected. Fixed with `--stock-*` vars captured at `:root` — out of reach of the theme blocks (which sit on the wrapper, a descendant) and still following light/dark. Every tile now paints from inline colors; none use `bg-sidebar`.
+- Selected tile is a 1px `border-primary` swap with no `ring-*` — a border plus ring reads as one thick 2px outline.
+- Named themes are fixed palettes — a dark theme stays dark in light mode. Intended (`L2-UI-29`); it is what makes the chrome an identity rather than a mood.
+- **Tuned after first review** (2026-08-31): the four dark themes were near-indistinguishable at chroma ≈0.02, and the sidebar↔header seam read as a hard rule. Dark chroma went to ~0.042–0.051 with hues spread (slate 258, pine 173, plum 328, graphite neutral by design), light to ~0.018–0.021, and every border moved to ≈0.045 L from its surface. Both halves of the chrome share one surface, so the seam only needs a hairline.
+- Dropdowns opened from the sidebar (NavUser) render in a portal at the body, so they keep the app palette, not the sidebar one. Correct: a popover floating over page content should match the content.
+- Mobile sidebar renders through a `Sheet` (`data-slot="sidebar"[data-mobile="true"]`), which is why the token rule names it explicitly alongside `sidebar-inner`.
+- **`sidebar-container` is outside `sidebar-inner`.** The right edge (`group-data-[side=left]:border-r`) lives on the container, so the `sidebar-inner` token re-point misses it and it kept painting the app's neutral `--border` — a pale gray rule against a dark themed sidebar. It gets its own rule taking `--sidebar-border` — the same value every theme block gives `--chrome-header-border`, so the sidebar's vertical edge and the header's bottom edge are one color and the chrome reads as a single surface. (First attempt mixed `--sidebar-foreground` 26% into the surface; fine on dark themes, far too intense on light ones, where that mix is dark ink on a pale surface.)
+
 ## Docs explorer — `L2-UI-20`
 
 ### Navigation
