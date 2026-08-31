@@ -26,7 +26,8 @@ export const JUMP_GROUPS: {
       {
         label: "Integrations",
         href: "/backflip/settings",
-        keywords: "settings ai providers email resend keys",
+        keywords:
+          "settings ai providers email resend keys clickup slack webhooks n8n connectors",
       },
     ],
   },

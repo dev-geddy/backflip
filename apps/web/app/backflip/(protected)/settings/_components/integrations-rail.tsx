@@ -2,8 +2,18 @@ import { SectionLabel } from "../../_components/page-heading"
 
 type AboutLink = { label: string; href: string }
 
+type RailSelection =
+  | "ai"
+  | "email"
+  | "analytics"
+  | "speech"
+  | "connectors"
+  | "clickup"
+  | "slack"
+  | "n8n"
+
 const ABOUT: Record<
-  "ai" | "email" | "analytics" | "speech" | "connectors",
+  RailSelection,
   { title: string; body: string; links: AboutLink[] }
 > = {
   ai: {
@@ -37,6 +47,35 @@ const ABOUT: Record<
       },
     ],
   },
+  clickup: {
+    title: "About ClickUp",
+    body: "A personal API token authenticates as the ClickUp user who created it — it inherits that user's access, so use a service account for shared automation. Testing only reads the account.",
+    links: [
+      { label: "ClickUp API docs", href: "https://developer.clickup.com/docs" },
+      {
+        label: "Generate a token",
+        href: "https://app.clickup.com/settings/apps",
+      },
+    ],
+  },
+  slack: {
+    title: "About Slack",
+    body: "Bot tokens post as your app anywhere it is invited; incoming webhooks are post-only URLs bound to one channel. Add as many of each as you need — testing a webhook posts a real message.",
+    links: [
+      { label: "Slack API docs", href: "https://api.slack.com/docs" },
+      { label: "Your Slack apps", href: "https://api.slack.com/apps" },
+    ],
+  },
+  n8n: {
+    title: "About n8n",
+    body: "One instance, reached over the n8n public API with an X-N8N-API-KEY header. The key inherits the permissions of the user who created it. Testing only lists workflows — it runs nothing.",
+    links: [
+      {
+        label: "n8n API docs",
+        href: "https://docs.n8n.io/api/",
+      },
+    ],
+  },
   connectors: {
     title: "About the MCP connector",
     body: "A Claude client authenticates over OAuth and talks to a read-only MCP tool surface, scoped to the signed-in user's role and the token's granted scopes.",
@@ -50,11 +89,7 @@ const ABOUT: Record<
 }
 
 /** Context rail for the integrations detail: about the service + a security note. */
-export function IntegrationsRail({
-  selection,
-}: {
-  selection: "ai" | "email" | "analytics" | "speech" | "connectors"
-}) {
+export function IntegrationsRail({ selection }: { selection: RailSelection }) {
   const about = ABOUT[selection]
   return (
     <div className="flex flex-col gap-4">

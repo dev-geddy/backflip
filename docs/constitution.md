@@ -56,6 +56,12 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `email` → `/docs/contracts/email.md`
 - `devops` → `/docs/contracts/devops.md`
 - `mcp` → `/docs/contracts/mcp.md`
+- `analytics` → `/docs/contracts/analytics.md`
+- `speech` → `/docs/contracts/speech.md`
+- `testing` → `/docs/contracts/testing.md`
+- `clickup` → `/docs/contracts/clickup.md`
+- `slack` → `/docs/contracts/slack.md`
+- `n8n` → `/docs/contracts/n8n.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.

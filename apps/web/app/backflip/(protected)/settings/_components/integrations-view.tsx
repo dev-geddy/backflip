@@ -11,6 +11,7 @@ import {
   AnalyticsIntegration,
   type AnalyticsConfig,
 } from "./analytics-integration"
+import { ClickupIntegration, type ClickupConfig } from "./clickup-integration"
 import {
   ConnectorsIntegration,
   type ConnectorClientRow,
@@ -19,9 +20,21 @@ import {
 import type { EmailConfig } from "./email-config-form"
 import { EmailIntegration } from "./email-integration"
 import { IntegrationsRail } from "./integrations-rail"
+import { N8nIntegration, type N8nConfig } from "./n8n-integration"
+import { SlackIntegration } from "./slack-integration"
+import type { SlackAppRow } from "./slack-apps"
+import type { SlackWebhookRow } from "./slack-webhooks"
 import { SpeechIntegration, type SpeechConfig } from "./speech-integration"
 
-type Selection = "ai" | "email" | "analytics" | "speech" | "connectors"
+type Selection =
+  | "ai"
+  | "email"
+  | "analytics"
+  | "speech"
+  | "connectors"
+  | "clickup"
+  | "slack"
+  | "n8n"
 
 /** One row in the integrations master list. */
 function ListRow({
@@ -67,8 +80,9 @@ function ListRow({
 
 /**
  * Integrations admin shell (design 2a) — master list of connected services +
- * detail pane + context rail. **Real-data-only:** exactly four integrations
- * exist today (AI providers, Resend email, Google Analytics, Deepgram speech).
+ * detail pane + context rail. **Real-data-only:** every row below is backed by
+ * stored config — AI providers, Resend email, Google Analytics, Deepgram
+ * speech, the MCP connector, ClickUp, Slack (apps + webhooks) and n8n.
  */
 export function IntegrationsView({
   ai,
@@ -79,6 +93,10 @@ export function IntegrationsView({
   connectorSettings,
   connectorClients,
   connectorMcpUrl,
+  clickup,
+  slackApps,
+  slackWebhooks,
+  n8n,
 }: {
   ai: ProviderConfig[]
   email: EmailConfig
@@ -88,6 +106,10 @@ export function IntegrationsView({
   connectorSettings: ConnectorSettingsData | null
   connectorClients: ConnectorClientRow[]
   connectorMcpUrl: string
+  clickup: ClickupConfig
+  slackApps: SlackAppRow[]
+  slackWebhooks: SlackWebhookRow[]
+  n8n: N8nConfig
 }) {
   const [selection, setSelection] = useState<Selection>("ai")
   const [mobileDetail, setMobileDetail] = useState(false)
@@ -96,6 +118,10 @@ export function IntegrationsView({
   const emailConnected = Boolean(email.keyPreview)
   const analyticsConnected = Boolean(analytics.measurementId)
   const speechConnected = Boolean(speech.keyPreview)
+  const clickupConnected = Boolean(clickup.tokenPreview)
+  const slackCount = slackApps.length + slackWebhooks.length
+  const slackConnected = slackCount > 0
+  const n8nConnected = Boolean(n8n.keyPreview && n8n.baseUrl)
 
   function select(s: Selection) {
     setSelection(s)
@@ -178,12 +204,52 @@ export function IntegrationsView({
                 Cn
               </span>
             }
-            title="Connectors"
+            title="MCP Connectors"
             subtitle={
               connectorsEnabled
                 ? `${connectorClients.length} client${connectorClients.length === 1 ? "" : "s"}`
                 : "Disabled"
             }
+          />
+          <ListRow
+            active={selection === "clickup"}
+            onClick={() => select("clickup")}
+            connected={clickupConnected}
+            tile={
+              <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold">
+                Cu
+              </span>
+            }
+            title="ClickUp"
+            subtitle={clickupConnected ? "Token saved" : "Not configured"}
+          />
+          <ListRow
+            active={selection === "slack"}
+            onClick={() => select("slack")}
+            connected={slackConnected}
+            tile={
+              <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold">
+                Sl
+              </span>
+            }
+            title="Slack"
+            subtitle={
+              slackConnected
+                ? `${slackApps.length} app${slackApps.length === 1 ? "" : "s"} · ${slackWebhooks.length} webhook${slackWebhooks.length === 1 ? "" : "s"}`
+                : "Not configured"
+            }
+          />
+          <ListRow
+            active={selection === "n8n"}
+            onClick={() => select("n8n")}
+            connected={n8nConnected}
+            tile={
+              <span className="flex size-9 flex-none items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold">
+                n8
+              </span>
+            }
+            title="n8n"
+            subtitle={n8nConnected ? n8n.baseUrl : "Not configured"}
           />
         </div>
       </div>
@@ -214,6 +280,12 @@ export function IntegrationsView({
           />
         ) : selection === "speech" ? (
           <SpeechIntegration speech={speech} connected={speechConnected} />
+        ) : selection === "clickup" ? (
+          <ClickupIntegration clickup={clickup} connected={clickupConnected} />
+        ) : selection === "slack" ? (
+          <SlackIntegration apps={slackApps} webhooks={slackWebhooks} />
+        ) : selection === "n8n" ? (
+          <N8nIntegration n8n={n8n} connected={n8nConnected} />
         ) : (
           <ConnectorsIntegration
             enabled={connectorsEnabled}

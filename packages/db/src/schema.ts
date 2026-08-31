@@ -341,3 +341,94 @@ export const oauthTokens = pgTable(
     index("oauth_token_user_client_idx").on(t.userId, t.clientId),
   ]
 )
+
+/**
+ * ClickUp config — single row (`kind` unique). Auth today is a personal API
+ * token (`pk_…`) in `apiTokenEnc`, AES-256-GCM encrypted (see `crypto.ts`).
+ * `clientId`/`clientSecretEnc` are reserved for a later OAuth app flow and
+ * stay null until one exists — no code reads them yet.
+ *
+ * @spec L2-DB-29, L2-CLICKUP-01
+ */
+export const clickupConfig = pgTable("clickup_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  kind: text("kind").notNull().unique().default("clickup"),
+  apiTokenEnc: text("apiTokenEnc"),
+  /** Default ClickUp workspace (team) id — plain, not a secret. */
+  teamId: text("teamId"),
+  /** Reserved for the future OAuth app flow. Unused today. */
+  clientId: text("clientId"),
+  /** Reserved for the future OAuth app flow. Unused today. */
+  clientSecretEnc: text("clientSecretEnc"),
+  enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
+
+/**
+ * Slack apps (bot tokens) — many rows, one per installed Slack app. Each holds
+ * a bot token (`xoxb-…`) and optionally a signing secret, both AES-256-GCM
+ * encrypted. `teamName`/`appId` are display metadata filled from `auth.test`
+ * when the connection is tested.
+ *
+ * @spec L2-DB-30, L2-SLACK-01
+ */
+export const slackApps = pgTable("slack_app", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  /** Operator-chosen label, unique so two apps can't share a name. */
+  name: text("name").notNull().unique(),
+  botTokenEnc: text("botTokenEnc"),
+  signingSecretEnc: text("signingSecretEnc"),
+  /** Default channel id or #name used when a caller doesn't pass one. */
+  defaultChannel: text("defaultChannel"),
+  /** Workspace name, from `auth.test`. Display only. */
+  teamName: text("teamName"),
+  /** Slack app/bot identity, from `auth.test`. Display only. */
+  appId: text("appId"),
+  enabled: boolean("enabled").notNull().default(true),
+  lastCheckedAt: timestamp("lastCheckedAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
+
+/**
+ * Slack incoming webhooks — many rows. The whole URL is the credential
+ * (anyone holding it can post), so `urlEnc` is AES-256-GCM encrypted and the
+ * UI only ever sees a masked preview. `channel` is the operator's own note of
+ * where it posts — Slack binds the real channel to the URL itself.
+ *
+ * @spec L2-DB-31, L2-SLACK-02
+ */
+export const slackWebhooks = pgTable("slack_webhook", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  label: text("label").notNull().unique(),
+  urlEnc: text("urlEnc").notNull(),
+  channel: text("channel"),
+  enabled: boolean("enabled").notNull().default(true),
+  lastCheckedAt: timestamp("lastCheckedAt", { mode: "date" }),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})
+
+/**
+ * n8n config — single row (`kind` unique). `baseUrl` is the instance origin
+ * (e.g. `https://n8n.example.com`), `apiKeyEnc` the AES-256-GCM encrypted
+ * public API key sent as `X-N8N-API-KEY`.
+ *
+ * @spec L2-DB-32, L2-N8N-01
+ */
+export const n8nConfig = pgTable("n8n_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  kind: text("kind").notNull().unique().default("n8n"),
+  baseUrl: text("baseUrl"),
+  apiKeyEnc: text("apiKeyEnc"),
+  enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})

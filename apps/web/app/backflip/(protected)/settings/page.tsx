@@ -1,11 +1,15 @@
 import {
   aiConfig,
   analyticsConfig,
+  clickupConfig,
   db,
   emailConfig,
+  n8nConfig,
+  slackApps,
+  slackWebhooks,
   speechConfig,
 } from "@workspace/db"
-import { eq } from "drizzle-orm"
+import { asc, eq } from "drizzle-orm"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { listClients } from "@/app/_lib/oauth/clients"
@@ -17,14 +21,18 @@ import {
 } from "@/app/_lib/oauth/config"
 import { type ProviderConfig } from "./_components/ai-config-form"
 import { type AnalyticsConfig } from "./_components/analytics-integration"
+import { type ClickupConfig } from "./_components/clickup-integration"
 import {
   type ConnectorClientRow,
   type ConnectorSettingsData,
 } from "./_components/connectors-integration"
 import { type EmailConfig } from "./_components/email-config-form"
 import { IntegrationsView } from "./_components/integrations-view"
+import { type N8nConfig } from "./_components/n8n-integration"
+import { type SlackAppRow } from "./_components/slack-apps"
+import { type SlackWebhookRow } from "./_components/slack-webhooks"
 import { type SpeechConfig } from "./_components/speech-integration"
-import { keyPreview } from "./_lib/mask"
+import { keyPreview, urlPreview } from "./_lib/mask"
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 
@@ -34,15 +42,16 @@ const CONNECTOR_DATE_FMT = new Intl.DateTimeFormat("en-US", {
 
 /**
  * /backflip/settings — admin Integrations (owner only). Master-detail over
- * five surfaces: AI providers (per provider), Email (Resend), Google
- * Analytics, Speech (Deepgram), and the Connectors (MCP OAuth client) admin.
- * Secrets are never sent to the client; only whether a key is set + its
- * masked preview (or, for a freshly created OAuth client, the raw secret
- * exactly once — `L2-MCP-50`). The GA measurement id is public, so it
- * round-trips in the clear.
+ * eight surfaces: AI providers (per provider), Email (Resend), Google
+ * Analytics, Speech (Deepgram), the Connectors (MCP OAuth client) admin,
+ * ClickUp, Slack (many apps + many webhooks) and n8n. Secrets are never sent
+ * to the client; only whether a key is set + its masked preview (or, for a
+ * freshly created OAuth client, the raw secret exactly once — `L2-MCP-50`).
+ * The GA measurement id is public, so it round-trips in the clear.
  *
  * @spec L2-AI-01, L2-EMAIL-01, L2-ANALYTICS-05, L2-SPEECH-01, L2-MCP-25,
- *       L2-MCP-37, L2-MCP-47
+ *       L2-MCP-37, L2-MCP-47, L2-CLICKUP-01, L2-SLACK-01, L2-SLACK-02,
+ *       L2-N8N-01
  */
 export default async function SettingsPage() {
   await requireCapability("settings")
@@ -111,6 +120,57 @@ export default async function SettingsPage() {
     dcrMode: connectorSettingsRow.dcrMode,
     redirectHosts: connectorSettingsRow.redirectHosts,
   }
+  const [clickupRow] = await db
+    .select()
+    .from(clickupConfig)
+    .where(eq(clickupConfig.kind, "clickup"))
+  const clickup: ClickupConfig = {
+    teamId: clickupRow?.teamId ?? "",
+    enabled: clickupRow?.enabled ?? false,
+    tokenPreview: keyPreview(clickupRow?.apiTokenEnc),
+  }
+
+  const [n8nRow] = await db
+    .select()
+    .from(n8nConfig)
+    .where(eq(n8nConfig.kind, "n8n"))
+  const n8n: N8nConfig = {
+    baseUrl: n8nRow?.baseUrl ?? "",
+    enabled: n8nRow?.enabled ?? false,
+    keyPreview: keyPreview(n8nRow?.apiKeyEnc),
+  }
+
+  // Slack is the one multi-row integration here: any number of apps (bot
+  // tokens) and any number of incoming webhooks. Secrets stay server-side —
+  // rows carry masked previews only.
+  const [slackAppRows, slackWebhookRows] = await Promise.all([
+    db.select().from(slackApps).orderBy(asc(slackApps.createdAt)),
+    db.select().from(slackWebhooks).orderBy(asc(slackWebhooks.createdAt)),
+  ])
+  const slackAppList: SlackAppRow[] = slackAppRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    defaultChannel: row.defaultChannel,
+    teamName: row.teamName,
+    appId: row.appId,
+    enabled: row.enabled,
+    tokenPreview: keyPreview(row.botTokenEnc),
+    hasSigningSecret: Boolean(row.signingSecretEnc),
+    lastCheckedAt: row.lastCheckedAt
+      ? CONNECTOR_DATE_FMT.format(row.lastCheckedAt)
+      : null,
+  }))
+  const slackWebhookList: SlackWebhookRow[] = slackWebhookRows.map((row) => ({
+    id: row.id,
+    label: row.label,
+    channel: row.channel,
+    enabled: row.enabled,
+    urlPreview: urlPreview(row.urlEnc),
+    lastCheckedAt: row.lastCheckedAt
+      ? CONNECTOR_DATE_FMT.format(row.lastCheckedAt)
+      : null,
+  }))
+
   let connectorClients: ConnectorClientRow[] = []
   if (connectorsEnabled) {
     const clientRows = await listClients()
@@ -136,6 +196,10 @@ export default async function SettingsPage() {
       connectorSettings={connectorSettings}
       connectorClients={connectorClients}
       connectorMcpUrl={mcpResourceUrl()}
+      clickup={clickup}
+      slackApps={slackAppList}
+      slackWebhooks={slackWebhookList}
+      n8n={n8n}
     />
   )
 }

@@ -314,13 +314,13 @@ async function setDcrMode(mode: "off" | "allowlist" | "open"): Promise<void> {
   }
 }
 
-/** Selects the "Connectors" row in `/backflip/settings`'s master list,
+/** Selects the "MCP Connectors" row in `/backflip/settings`'s master list,
  *  landing on the `ConnectorsIntegration` detail pane. Caller must already be
  *  authenticated as an owner (`settings` capability) — a teammate never sees
  *  this page at all. */
 async function openConnectorsTab(page: Page): Promise<void> {
   await page.goto("/backflip/settings")
-  await page.getByRole("button", { name: "Connectors" }).click()
+  await page.getByRole("button", { name: "MCP Connectors" }).click()
 }
 
 /**
