@@ -89,6 +89,9 @@ function titleFrom(body: string, fallback: string): string {
   const flat = body
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\*\*/g, "")
+    // Concern-grouped contracts tag each clause `_(iface)_` / `_(inv)_` etc.
+    // before the text; taking it as the title made whole columns read "_(inv)_".
+    .replace(/^_\((?:iface|schema|inv|err|accept)\)_\s*(?:—|-|–)?\s*/, "")
     .replace(/\s+/g, " ")
     .trim()
   if (!flat) return fallback

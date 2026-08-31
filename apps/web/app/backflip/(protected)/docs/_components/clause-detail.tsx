@@ -91,7 +91,9 @@ export function ClauseDetail({
           L{clause.level} · {LEVEL_NAMES[clause.level]}
         </span>
         {clause.id ? <IdChip id={clause.id} /> : null}
-        <span className="truncate text-sm font-medium">{clause.title}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+          {clause.title}
+        </span>
         {badges.map((badge) => (
           <DriftBadgePill key={badge} badge={badge} />
         ))}
@@ -123,7 +125,7 @@ export function ClauseDetail({
           260px right rail, below the fold on narrow screens. It now runs
           directly under the title, where the reading order puts it
           (`L2-UI-39`). */}
-      <div className="flex flex-col gap-2 border-b bg-muted/30 px-4 py-2.5">
+      <div className="flex flex-none flex-col gap-1.5 border-b bg-muted/30 px-4 py-2.5">
         <TraceRow
           label={clause.level === 3 ? "Implements ↑" : "Implements (L1) ↑"}
           empty={
@@ -142,26 +144,29 @@ export function ClauseDetail({
           items={down}
           onPick={onPick}
         />
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="w-28 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="flex items-center gap-2">
+          <span className="w-28 flex-none text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
             Code (@spec)
             {codeRefs.length ? (
               <span className="ml-1 tabular-nums">({codeRefs.length})</span>
             ) : null}
           </span>
           {codeRefs.length ? (
-            codeRefs.map((path) => (
-              <a
-                key={path}
-                href={`${REPO_BLOB}${path}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="max-w-72 truncate rounded border bg-background px-1.5 py-px font-mono text-[11px] text-muted-foreground hover:text-foreground"
-                title={path}
-              >
-                {path}
-              </a>
-            ))
+            <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5">
+              {codeRefs.map((path) => (
+                <a
+                  key={path}
+                  href={`${REPO_BLOB}${path}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-44 flex-none truncate rounded border bg-background px-1.5 py-0.5 text-right font-mono text-[11px] text-muted-foreground hover:text-foreground"
+                  title={path}
+                  dir="rtl"
+                >
+                  {path}
+                </a>
+              ))}
+            </div>
           ) : (
             <span className="text-[11px] text-muted-foreground">
               {clause.level === 2
@@ -192,28 +197,32 @@ function TraceRow({
   onPick: (key: string) => void
 }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-      <span className="w-28 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+    <div className="flex items-center gap-2">
+      <span className="w-28 flex-none text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
         {label}
         {items.length ? (
           <span className="ml-1 tabular-nums">({items.length})</span>
         ) : null}
       </span>
       {items.length ? (
-        items.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => onPick(item.key)}
-            className="flex max-w-72 items-center gap-1.5 rounded border bg-background px-1.5 py-px text-[11px] hover:border-primary/40"
-            title={item.title}
-          >
-            {item.id ? (
-              <span className="font-mono text-muted-foreground">{item.id}</span>
-            ) : null}
-            <span className="truncate">{item.title}</span>
-          </button>
-        ))
+        <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5">
+          {items.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => onPick(item.key)}
+              className="flex w-44 flex-none items-center gap-1.5 rounded border bg-background px-1.5 py-0.5 text-left text-[11px] hover:border-primary/40"
+              title={item.title}
+            >
+              {item.id ? (
+                <span className="flex-none font-mono text-muted-foreground">
+                  {item.id}
+                </span>
+              ) : null}
+              <span className="truncate">{item.title}</span>
+            </button>
+          ))}
+        </div>
       ) : (
         <span className="text-[11px] text-muted-foreground">{empty}</span>
       )}

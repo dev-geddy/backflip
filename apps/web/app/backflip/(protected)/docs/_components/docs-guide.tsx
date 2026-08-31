@@ -1,9 +1,8 @@
 "use client"
 
-import { cn } from "@workspace/ui/lib/utils"
 import { RiArrowRightLine } from "@remixicon/react"
 
-import type { DocsGraph } from "../_lib/docs-graph"
+import { exampleTrace, type DocsGraph } from "../_lib/docs-graph"
 import { IdChip } from "./drift-badge"
 
 /**
@@ -49,25 +48,19 @@ const LEVELS: {
 
 export function DocsGuide({
   graph,
-  onPickClause,
-  onPickDomain,
+  onOpenTrace,
 }: {
   graph: DocsGraph
-  onPickClause: (key: string) => void
-  onPickDomain: (domain: string) => void
+  /** Loads a whole L1 → L2 → L3 chain into the cascade at once. */
+  onOpenTrace: (keys: { l1: string; l2: string; l3: string }) => void
 }) {
   const counted = (level: 1 | 2 | 3) =>
     graph.index.clauses.filter((c) => c.level === level).length
   const tagged = Object.keys(graph.index.codeRefs).length
 
-  // Worked entry points, checked against the live index so a retired ID never
-  // renders as a dead link.
-  const starts = [
-    { id: "L1-ARCH-01", why: "The two surfaces this platform is built from" },
-    { id: "L1-CON-06", why: "What the MCP connector is allowed to do" },
-    { id: "L2-AUTH-01", why: "How the admin gate actually works" },
-    { id: "L2-DB-16", why: "How secrets are stored" },
-  ].filter((s) => graph.byId.has(s.id))
+  // Derived, not curated: hand-picked entry points were arbitrary, went stale
+  // and taught nothing. This shows the model working on real clauses.
+  const example = exampleTrace(graph)
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 lg:px-6">
@@ -112,49 +105,62 @@ export function DocsGuide({
         </p>
       </div>
 
-      {starts.length ? (
+      {example ? (
         <>
-          <p className="mt-5 mb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-            Start here
+          <p className="mt-5 mb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+            One rule, end to end
           </p>
-          <ul className="divide-y rounded-lg border">
-            {starts.map((s) => (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => onPickClause(s.id)}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] hover:bg-muted/50"
-                >
-                  <IdChip id={s.id} />
-                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                    {s.why}
+          <p className="mb-2 text-[13px] text-muted-foreground">
+            The chain below is the most-cited one in these docs right now — a
+            constitution clause, a contract implementing it, and the note
+            recording how it was built. Open it to see the same trace loaded
+            into the columns below.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onOpenTrace({
+                l1: example.l1.key,
+                l2: example.l2.key,
+                l3: example.l3.key,
+              })
+            }
+            className="flex w-full flex-col gap-2 rounded-lg border p-3 text-left hover:border-primary/40 lg:flex-row lg:items-stretch"
+          >
+            {[example.l1, example.l2, example.l3].map((clause, i) => (
+              <span key={clause.key} className="flex min-w-0 flex-1 gap-2">
+                {i > 0 ? (
+                  <RiArrowRightLine
+                    aria-hidden
+                    className="mt-4 hidden size-4 flex-none text-muted-foreground lg:block"
+                  />
+                ) : null}
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] font-medium">
+                      L{clause.level}
+                    </span>
+                    {clause.id ? <IdChip id={clause.id} /> : null}
+                    <span className="truncate text-[10px] text-muted-foreground">
+                      {clause.domain}
+                    </span>
                   </span>
-                </button>
-              </li>
+                  <span className="line-clamp-2 text-[13px]">
+                    {clause.title}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {
+                      ["why it exists", "what it promises", "how it is built"][
+                        i
+                      ]
+                    }
+                  </span>
+                </span>
+              </span>
             ))}
-          </ul>
+          </button>
         </>
       ) : null}
-
-      <p className="mt-5 mb-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        Domains ({graph.index.domains.length})
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {graph.index.domains.map((d) => (
-          <button
-            key={d.key}
-            type="button"
-            onClick={() => onPickDomain(d.key)}
-            className={cn(
-              "rounded-full border px-2.5 py-1 text-xs text-muted-foreground",
-              "hover:border-primary/30 hover:text-foreground"
-            )}
-          >
-            {d.label}
-            <span className="ml-1 tabular-nums opacity-60">{d.contracts}</span>
-          </button>
-        ))}
-      </div>
     </div>
   )
 }

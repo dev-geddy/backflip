@@ -249,3 +249,57 @@ export function constraintsOn(
   }
   return out
 }
+
+/**
+ * One complete L1 → L2 → L3 chain, picked from the index, for the Guide to
+ * demonstrate the citation model with real clauses rather than prose.
+ *
+ * Chosen by richness, not by hand: the L1 clause with the most implementing
+ * contracts, then that contract with the most notes citing it. Deterministic
+ * for a given index, and it cannot name a clause the repo no longer has.
+ *
+ * @spec L2-UI-40
+ */
+const GENERIC_NOTES = new Set([
+  "File map",
+  "State",
+  "TODO",
+  "Notes / deviations",
+  "Gotchas",
+  "ADR",
+])
+
+export function exampleTrace(
+  graph: DocsGraph
+): { l1: DocClause; l2: DocClause; l3: DocClause } | null {
+  const l1s = graph.index.clauses
+    .filter((c) => c.level === 1 && c.id && graph.implementers.has(c.id))
+    .sort(
+      (a, b) =>
+        (graph.implementers.get(b.id!)?.length ?? 0) -
+          (graph.implementers.get(a.id!)?.length ?? 0) ||
+        a.id!.localeCompare(b.id!)
+    )
+
+  for (const l1 of l1s) {
+    const contracts = [...(graph.implementers.get(l1.id!) ?? [])]
+      .filter((c) => c.id && graph.notes.has(c.id))
+      .sort(
+        (a, b) =>
+          (graph.notes.get(b.id!)?.length ?? 0) -
+            (graph.notes.get(a.id!)?.length ?? 0) || a.id!.localeCompare(b.id!)
+      )
+    const l2 = contracts[0]
+    // Prefer a note section whose heading says something — every domain has a
+    // "File map", and it makes a poor demonstration of what notes are for.
+    const l3 = l2?.id
+      ? [...(graph.notes.get(l2.id) ?? [])].sort(
+          (a, b) =>
+            Number(GENERIC_NOTES.has(a.title)) -
+            Number(GENERIC_NOTES.has(b.title))
+        )[0]
+      : undefined
+    if (l2 && l3) return { l1, l2, l3 }
+  }
+  return null
+}

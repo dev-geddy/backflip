@@ -101,6 +101,13 @@ The explorer was built as a filter tool for someone who already knew the doc sys
 4. **Search** — 324 L2 clauses across 14 domains is not browsable by scrolling.
 5. **Trace promoted** out of the 260px right rail to under the clause title; the reading pane took the full width.
 
+Settled after testing:
+- **Content above navigation.** The guide/reading pane sits directly under the orientation strip; domain chips, trace bar and columns moved below it. The old order buried the guide three scrolls down and opened clause detail below the fold.
+- **Trace rows are single lines, scrolled — never wrapped.** `L1-ARCH-01` has fourteen implementers; as a wrapping chip cloud they filled the pane and pushed the clause text out of view. Fixed label column, uniform 176px chips, `overflow-x-auto`, and the bar is `flex-none` so it can never grow into the reading area.
+- **The guide no longer lists domains** — the chip row sits a few pixels below it; two selectors for one thing.
+- **Curated entry points were replaced by a derived one** (`L2-UI-40`). Four hand-picked IDs with hand-written blurbs had no principle behind them and taught nothing; one real chain, labelled why/what/how and loadable into the cascade, demonstrates the model instead.
+- **Kind-tag titles** (`L2-UI-41`): `titleFrom` took `_(inv)_` as the clause title, so concern-grouped contracts (auth, mcp) listed rows reading `_(inv)_`. Stripped — index-wide, zero clauses still title as their tag.
+
 ### Drift legend + marker parsing (`L2-UI-23`)
 - The landing view leads with a legend: one row per badge — pill, count, one-line meaning — including badges at zero, so the pills further down the list are always decodable. `no code` is the one that reads as alarming and usually isn't: it means no file carries an `@spec` tag for that ID, which for env/compose/script clauses is expected (JSON has no comments, and the doc rules say not to force tags onto invariant/error/acceptance IDs).
 - `needsConfirm` used to match the literal marker anywhere in a clause, so the two docs that *describe* the rule (`L2-UI-23` and this notes section) flagged themselves. `carriesNeedsConfirm()` in `parse-docs.ts` strips inline-code spans first — quoting the marker is not carrying it.

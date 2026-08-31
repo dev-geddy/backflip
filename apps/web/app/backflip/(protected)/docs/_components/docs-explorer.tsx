@@ -209,7 +209,53 @@ export function DocsExplorer({ index }: { index: DocsIndex }) {
 
       <OrientationStrip />
 
-      <div className="flex flex-wrap items-center gap-1.5 border-b px-4 pb-3 lg:px-6">
+      <div className="flex min-h-0 flex-1 flex-col">
+        {detail ? (
+          <ClauseDetail
+            clause={detail}
+            graph={graph}
+            focusId={focusId}
+            focused={focused}
+            onToggleFocus={() => setFocused((v) => !v)}
+            onPick={jump}
+            onBack={() => navigate({ clause: null })}
+          />
+        ) : (
+          <>
+            <div className="flex items-center gap-1 border-b px-4 py-1.5 lg:px-6">
+              {(["guide", "health"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() =>
+                    navigate({ view: tab === "guide" ? null : tab })
+                  }
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs transition-colors",
+                    view === tab
+                      ? "bg-muted font-medium text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {tab === "guide" ? "Guide" : "Health"}
+                </button>
+              ))}
+            </div>
+            {view === "guide" ? (
+              <DocsGuide
+                graph={graph}
+                onOpenTrace={(keys) =>
+                  navigate({ ...keys, clause: keys.l1, domain: null })
+                }
+              />
+            ) : (
+              <IndexSummary graph={graph} onPick={jump} />
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-b px-4 pt-3 pb-3 lg:px-6">
         <Chip active={domain === null} onClick={() => pickDomain(null)}>
           All domains
         </Chip>
@@ -337,51 +383,6 @@ export function DocsExplorer({ index }: { index: DocsIndex }) {
             </section>
           )
         })}
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col border-t">
-        {detail ? (
-          <ClauseDetail
-            clause={detail}
-            graph={graph}
-            focusId={focusId}
-            focused={focused}
-            onToggleFocus={() => setFocused((v) => !v)}
-            onPick={jump}
-            onBack={() => navigate({ clause: null })}
-          />
-        ) : (
-          <>
-            <div className="flex items-center gap-1 border-b px-4 py-1.5 lg:px-6">
-              {(["guide", "health"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() =>
-                    navigate({ view: tab === "guide" ? null : tab })
-                  }
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs transition-colors",
-                    view === tab
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {tab === "guide" ? "Guide" : "Health"}
-                </button>
-              ))}
-            </div>
-            {view === "guide" ? (
-              <DocsGuide
-                graph={graph}
-                onPickClause={jump}
-                onPickDomain={(d) => pickDomain(d)}
-              />
-            ) : (
-              <IndexSummary graph={graph} onPick={jump} />
-            )}
-          </>
-        )}
       </div>
     </div>
   )
