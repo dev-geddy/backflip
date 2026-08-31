@@ -1,4 +1,4 @@
-import type { DocClause, DocsIndex } from "./parse-docs"
+import type { DocClause, DocLevel, DocsIndex } from "./parse-docs"
 
 /**
  * Client-safe derivations over the docs index: cite edges in both directions,
@@ -199,10 +199,53 @@ export const BADGE_LABELS: Record<DriftBadge, string> = {
 }
 
 export const BADGE_HELP: Record<DriftBadge, string> = {
-  orphan:
-    "No L3 note cites this interface/schema ID — nothing records how it is built.",
+  orphan: "No L3 note cites this ID — nothing records how it is built.",
   "no-code":
-    "No source file carries an @spec tag for this interface/schema ID.",
-  "needs-confirm": "Clause is marked [NEEDS HUMAN CONFIRMATION].",
-  "broken-ref": "Cites an ID that is not defined anywhere in /docs.",
+    "No file carries an @spec tag for this ID — untagged, or not built yet.",
+  "needs-confirm":
+    "Marked [NEEDS HUMAN CONFIRMATION] — a human must confirm or rewrite it.",
+  "broken-ref": "Cites an ID that no doc defines.",
+}
+
+/**
+ * Free-text match over a clause: ID, title and body. Cheap `includes` on a
+ * lowercased haystack — the whole index is ~450 clauses, so anything smarter
+ * would cost more to maintain than it saves.
+ *
+ * @spec L2-UI-35
+ */
+export function matchesQuery(clause: DocClause, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return (
+    (clause.id ?? "").toLowerCase().includes(q) ||
+    clause.title.toLowerCase().includes(q) ||
+    clause.body.toLowerCase().includes(q) ||
+    clause.domain.toLowerCase().includes(q)
+  )
+}
+
+/**
+ * What is currently narrowing one column — the other levels' selections, named
+ * so a column header can say why its list shrank instead of shrinking silently.
+ *
+ * @spec L2-UI-36
+ */
+export function constraintsOn(
+  level: DocLevel,
+  selection: Selection,
+  byKey: Map<string, DocClause>
+): { key: string; level: DocLevel; label: string }[] {
+  const out: { key: string; level: DocLevel; label: string }[] = []
+  for (const [lvl, key] of [
+    [1, selection.l1],
+    [2, selection.l2],
+    [3, selection.l3],
+  ] as const) {
+    if (!key || lvl === level) continue
+    const clause = byKey.get(key)
+    if (!clause) continue
+    out.push({ key, level: lvl, label: clause.id ?? clause.title })
+  }
+  return out
 }

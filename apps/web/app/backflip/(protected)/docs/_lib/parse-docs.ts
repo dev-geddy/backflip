@@ -57,6 +57,16 @@ const ID_RE = /\bL([123])-[A-Z]+-\d+\b/g
 const BULLET_ID_RE = /^-\s+`(L[123]-[A-Z]+-\d+)`\s*(?:—|-|–)?\s*([\s\S]*)$/
 const NEEDS_CONFIRM = "[NEEDS HUMAN CONFIRMATION]"
 
+/**
+ * True when a clause actually *carries* the marker, rather than merely naming
+ * it. Inline-code spans are stripped first: the badge rule itself is written
+ * as `` `[NEEDS HUMAN CONFIRMATION]` `` in the ui contract and its notes, and
+ * flagging those made the docs that define the signal look like drift.
+ */
+function carriesNeedsConfirm(text: string): boolean {
+  return text.replace(/`[^`]*`/g, "").includes(NEEDS_CONFIRM)
+}
+
 function idsIn(text: string, level?: DocLevel): string[] {
   const out = new Set<string>()
   for (const m of text.matchAll(ID_RE)) {
@@ -196,7 +206,7 @@ function parseDoc(doc: RawDoc): DocClause[] {
               ? fileImplements
               : [],
         dependsOn: doc.level === 2 ? fileDepends : [],
-        needsConfirm: bullet.body.includes(NEEDS_CONFIRM),
+        needsConfirm: carriesNeedsConfirm(bullet.body),
         source: doc.path,
       })
     }
@@ -227,7 +237,7 @@ function parseDoc(doc: RawDoc): DocClause[] {
             ? idsIn(prose, 1)
             : [],
       dependsOn: [],
-      needsConfirm: prose.includes(NEEDS_CONFIRM),
+      needsConfirm: carriesNeedsConfirm(prose),
       source: doc.path,
     })
   }

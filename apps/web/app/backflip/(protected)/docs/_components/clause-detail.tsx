@@ -2,9 +2,12 @@
 
 import { useMemo } from "react"
 
-import { cn } from "@workspace/ui/lib/utils"
 import { Button } from "@workspace/ui/components/button"
-import { RiExternalLinkLine, RiFilter2Line } from "@remixicon/react"
+import {
+  RiArrowLeftLine,
+  RiExternalLinkLine,
+  RiFilter2Line,
+} from "@remixicon/react"
 
 import { Markdown } from "../../_components/markdown"
 import type { DocClause } from "../_lib/parse-docs"
@@ -37,6 +40,7 @@ export function ClauseDetail({
   focused,
   onToggleFocus,
   onPick,
+  onBack,
 }: {
   clause: DocClause
   graph: DocsGraph
@@ -45,6 +49,8 @@ export function ClauseDetail({
   focused: boolean
   onToggleFocus: () => void
   onPick: (key: string) => void
+  /** Returns to the drift overview — the pane this one replaced. */
+  onBack: () => void
 }) {
   const badges = graph.badges.get(clause.key) ?? []
   const down = useMemo(() => {
@@ -69,6 +75,18 @@ export function ClauseDetail({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
+        {/* Opening a clause replaces the overview pane outright, so without
+            this there is no way back to the drift list — the cascade above
+            only ever swaps one detail for another. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-2 h-7 gap-1 px-2 text-xs text-muted-foreground"
+          onClick={onBack}
+        >
+          <RiArrowLeftLine className="size-3.5" />
+          Overview
+        </Button>
         <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
           L{clause.level} · {LEVEL_NAMES[clause.level]}
         </span>
@@ -101,65 +119,68 @@ export function ClauseDetail({
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="min-w-0 px-4 py-3 text-[13px] leading-relaxed">
-          <Markdown>{body}</Markdown>
-        </div>
-
-        <aside className="space-y-4 border-t px-4 py-3 lg:border-t-0 lg:border-l">
-          <TraceList
-            label={clause.level === 3 ? "Implements" : "Implements (L1)"}
-            empty={
-              clause.level === 1 ? "Top of the tree." : "No upward citation."
-            }
-            items={up}
-            onPick={onPick}
-          />
-          <TraceList
-            label={clause.level === 1 ? "Contracts" : "Notes"}
-            empty={
-              clause.level === 3
-                ? "Notes are the bottom level."
-                : "Nothing cites this yet."
-            }
-            items={down}
-            onPick={onPick}
-          />
-          <div>
-            <p className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-              Code (@spec)
-            </p>
+      {/* The trace is the most-used control on this pane — it used to sit in a
+          260px right rail, below the fold on narrow screens. It now runs
+          directly under the title, where the reading order puts it
+          (`L2-UI-39`). */}
+      <div className="flex flex-col gap-2 border-b bg-muted/30 px-4 py-2.5">
+        <TraceRow
+          label={clause.level === 3 ? "Implements ↑" : "Implements (L1) ↑"}
+          empty={
+            clause.level === 1 ? "Top of the tree." : "No upward citation."
+          }
+          items={up}
+          onPick={onPick}
+        />
+        <TraceRow
+          label={clause.level === 1 ? "Contracts ↓" : "Notes ↓"}
+          empty={
+            clause.level === 3
+              ? "Notes are the bottom level."
+              : "Nothing cites this yet."
+          }
+          items={down}
+          onPick={onPick}
+        />
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="w-28 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+            Code (@spec)
             {codeRefs.length ? (
-              <ul className="space-y-1">
-                {codeRefs.map((path) => (
-                  <li key={path}>
-                    <a
-                      href={`${REPO_BLOB}${path}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block truncate font-mono text-[11px] text-muted-foreground hover:text-foreground"
-                      title={path}
-                    >
-                      {path}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">
-                {clause.level === 2
-                  ? BADGE_HELP["no-code"]
-                  : "Tags are carried by contract IDs."}
-              </p>
-            )}
-          </div>
-        </aside>
+              <span className="ml-1 tabular-nums">({codeRefs.length})</span>
+            ) : null}
+          </span>
+          {codeRefs.length ? (
+            codeRefs.map((path) => (
+              <a
+                key={path}
+                href={`${REPO_BLOB}${path}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="max-w-72 truncate rounded border bg-background px-1.5 py-px font-mono text-[11px] text-muted-foreground hover:text-foreground"
+                title={path}
+              >
+                {path}
+              </a>
+            ))
+          ) : (
+            <span className="text-[11px] text-muted-foreground">
+              {clause.level === 2
+                ? BADGE_HELP["no-code"]
+                : "Tags are carried by contract IDs."}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-[13px] leading-relaxed">
+        <Markdown>{body}</Markdown>
       </div>
     </div>
   )
 }
 
-function TraceList({
+/** One horizontal trace line: label, then clickable clause chips. */
+function TraceRow({
   label,
   items,
   empty,
@@ -171,34 +192,30 @@ function TraceList({
   onPick: (key: string) => void
 }) {
   return (
-    <div>
-      <p className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <span className="w-28 shrink-0 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
         {label}
         {items.length ? (
           <span className="ml-1 tabular-nums">({items.length})</span>
         ) : null}
-      </p>
+      </span>
       {items.length ? (
-        <ul className="space-y-1">
-          {items.map((item) => (
-            <li key={item.key}>
-              <button
-                type="button"
-                onClick={() => onPick(item.key)}
-                className={cn(
-                  "block w-full truncate text-left text-[11px] text-muted-foreground",
-                  "hover:text-foreground"
-                )}
-                title={item.title}
-              >
-                <span className="font-mono">{item.id ?? item.domain}</span>{" "}
-                {item.title}
-              </button>
-            </li>
-          ))}
-        </ul>
+        items.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onPick(item.key)}
+            className="flex max-w-72 items-center gap-1.5 rounded border bg-background px-1.5 py-px text-[11px] hover:border-primary/40"
+            title={item.title}
+          >
+            {item.id ? (
+              <span className="font-mono text-muted-foreground">{item.id}</span>
+            ) : null}
+            <span className="truncate">{item.title}</span>
+          </button>
+        ))
       ) : (
-        <p className="text-[11px] text-muted-foreground">{empty}</p>
+        <span className="text-[11px] text-muted-foreground">{empty}</span>
       )}
     </div>
   )

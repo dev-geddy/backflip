@@ -15,6 +15,7 @@
 - `settings/page.tsx` — loads the `analytics_config` row, maps to the view model (defaults: banner enabled, empty strings), passes to `IntegrationsView`. Satisfies `L2-ANALYTICS-05`.
 - `apps/web/app/api/public/analytics-config/route.ts` — the public read path. Explicit column select so the row's `id`/`updatedAt` can't leak. `force-dynamic` (no DB at build time) + ~5 min `Cache-Control`. try/catch → analytics-off. Satisfies `L2-ANALYTICS-03`, `L2-ANALYTICS-16`.
 - `apps/web/app/_components/analytics-gate.tsx` — client; the decision module. Fetch config → read consent → derive `allowed` → inject gtag.js. Satisfies `L2-ANALYTICS-04`, `L2-ANALYTICS-06`, `L2-ANALYTICS-07`, `L2-ANALYTICS-13`.
+- Consent lives only in the visitor's browser (`localStorage`, `L2-ANALYTICS-09`) — never on the server, so there is nothing to migrate or purge and no consent record to leak.
 - `apps/web/app/_components/cookie-banner.tsx` — client; presentational only (`role="region"`, `aria-label="Cookie consent"`, fixed bottom, `z-50`, Card-ish bar, `Button` outline/primary). No storage or GA knowledge.
 - `apps/web/app/_components/site-footer.tsx` — now renders `<AnalyticsGate />`.
 
