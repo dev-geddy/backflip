@@ -1,0 +1,46 @@
+# Release automation (@spec L2-DEVOPS-29).
+#
+# Every push to master, semantic-release reads the conventional commits since
+# the last tag, decides the next version, and in ONE run: bumps the root
+# package.json (which is what the app displays, L2-UI-19), writes the
+# changelog, commits both, tags, and publishes the GitHub release. Bump and
+# tag can no longer disagree — the failure that left v1.2.0 announcing v1.1.0.
+name: release
+
+on:
+  push:
+    branches: [master]
+
+# Never two releases at once: both would compute the same next version.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history + tags: the next version is derived from the commits
+          # since the last tag, and a shallow clone has neither.
+          fetch-depth: 0
+          # semantic-release authenticates with GITHUB_TOKEN itself; leaving
+          # the checkout credentials in place makes the push ambiguous.
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: corepack enable
+      - run: corepack yarn install --immutable
+
+      - run: corepack yarn semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
