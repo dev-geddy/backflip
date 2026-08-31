@@ -11,8 +11,10 @@ import { requireCapability } from "@/app/_lib/auth/guard"
 import { ROLE_LABELS } from "@/app/_lib/auth/permissions"
 import { isMcpEnabled } from "@/app/_lib/oauth/config"
 import { listGrants } from "@/app/_lib/oauth/tokens"
+import { getChromePreferences } from "@/app/_lib/theme/preferences"
 import { PageHeading, SectionLabel } from "../_components/page-heading"
 import { AccountRail } from "./_components/account-rail"
+import { AppearanceSection } from "./_components/appearance-section"
 import { ConnectionsSection } from "./_components/connections-section"
 import { AccountEmailSection } from "./_components/email-section"
 import { PasswordSection } from "./_components/password-section"
@@ -66,6 +68,8 @@ export default async function AccountPage() {
   const mcpEnabled = await isMcpEnabled()
   const grants = mcpEnabled ? await listGrants(sessionUser.id) : []
 
+  const chrome = await getChromePreferences(sessionUser.id)
+
   return (
     // Canvas mirrors ui-samples (bg-muted light / bg-background dark); only
     // cards sit on bg-card.
@@ -115,6 +119,18 @@ export default async function AccountPage() {
               <div className="border-t p-4">
                 <PasswordSection hasPassword={Boolean(row?.passwordHash)} />
               </div>
+            </div>
+          </div>
+
+          {/* Appearance — chrome theme for this admin, per user (`L2-UI-25`) */}
+          <div className="flex flex-col gap-3">
+            <SectionLabel>Appearance</SectionLabel>
+            <div className="rounded-xl border bg-card p-4">
+              <AppearanceSection
+                theme={chrome.theme}
+                headerThemed={chrome.headerThemed}
+                custom={chrome.custom}
+              />
             </div>
           </div>
 

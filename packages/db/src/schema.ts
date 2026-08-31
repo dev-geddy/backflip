@@ -432,3 +432,37 @@ export const n8nConfig = pgTable("n8n_config", {
   enabled: boolean("enabled").notNull().default(false),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 })
+
+/**
+ * Per-user UI preferences — one row per user, keyed by `userId` (also the pk,
+ * so a user can never accumulate two rows). Absent row = every default; the
+ * app reads it with a fallback rather than seeding on signup.
+ *
+ * `chromeTheme` is the admin shell's sidebar + header palette (`default` plus
+ * the named themes in `chrome-themes.ts`). Stored as free text, validated
+ * against that catalog in the action — an unknown value renders as `default`
+ * rather than breaking the shell, which keeps a retired theme harmless.
+ *
+ * @spec L2-DB-33, L2-UI-25
+ */
+export const userPreferences = pgTable("user_preference", {
+  userId: text("userId")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  chromeTheme: text("chromeTheme").notNull().default("default"),
+  /**
+   * Whether the chosen theme also tints the top header. Off → the header
+   * follows the plain light/dark mode while the sidebar stays themed.
+   * Default true: the theme is a platform identity, and both halves of the
+   * chrome carrying it is the stronger signal.
+   */
+  chromeHeaderThemed: boolean("chromeHeaderThemed").notNull().default(true),
+  /**
+   * Colors behind the `custom` theme — `#rrggbb`, validated in the action.
+   * Null until the user picks; the UI then falls back to its seed colors. Kept
+   * as two plain columns rather than JSON: two scalars, queried as scalars.
+   */
+  chromeCustomSurface: text("chromeCustomSurface"),
+  chromeCustomAccent: text("chromeCustomAccent"),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+})

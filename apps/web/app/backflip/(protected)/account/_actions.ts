@@ -19,6 +19,12 @@ import {
   sendEmailChangeVerification,
   sendPasswordChangedEmail,
 } from "@/app/_lib/email/send"
+import { isHexColor, resolveChromeTheme } from "@/app/_lib/theme/chrome-themes"
+import {
+  setChromeHeaderThemed,
+  setChromeTheme,
+  setCustomChrome,
+} from "@/app/_lib/theme/preferences"
 
 /**
  * Self-service account actions (`/backflip/account`). All self-scoped to the
@@ -255,4 +261,75 @@ export async function confirmEmailChange(token: string): Promise<SaveState> {
     ok: true,
     message: `Your email is now ${consumed.newEmail}. You’ll be signed out shortly.`,
   }
+}
+
+/**
+ * Save the signed-in user's chrome theme (admin sidebar + header palette).
+ * Self-scoped — the id comes from the session, never the client. An unknown
+ * theme id is refused rather than silently stored, so the catalog stays the
+ * only source of valid values (`L2-UI-26`).
+ *
+ * Revalidates the `/backflip` **layout**, not just this page: the shell reads
+ * the preference, so every route under it has to re-render with the new
+ * palette.
+ *
+ * @spec L2-UI-28
+ */
+export async function saveChromeTheme(theme: string): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+
+  const resolved = resolveChromeTheme(theme)
+  if (resolved !== theme) {
+    return { ok: false, message: "Unknown theme." }
+  }
+
+  await setChromeTheme(session.user.id, resolved)
+  revalidatePath("/backflip", "layout")
+  return { ok: true, message: "Theme saved." }
+}
+
+/**
+ * Toggle whether the chosen theme also tints the header. Off → the sidebar
+ * stays themed and the header returns to plain light/dark (`L2-UI-32`).
+ * Self-scoped; revalidates the layout for the same reason as the theme itself.
+ *
+ * @spec L2-UI-32
+ */
+export async function saveChromeHeaderThemed(
+  enabled: boolean
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+
+  await setChromeHeaderThemed(session.user.id, enabled)
+  revalidatePath("/backflip", "layout")
+  return {
+    ok: true,
+    message: enabled ? "Header tinted." : "Header left plain.",
+  }
+}
+
+/**
+ * Save the two colors behind the `custom` chrome theme. Both must be
+ * `#rrggbb`; everything else in the palette (ink, border, ring) is derived at
+ * render time, so no combination a user picks can be unreadable (`L2-UI-33`).
+ * Self-scoped; revalidates the layout so the shell repaints.
+ *
+ * @spec L2-UI-33
+ */
+export async function saveCustomChrome(
+  surface: string,
+  accent: string
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+
+  if (!isHexColor(surface) || !isHexColor(accent)) {
+    return { ok: false, message: "Colors must be hex values like #243043." }
+  }
+
+  await setCustomChrome(session.user.id, surface, accent)
+  revalidatePath("/backflip", "layout")
+  return { ok: true, message: "Custom colors saved." }
 }
