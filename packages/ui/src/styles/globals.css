@@ -86,7 +86,7 @@
  * toggle, so a platform keeps its identity in either mode. `default`
  * defines no block at all — it simply leaves the tokens above alone.
  *
- * Chroma is held ≤ 0.06: enough hue to tell six dark themes apart at a
+ * Chroma is held ≤ 0.06: enough hue to tell the dark themes apart at a
  * glance, far short of anything that competes with page content.
  *
  * Borders sit close to their surface (≈0.045 L apart) on purpose. The
@@ -170,54 +170,6 @@
     --chrome-header-accent: oklch(0.306 0.054 173);
 }
 
-[data-chrome-theme="plum"] {
-    --sidebar: oklch(0.251 0.051 328);
-    --sidebar-foreground: oklch(0.967 0.011 328);
-    --sidebar-primary: oklch(0.967 0.011 328);
-    --sidebar-primary-foreground: oklch(0.251 0.051 328);
-    --sidebar-accent: oklch(0.313 0.058 328);
-    --sidebar-accent-foreground: oklch(0.986 0.008 328);
-    --sidebar-border: oklch(0.296 0.053 328);
-    --sidebar-ring: oklch(0.635 0.066 328);
-    --chrome-header: oklch(0.251 0.051 328);
-    --chrome-header-foreground: oklch(0.967 0.011 328);
-    --chrome-header-muted: oklch(0.745 0.036 328);
-    --chrome-header-border: oklch(0.296 0.053 328);
-    --chrome-header-accent: oklch(0.313 0.058 328);
-}
-
-[data-chrome-theme="garnet"] {
-    --sidebar: oklch(0.249 0.049 22);
-    --sidebar-foreground: oklch(0.967 0.011 22);
-    --sidebar-primary: oklch(0.967 0.011 22);
-    --sidebar-primary-foreground: oklch(0.249 0.049 22);
-    --sidebar-accent: oklch(0.311 0.056 22);
-    --sidebar-accent-foreground: oklch(0.986 0.008 22);
-    --sidebar-border: oklch(0.294 0.051 22);
-    --sidebar-ring: oklch(0.633 0.064 22);
-    --chrome-header: oklch(0.249 0.049 22);
-    --chrome-header-foreground: oklch(0.967 0.011 22);
-    --chrome-header-muted: oklch(0.744 0.035 22);
-    --chrome-header-border: oklch(0.294 0.051 22);
-    --chrome-header-accent: oklch(0.311 0.056 22);
-}
-
-[data-chrome-theme="rust"] {
-    --sidebar: oklch(0.247 0.045 55);
-    --sidebar-foreground: oklch(0.965 0.01 55);
-    --sidebar-primary: oklch(0.965 0.01 55);
-    --sidebar-primary-foreground: oklch(0.247 0.045 55);
-    --sidebar-accent: oklch(0.309 0.052 55);
-    --sidebar-accent-foreground: oklch(0.985 0.007 55);
-    --sidebar-border: oklch(0.292 0.047 55);
-    --sidebar-ring: oklch(0.631 0.06 55);
-    --chrome-header: oklch(0.247 0.045 55);
-    --chrome-header-foreground: oklch(0.965 0.01 55);
-    --chrome-header-muted: oklch(0.741 0.033 55);
-    --chrome-header-border: oklch(0.292 0.047 55);
-    --chrome-header-accent: oklch(0.309 0.052 55);
-}
-
 [data-chrome-theme="gold"] {
     --sidebar: oklch(0.961 0.021 84);
     --sidebar-foreground: oklch(0.271 0.019 84);
@@ -280,38 +232,6 @@
     --chrome-header-muted: oklch(0.527 0.025 22);
     --chrome-header-border: oklch(0.928 0.026 22);
     --chrome-header-accent: oklch(0.92 0.03 22);
-}
-
-[data-chrome-theme="lilac"] {
-    --sidebar: oklch(0.958 0.019 312);
-    --sidebar-foreground: oklch(0.267 0.02 312);
-    --sidebar-primary: oklch(0.267 0.02 312);
-    --sidebar-primary-foreground: oklch(0.958 0.019 312);
-    --sidebar-accent: oklch(0.917 0.029 312);
-    --sidebar-accent-foreground: oklch(0.241 0.023 312);
-    --sidebar-border: oklch(0.925 0.025 312);
-    --sidebar-ring: oklch(0.672 0.037 312);
-    --chrome-header: oklch(0.958 0.019 312);
-    --chrome-header-foreground: oklch(0.267 0.02 312);
-    --chrome-header-muted: oklch(0.524 0.025 312);
-    --chrome-header-border: oklch(0.925 0.025 312);
-    --chrome-header-accent: oklch(0.917 0.029 312);
-}
-
-[data-chrome-theme="iris"] {
-    --sidebar: oklch(0.957 0.02 288);
-    --sidebar-foreground: oklch(0.266 0.021 288);
-    --sidebar-primary: oklch(0.266 0.021 288);
-    --sidebar-primary-foreground: oklch(0.957 0.02 288);
-    --sidebar-accent: oklch(0.916 0.03 288);
-    --sidebar-accent-foreground: oklch(0.24 0.024 288);
-    --sidebar-border: oklch(0.924 0.026 288);
-    --sidebar-ring: oklch(0.671 0.038 288);
-    --chrome-header: oklch(0.957 0.02 288);
-    --chrome-header-foreground: oklch(0.266 0.021 288);
-    --chrome-header-muted: oklch(0.523 0.026 288);
-    --chrome-header-border: oklch(0.924 0.026 288);
-    --chrome-header-accent: oklch(0.916 0.03 288);
 }
 
 /* The header paints itself from the chrome tokens and re-points the base

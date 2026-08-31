@@ -23,15 +23,10 @@ export type ChromeThemeId =
   | "slate"
   | "graphite"
   | "pine"
-  | "plum"
-  | "garnet"
-  | "rust"
   | "gold"
   | "sky-blue"
   | "sage"
   | "rose-gold"
-  | "lilac"
-  | "iris"
 
 export type ChromeTheme = {
   id: ChromeThemeId
@@ -86,37 +81,6 @@ export const CHROME_THEMES: ChromeTheme[] = [
       accent: "oklch(0.306 0.054 173)",
     },
   },
-  {
-    id: "plum",
-    label: "Plum",
-    group: "dark",
-    swatch: {
-      surface: "oklch(0.251 0.051 328)",
-      foreground: "oklch(0.967 0.011 328)",
-      accent: "oklch(0.313 0.058 328)",
-    },
-  },
-
-  {
-    id: "garnet",
-    label: "Garnet",
-    group: "dark",
-    swatch: {
-      surface: "oklch(0.249 0.049 22)",
-      foreground: "oklch(0.967 0.011 22)",
-      accent: "oklch(0.311 0.056 22)",
-    },
-  },
-  {
-    id: "rust",
-    label: "Rust",
-    group: "dark",
-    swatch: {
-      surface: "oklch(0.247 0.045 55)",
-      foreground: "oklch(0.965 0.01 55)",
-      accent: "oklch(0.309 0.052 55)",
-    },
-  },
 
   {
     id: "gold",
@@ -156,26 +120,6 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.96 0.02 22)",
       foreground: "oklch(0.27 0.02 22)",
       accent: "oklch(0.92 0.03 22)",
-    },
-  },
-  {
-    id: "lilac",
-    label: "Lilac",
-    group: "light",
-    swatch: {
-      surface: "oklch(0.958 0.019 312)",
-      foreground: "oklch(0.267 0.02 312)",
-      accent: "oklch(0.917 0.029 312)",
-    },
-  },
-  {
-    id: "iris",
-    label: "Iris",
-    group: "light",
-    swatch: {
-      surface: "oklch(0.957 0.02 288)",
-      foreground: "oklch(0.266 0.021 288)",
-      accent: "oklch(0.916 0.03 288)",
     },
   },
 ]
