@@ -89,3 +89,31 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 - Optional: `--rollback` flag in deploy.sh (repoint symlink to previous release).
 - Docker flavour has no rollback script (`rollback-for-pm2.sh` hardcodes `NEEDS_NVM=yes`). Either add `-f/--flavor` to it or ship `rollback-for-docker.sh`; the public docker guide currently documents redeploy-an-older-ref as the rollback path.
 - Optional: pm2 cluster mode + `wait_ready` for zero-downtime reloads if the blip ever matters.
+
+## Release versioning — `L2-DEVOPS-28`
+
+The running app reports the **root `package.json`** version: `next.config.ts` reads it at build time and inlines `NEXT_PUBLIC_APP_VERSION`, which `app-version.tsx` renders on the public footer and the admin Overview (`L2-UI-19`). Git tags and GitHub releases are separate artifacts — nothing derives one from the other.
+
+**Order for a manual release** — only needed if the automation is bypassed (getting this wrong is what broke v1.2.0):
+1. Bump the root `package.json` version.
+2. Commit it.
+3. Tag *that* commit and cut the release.
+
+Tagging first leaves the tag pointing at a tree whose version file is older, so every instance deployed from it announces the previous release. `v1.0.0` and `v1.1.0` were tagged correctly; `v1.2.0` was tagged on a tree still reading 1.1.0, so the live footer read v1.1.0 while v1.2.0 was the newest release.
+
+**Automated by semantic-release** (`L2-DEVOPS-29`): on every push to master, `.github/workflows/release.yml` runs `semantic-release`, which reads the conventional commits since the last tag, decides the next version (`feat` → minor, `fix` → patch, `!`/`BREAKING CHANGE` → major), then in one run bumps the root `package.json`, writes `CHANGELOG.md`, commits both as `chore(release): <version> [skip ci]`, tags, and publishes the GitHub release. Bump and tag come from the same run, so they cannot disagree — the three-step order above stops being a thing anyone has to remember.
+
+Details that matter:
+- `fetch-depth: 0` + `persist-credentials: false` on checkout: the next version is computed from history since the last tag (a shallow clone has neither), and semantic-release authenticates with `GITHUB_TOKEN` itself.
+- `concurrency: release` — two runs would compute the same next version.
+- `[skip ci]` in the release commit keeps Drone from rebuilding the bump.
+- `@semantic-release/npm` is configured `npmPublish: false`; the root package is `private` and nothing is published to a registry. It is in the plugin list only because it is what writes the version into `package.json`.
+- Master is unprotected, so the default `GITHUB_TOKEN` can push the release commit. If it is ever protected, this workflow needs an app token or a protection bypass, or the bump stops landing.
+- semantic-release 25 requires Node ^22.14 || ≥24.10. CI runs Node 22; a local Node 20 will refuse to run it (`corepack yarn semantic-release`), which is why the dry run for this change was done in a `node:22` container.
+
+**Guard**: `corepack yarn version:check` (`scripts/check-version.mjs`) fails when `package.json` is *behind* the newest release tag. Ahead is fine — that is a normal pre-release state. It runs in the Drone `ci` pipeline after typecheck and lint; the step fetches tags first, because Drone clones shallow and the guard skips itself when no tags are reachable.
+
+Deliberately **not** wired into the deploy scripts: deploying an older commit legitimately reports an older version, and a guard there would block rollbacks and hotfix deploys for doing exactly what they are supposed to do.
+
+The `apps/web/package.json` version (0.1.0-ish, private workspace) is unrelated and displayed nowhere.
+

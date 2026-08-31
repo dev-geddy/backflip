@@ -20,6 +20,33 @@ Repo commit convention. One rule set, no exceptions.
 ## Types
 `feat` `fix` `docs` `chore` `refactor` `style` `test` `build` `ci` `perf`
 
+**The type decides the released version** — semantic-release reads master's
+history on every push (`L2-DEVOPS-29`):
+
+| Type | Release |
+|------|---------|
+| `feat` | minor (1.2.0 → 1.3.0) |
+| `fix`, `perf`, `revert` | patch (1.2.0 → 1.2.1) |
+| everything else | none |
+
+A PR of only `docs`/`chore`/`refactor`/`test`/`ci` commits ships no release.
+That is intended, not a fault.
+
+## Breaking changes — `!`, never a footer
+Mark them `type(scope)!: subject`. The `!` is what triggers a **major** bump.
+
+- `feat(auth)!: drop the legacy session cookie`
+
+The usual Conventional Commits way — a `BREAKING CHANGE:` footer — is
+unavailable here, because this repo bans bodies and footers. Forget the `!`
+and a breaking change ships as a minor, silently.
+
+## PR titles are commit messages
+Merges land on master as one squashed commit whose subject is the **PR
+title** (see `feat(web): … (#33)` in the log), and that subject is what
+semantic-release analyses. A PR titled "Fix the thing" releases nothing.
+Title every PR by these same rules.
+
 ## Scope
 Optional. Package/area: `web`, `ui`, `auth`, `docs`, … Use when it sharpens meaning.
 

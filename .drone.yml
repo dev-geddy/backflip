@@ -20,6 +20,12 @@ steps:
       - corepack yarn install --immutable
       - corepack yarn typecheck
       - corepack yarn lint
+      # The app reports the root package.json version, so it must not sit
+      # behind the newest tag (@spec L2-DEVOPS-28). Drone clones shallow and
+      # without tags, so fetch them first — otherwise the guard skips itself
+      # and never actually runs here.
+      - git fetch --tags --quiet || true
+      - corepack yarn version:check
 
 ---
 # @spec L2-DEVOPS-09

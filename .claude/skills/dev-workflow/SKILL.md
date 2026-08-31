@@ -89,3 +89,14 @@ Colocation convention: non-route code → underscore dirs (`_components`, `_hook
 
 ## Stack
 Next.js 16.2.6 · React 19.2.4 · TypeScript 5 · Tailwind v4 · shadcn/ui · Turborepo · yarn 4.17.1.
+
+## Releases
+Automated — do not bump versions or cut tags by hand (`L2-DEVOPS-29`).
+
+- Merging to master runs semantic-release: it derives the version from the
+  commit types since the last tag, bumps the root `package.json`, writes
+  `CHANGELOG.md`, tags `v<version>` and publishes the GitHub release.
+- The root `package.json` version is what the app displays (`L2-UI-19`), so
+  editing it by hand desynchronises the app from its tag. `corepack yarn
+  version:check` fails a build where that has happened (`L2-DEVOPS-28`).
+- semantic-release needs Node ≥22.14; a local Node 20 cannot run it. CI does.
