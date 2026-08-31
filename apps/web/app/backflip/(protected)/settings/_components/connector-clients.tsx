@@ -413,10 +413,7 @@ function SecretReveal({
           </div>
 
           <div className="mt-3 flex flex-col gap-3">
-            <ConnectorCopyField
-              label="Remote MCP server URL"
-              value={mcpUrl}
-            />
+            <ConnectorCopyField label="Remote MCP server URL" value={mcpUrl} />
 
             <ConnectorCopyField label="Client ID" value={reveal.clientId} />
 

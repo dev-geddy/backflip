@@ -13,7 +13,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-01` — `@workspace/db` → `db` — Drizzle client (node-postgres) over `DATABASE_URL`. (`packages/db/src/client.ts`)
 - `L2-DB-02` — `@workspace/db` re-exports schema tables + `db`. (`packages/db/src/index.ts`)
 - `L2-DB-03` — Scripts (root): `corepack yarn db:generate | db:migrate | db:studio`, `corepack yarn init-owner`. Per-pkg: `db:push` too. Migrate/generate/studio via drizzle-kit.
-- `L2-DB-16` — `encryptSecret(plain)` / `decryptSecret(enc)` — AES-256-GCM over `ENCRYPTION_KEY` (sha256-derived). For secrets at rest (AI keys). Server-only. (`packages/db/src/crypto.ts`)
+- `L2-DB-16` — `encryptSecret(plain)` / `decryptSecret(enc)` — AES-256-GCM over `ENCRYPTION_KEY` (sha256-derived). For secrets at rest (AI/email/speech keys, ClickUp + Slack + n8n credentials). Server-only. (`packages/db/src/crypto.ts`)
 - `L2-DB-19` — `generateToken()` / `hashToken(raw)` — one-time link tokens: `generateToken` returns a 32-byte base64url random string (the raw token, never stored); `hashToken` returns its sha256 hex (what is persisted + looked up). Server-only. (`packages/db/src/crypto.ts`)
 - `L2-DB-04` — `corepack yarn init-owner` — seeds/updates platform owner from `.env.init` (one-off file, loaded inline by the seed script; never injected into the running app). `ADMIN_EMAIL` required; `ADMIN_PASSWORD` optional (omit → Google-only owner, `passwordHash` null; re-run without it preserves any existing hash). Role `owner`. Idempotent (upsert on email).
 
@@ -28,6 +28,11 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-20` — `user_token_type` enum (`password_reset` | `email_change`) + `user_token` table: `id`, `userId` (fk → user, cascade), `type`, `tokenHash` (unique — sha256 of raw), `newEmail` (nullable; email_change only), `expiresAt`, `consumedAt` (nullable), `createdAt`. Single-use, time-boxed. Owned by the `auth` domain.
 - `L2-DB-24` — `speech_config` table (single row, `provider` unique default `deepgram`): `id`, `provider`, `apiKeyEnc` (AES), `sttModel`, `ttsModel`, `enabled`, `updatedAt`. Migration `0007` creates. Owned by the `speech` domain (`L2-SPEECH-01`).
 - `L2-DB-23` — `analytics_config` table (single row, `kind` unique default `google_analytics`): `id`, `kind`, `measurementId` (nullable plaintext — public identifier, not a secret), `cookieBannerEnabled` (default true), `cookieBannerText`, `updatedAt`. Migration `0005` creates; `0006` seeds singleton row with default banner copy (`ON CONFLICT (kind) DO NOTHING`). Owned by the `analytics` domain (`L2-ANALYTICS-01`).
+
+- `L2-DB-29` — `clickup_config` table (single row, `kind` unique default `clickup`): `id`, `kind`, `apiTokenEnc` (AES), `teamId` (nullable plaintext workspace id), `clientId` + `clientSecretEnc` (nullable, reserved for a future OAuth app — never written today), `enabled` (default false), `updatedAt`. Migration `0012` creates. Owned by the `clickup` domain (`L2-CLICKUP-01`).
+- `L2-DB-30` — `slack_app` table (many rows): `id`, `name` (unique), `botTokenEnc` (AES), `signingSecretEnc` (AES, nullable), `defaultChannel`, `teamName`, `appId`, `enabled` (default true), `lastCheckedAt`, `createdAt`, `updatedAt`. Migration `0012` creates. Owned by the `slack` domain (`L2-SLACK-01`).
+- `L2-DB-31` — `slack_webhook` table (many rows): `id`, `label` (unique), `urlEnc` (AES, not null — the URL is the credential), `channel` (operator note), `enabled` (default true), `lastCheckedAt`, `createdAt`, `updatedAt`. Migration `0012` creates. Owned by the `slack` domain (`L2-SLACK-02`).
+- `L2-DB-32` — `n8n_config` table (single row, `kind` unique default `n8n`): `id`, `kind`, `baseUrl` (nullable plaintext instance origin), `apiKeyEnc` (AES), `enabled` (default false), `updatedAt`. Migration `0012` creates. Owned by the `n8n` domain (`L2-N8N-01`).
 
 - `L2-DB-25` — `oauth_client` table: `id`, `clientId` (random, unique), `clientName`, `redirectUris` (text array), `grantTypes` (text array), `scopes` (text array), `tokenEndpointAuthMethod` (default `none`), `clientSecretHash` (nullable — null for public clients, this connector phase mints only public clients), `createdAt`, `lastUsedAt` (nullable). Owned by the `mcp` domain (`L2-MCP-21`).
 - `L2-DB-26` — `oauth_auth_code` table: `id`, `codeHash` (hash-only, sha256, same pattern as `L2-DB-21`), `clientId` (fk → `oauth_client`, cascade), `userId` (fk → `user`, cascade), `redirectUri`, `scopes` (text array), `resource`, `codeChallenge`, `codeChallengeMethod`, `expiresAt` (60 s TTL), `consumedAt` (nullable — single-use). Owned by the `mcp` domain (`L2-MCP-22`).
@@ -45,7 +50,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-13` — `init-owner` without `ADMIN_EMAIL` → throws (define in `.env.init`). `ADMIN_PASSWORD` is optional (omit → Google-only owner).
 
 ## Acceptance
-- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token, analytics_config, speech_config); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`; `0005`+`0006` add + seed `analytics_config`; `0007` adds `speech_config`.
+- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token, analytics_config, speech_config, clickup_config, slack_app, slack_webhook, n8n_config); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`; `0005`+`0006` add + seed `analytics_config`; `0007` adds `speech_config`; `0012` adds the ClickUp/Slack/n8n tables.
 - `L2-DB-15` — `init-owner` yields a `user` row: email from `.env.init`, role `owner`. `passwordHash` non-null when `ADMIN_PASSWORD` is set, else null (Google-only owner). Re-run updates, no duplicate.
 
 ## Constrained L3

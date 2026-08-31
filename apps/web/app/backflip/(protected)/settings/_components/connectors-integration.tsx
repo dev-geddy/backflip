@@ -66,7 +66,7 @@ export function ConnectorsIntegration({
   return (
     <div className="flex flex-col gap-5 p-5">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">Connectors</h2>
+        <h2 className="text-lg font-semibold tracking-tight">MCP Connectors</h2>
         <p className="text-sm text-muted-foreground">
           Manage who can connect a Claude client to this platform through the
           MCP connector.
