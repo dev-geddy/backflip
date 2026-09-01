@@ -7,9 +7,9 @@ export type NumberedItem = {
 }
 
 /**
- * The homepage's two five-item sections share this row layout instead of a card
- * grid: five cards in an `auto-fit` grid wrap 4 + 1 on wide viewports, leaving
- * an all-but-empty second row. Rows use the full column width, stay one item
+ * The homepage's two six-item sections share this row layout instead of a card
+ * grid: cards in an `auto-fit` grid wrap unevenly on wide viewports, leaving a
+ * near-empty last row. Rows use the full column width, stay one item
  * per line at every size, and read as a pair across both sections.
  *
  * Each row is a large low-contrast index, then icon + title, then the body —

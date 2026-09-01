@@ -2,6 +2,7 @@ import {
   RiDashboardLine,
   RiDatabase2Line,
   RiPaletteLine,
+  RiPlugLine,
   RiShieldKeyholeLine,
   RiSparkling2Line,
 } from "@remixicon/react"
@@ -33,6 +34,11 @@ const FEATURES: NumberedItem[] = [
     icon: RiSparkling2Line,
     title: "AI, ready to call",
     body: "Provider config and typed helpers — swap models without rewiring your app.",
+  },
+  {
+    icon: RiPlugLine,
+    title: "MCP connector",
+    body: "A remote MCP server and its OAuth 2.1 provider already ship. Adding a tool is one file — auth, consent and role scoping are done.",
   },
 ]
 

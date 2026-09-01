@@ -1,10 +1,15 @@
-import { RiEyeLine, RiShieldUserLine, RiToggleLine } from "@remixicon/react"
+import {
+  RiEyeLine,
+  RiShieldUserLine,
+  RiToggleLine,
+  RiToolsLine,
+} from "@remixicon/react"
 
 import { Card } from "@workspace/ui/components/card"
 
 /**
- * Three parallel facts about the connector, not a sequence — no step numbers
- * here (contrast `HowItWorks`, which is genuinely ordered).
+ * Parallel facts about the connector, not a sequence — no step numbers here
+ * (contrast `HowItWorks`, which is genuinely ordered).
  */
 const FACTS = [
   {
@@ -18,6 +23,11 @@ const FACTS = [
     body: "Ask about users, the dashboard summary, and integration status. No write tools in this phase.",
   },
   {
+    icon: RiToolsLine,
+    title: "Your own tools next",
+    body: "Five tools ship today, and the hard part — OAuth, consent, per-role scoping — is already built. A new tool is one file registered against an existing scope.",
+  },
+  {
     icon: RiToggleLine,
     title: "Off until you turn it on",
     body: "Disabled by default — an owner enables it and creates the client in settings. Disconnect any time from the account page; a password change revokes it too.",
@@ -27,19 +37,19 @@ const FACTS = [
 export function ClaudeConnector() {
   return (
     <section
-      aria-label="Connect Claude to your platform"
+      aria-label="Connect Claude to your platform over MCP"
       className="mx-auto max-w-6xl px-6 py-20"
     >
       <div className="mb-9 flex flex-col gap-2">
         <span className="font-mono text-xs tracking-[0.08em] text-primary uppercase">
-          Claude connector
+          MCP connector
         </span>
         <h2 className="text-[clamp(1.625rem,3.4vw,2.125rem)] font-semibold tracking-tight">
           Ask your platform questions from Claude
         </h2>
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Connect claude.ai, Claude Desktop or Claude Code straight to your
-          platform over the Model Context Protocol, as an authenticated
+          platform over the Model Context Protocol (MCP), as an authenticated
           connector. It signs in as a real account, so it only ever sees what
           that user&apos;s role already allows.
         </p>

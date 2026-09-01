@@ -2,6 +2,7 @@ import {
   RiChat3Line,
   RiKey2Line,
   RiPlugLine,
+  RiRobot2Line,
   RiSlideshowLine,
   RiUserSettingsLine,
 } from "@remixicon/react"
@@ -9,7 +10,7 @@ import {
 import { type NumberedItem, NumberedList } from "./numbered-list"
 
 /**
- * The non-technical counterpart to `FEATURES` in `feature-list.tsx`: same five
+ * The non-technical counterpart to `FEATURES` in `feature-list.tsx`: same six
  * slots, but each one answers "what can I do with this?" rather than "what is
  * it built from". Every line maps to something the platform actually ships —
  * keep it that way; this section is not a wish list.
@@ -39,6 +40,11 @@ const CAPABILITIES: NumberedItem[] = [
     icon: RiKey2Line,
     title: "Own the whole thing",
     body: "Your server, your domain, your database, MIT-licensed code. No seats to buy, no platform to be locked into, nothing to migrate off later.",
+  },
+  {
+    icon: RiRobot2Line,
+    title: "Ask Claude about your platform",
+    body: "Connect Claude to it and ask who signed up or how things are doing, in chat. You switch it on in the admin; it reads only what your own account is allowed to see.",
   },
 ]
 
