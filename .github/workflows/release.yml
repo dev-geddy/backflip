@@ -5,6 +5,23 @@
 # package.json (which is what the app displays, L2-UI-19), writes the
 # changelog, commits both, tags, and publishes the GitHub release. Bump and
 # tag can no longer disagree — the failure that left v1.2.0 announcing v1.1.0.
+#
+# The default assumes master takes a plain push: semantic-release authenticates
+# with GITHUB_TOKEN over https and no extra setup exists to forget.
+#
+# OPTIONAL, only when a branch ruleset blocks that push — `required_signatures`
+# is the usual one, since the runner has no signing key and the commit is
+# rejected with GH013. Set secret RELEASE_SSH_KEY and the run switches to a
+# write-enabled deploy key on the ruleset's bypass list. On a user-owned repo
+# that list offers no GitHub Actions entry, only roles and "Deploy keys", so the
+# key is the one actor that can be exempted without lending an account's rights:
+# repo-scoped, revocable, impersonating nobody. Unset, the step is a no-op.
+#
+# Setup (once): ssh-keygen -t ed25519 -f backflip_release -N ""
+#   - public half  -> Settings > Deploy keys, "Allow write access" ticked
+#   - private half -> secret RELEASE_SSH_KEY
+#   - ruleset > Bypass list > Deploy keys
+# GITHUB_TOKEN authenticates the GitHub Release itself either way.
 name: release
 
 on:
@@ -30,9 +47,32 @@ jobs:
           # Full history + tags: the next version is derived from the commits
           # since the last tag, and a shallow clone has neither.
           fetch-depth: 0
-          # semantic-release authenticates with GITHUB_TOKEN itself; leaving
-          # the checkout credentials in place makes the push ambiguous.
+          # semantic-release authenticates the push itself — with GITHUB_TOKEN,
+          # or with the deploy key below when one is configured. Leaving the
+          # checkout credentials in place makes it ambiguous which git uses.
           persist-credentials: false
+
+      # semantic-release keeps the URL it finds on `origin` when that URL
+      # already authenticates (it probes with a dry-run push first), and falls
+      # back to a token-bearing https URL otherwise. Handing it an SSH origin
+      # plus a loaded key is what moves the push onto the deploy key; with no
+      # key configured, `origin` stays https and the token does the work.
+      - name: Use the release deploy key when one is configured
+        env:
+          RELEASE_SSH_KEY: ${{ secrets.RELEASE_SSH_KEY }}
+        run: |
+          if [ -z "$RELEASE_SSH_KEY" ]; then
+            echo "No RELEASE_SSH_KEY configured — pushing with GITHUB_TOKEN over https."
+            echo "That needs a master which takes a plain push; if a ruleset blocks it,"
+            echo "see the header of this workflow."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          umask 077
+          printf '%s\n' "$RELEASE_SSH_KEY" > ~/.ssh/release_key
+          ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/release_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+          git remote set-url origin git@github.com:${{ github.repository }}.git
 
       - uses: actions/setup-node@v4
         with:

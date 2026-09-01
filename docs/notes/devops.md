@@ -103,6 +103,12 @@ Tagging first leaves the tag pointing at a tree whose version file is older, so 
 
 **Automated by semantic-release** (`L2-DEVOPS-29`): on every push to master, `.github/workflows/release.yml` runs `semantic-release`, which reads the conventional commits since the last tag, decides the next version (`feat` → minor, `fix` → patch, `!`/`BREAKING CHANGE` → major), then in one run bumps the root `package.json`, writes `CHANGELOG.md`, commits both as `chore(release): <version> [skip ci]`, tags, and publishes the GitHub release. Bump and tag come from the same run, so they cannot disagree — the three-step order above stops being a thing anyone has to remember.
 
+**How the release commit is pushed.** By default with `GITHUB_TOKEN` over https, assuming a master that takes a plain push — no setup to forget, and nothing in the repo to configure.
+
+**When a ruleset blocks that push**, set secret `RELEASE_SSH_KEY` and the run switches to a **write-enabled deploy key** instead: `release.yml` writes the key, points `origin` at `git@github.com:…`, and semantic-release keeps that SSH remote because it probes the URL before falling back to a token-bearing https one. Unset, the step logs what it is skipping and exits 0. `GITHUB_TOKEN` authenticates the GitHub Release either way.
+
+The case that forced this: "Protect master branch" carries `required_signatures`, the runner has no signing key, and every run died with `GH013 … Commits must have verified signatures` in `prepare` — before the tag, before the release. The key has to sit on the ruleset's **bypass list**; a user-owned repo offers no GitHub Actions entry there, only roles and *Deploy keys*, so the key is the one actor exemptable without lending an account's rights. It is repo-scoped, revocable and impersonates nobody; rotating it means replacing both the deploy key and the secret. Signature enforcement still applies to every human push.
+
 Details that matter:
 - `fetch-depth: 0` + `persist-credentials: false` on checkout: the next version is computed from history since the last tag (a shallow clone has neither), and semantic-release authenticates with `GITHUB_TOKEN` itself.
 - `concurrency: release` — two runs would compute the same next version.
