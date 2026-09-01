@@ -107,7 +107,37 @@ Tagging first leaves the tag pointing at a tree whose version file is older, so 
 
 **When a ruleset blocks that push**, set secret `RELEASE_SSH_KEY` and the run switches to a **write-enabled deploy key** instead: `release.yml` writes the key, points `origin` at `git@github.com:…`, and semantic-release keeps that SSH remote because it probes the URL before falling back to a token-bearing https one. Unset, the step logs what it is skipping and exits 0. `GITHUB_TOKEN` authenticates the GitHub Release either way.
 
-The case that forced this: "Protect master branch" carries `required_signatures`, the runner has no signing key, and every run died with `GH013 … Commits must have verified signatures` in `prepare` — before the tag, before the release. The key has to sit on the ruleset's **bypass list**; a user-owned repo offers no GitHub Actions entry there, only roles and *Deploy keys*, so the key is the one actor exemptable without lending an account's rights. It is repo-scoped, revocable and impersonates nobody; rotating it means replacing both the deploy key and the secret. Signature enforcement still applies to every human push.
+The case that forced this: "Protect master branch" carries `required_signatures`, the runner has no signing key, and every run died with `GH013 … Commits must have verified signatures` in `prepare` — before the tag, before the release. The key has to sit on the ruleset's **bypass list**; a user-owned repo offers no GitHub Actions entry there, only roles and *Deploy keys*, so the key is the one actor exemptable without lending an account's rights. It is repo-scoped, revocable and impersonates nobody. Signature enforcement still applies to every human push.
+
+**Setting the key up** (once, from a clone; `<owner>/<repo>` = `dev-geddy/backflip`):
+
+```sh
+# 1. Keypair. Private half stays in ~/.ssh — never in the repo.
+ssh-keygen -t ed25519 -C "backflip release key" -f ~/.ssh/backflip_release -N ""
+
+# 2. Public half as a deploy key. --allow-write is the point: a read-only key
+#    bypasses nothing. Needs the admin:public_key scope
+#    (gh auth refresh -h github.com -s admin:public_key), or paste the .pub at
+#    Settings > Deploy keys with "Allow write access" ticked.
+gh repo deploy-key add ~/.ssh/backflip_release.pub \
+  --repo <owner>/<repo> --title "semantic-release" --allow-write
+
+# 3. Private half as the secret the workflow reads. Redirect, never paste —
+#    the key then appears in no terminal and no scrollback.
+gh secret set RELEASE_SSH_KEY --repo <owner>/<repo> < ~/.ssh/backflip_release
+```
+
+Then tick **Deploy keys** on the ruleset's bypass list (Settings → Rules → the ruleset → Bypass list → Add bypass → *Deploy keys*).
+
+Verify all three landed before relying on a release:
+
+```sh
+gh repo deploy-key list --repo <owner>/<repo>       # expect read-write
+gh api repos/<owner>/<repo>/actions/secrets         # expect RELEASE_SSH_KEY
+gh api repos/<owner>/<repo>/rulesets/<id> --jq .bypass_actors  # expect DeployKey
+```
+
+Two properties of that key worth remembering. It can push **anything** to the repo, force-pushes included — its bypass covers the whole ruleset, not only the signature rule. And unlike `GITHUB_TOKEN`, a deploy-key push *does* trigger workflows; the `[skip ci]` in the release commit subject (`.releaserc.json`) is what stops the loop. Revoke by deleting the deploy key; rotating means replacing the key and the secret together.
 
 Details that matter:
 - `fetch-depth: 0` + `persist-credentials: false` on checkout: the next version is computed from history since the last tag (a shallow clone has neither), and semantic-release authenticates with `GITHUB_TOKEN` itself.
