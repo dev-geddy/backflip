@@ -39,7 +39,7 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - Removed: `nav-main.tsx`, `nav-secondary.tsx` (nav inlined into `app-sidebar`).
 - Nav labels renamed to design: **Overview** (was Dashboard) + **Integrations** (was Settings; icon `RiCheckboxMultipleBlankLine`). Routes/capabilities unchanged (`/backflip`, `/backflip/settings`, caps `dashboard`/`settings`). Menu item type `text-[13px]`, group labels `text-[11px]` to match a1.
 - **Full-bleed content:** shell (`layout.tsx`) drops all outer padding/gap — content area is edge-to-edge on a `bg-muted/40` canvas. Master-detail pages (`MembersView`, `IntegrationsView`) are one flush region, no rounded cards/gaps (list `lg:w-[372px] lg:border-r` | detail `flex-1` | rail `w-[300px] xl:border-l p-4`). **Split surfaces:** shell root stays `bg-card` (detail + rail sit on it, rail keeps its `bg-muted/50` tint over card); the **list column is explicitly `bg-background`** so it matches the header/`SidebarInset` canvas. (Overview/Account differ: their canvas = ui-samples `bg-muted dark:bg-background`, content surface = `bg-card`.) Holds in both mobile states (list `w-full` below lg, detail `flex-1` when `mobileDetail`). Padded pages own their padding: dashboard + `account` wrap in `p-4 md:p-6` (account stays `max-w-5xl` centered).
-- `header-search.tsx` + `overview-jump.tsx` — quick-jump: `⌘K` `CommandDialog` (cmdk) over shared `jump-targets.ts` (`JUMP_GROUPS`) → `router.push`. Compact button in `site-header`; large field on Overview.
+- `header-search.tsx` + `overview-jump.tsx` — quick-jump: `⌘K` `CommandDialog` (cmdk) over shared `jump-targets.ts` (`JUMP_GROUPS`) → `router.push`. Compact button in `site-header`; large field on Overview. Group headings are typed like the sidebar's section labels (`text-[11px] tracking-wide uppercase`, no `font-medium` — mirrors `app-sidebar.tsx`'s `SidebarGroupLabel`), `select-none`, no background of their own: only the hovered/selected item carries `bg-muted`, so a filled band always means "clickable". Items are `cursor-pointer` and `pl-6` against the heading's `px-2.5`, indenting their text well under the title. Styled on `CommandGroup`/`CommandItem` in `packages/ui/src/components/command.tsx`, so both entry points and any later palette match.
 - Sidebar `collapsible="icon"` (was offcanvas) → contracted = 60px icon rail (design 1B); `--sidebar-width-icon: 3.5rem`; logo/user buttons get `group-data-[collapsible=icon]:p-0!` so tile/avatar fit. **Icon-only when contracted:** `p-0` alone was not enough — the brand label block and the user chip's label + `RiMore2Line` are `flex-1`/`ml-auto` siblings that keep their intrinsic width, so inside the 32px button (`overflow-hidden`, `justify-center`) they pushed the icon out of the box (measured brand tile `x = -24px`, footer avatar `x = -8.5px` — the mark disappeared). Both label blocks now carry `group-data-[collapsible=icon]:hidden` so they leave the flow entirely. Guarded by `e2e/admin-chrome.spec.ts`. Header divider is a plain `h-4 w-px bg-border` span (base-mira `Separator` forces `data-vertical:self-stretch`, so it stretched/misaligned — a fixed span centered by the header's `items-center` is reliable).
 
 ## Overview page — design 5A (L2-UI-03)
@@ -245,7 +245,16 @@ button, button-group, calendar, card, carousel, chart, checkbox, collapsible, co
 context-menu, dialog, direction, drawer, dropdown-menu, empty, field, hover-card, input,
 input-group, input-otp, item, kbd, label, marker, menubar, message, message-scroller,
 native-select, navigation-menu, pagination, popover, progress, radio-group, resizable,
-scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner, spinner, switch,
+scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner, spinner, switch
+(checked track is `bg-success` — the new semantic token, `L2-UI-03` — with
+`inset-shadow-sm inset-shadow-black/25` so the thumb sits in a well; the thumb stays light on green in
+both themes (`dark:data-checked:bg-foreground`, not `primary-foreground`, which is dark in dark mode).
+Thumb carries `border-foreground/15` + `shadow-sm`, stepped up to `border-foreground/30` + `shadow-md`
+when checked, `dark:border-background/35`|`/55` — the thumb is
+`bg-background`, i.e. the page's own colour, so without that hairline the circle dissolved into
+the page; a border rather than a ring because `box-border` keeps it inside the thumb instead of
+bleeding over the track edge. Track geometry left untouched. Root is `cursor-pointer`; the disabled
+variant still wins on specificity),
 table, tabs, textarea, toggle, toggle-group, tooltip.
 
 Hook: `src/hooks/use-mobile.ts` (sidebar).
