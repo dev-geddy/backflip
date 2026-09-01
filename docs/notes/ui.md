@@ -75,7 +75,7 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 
 ![Integrations — AI providers pane](../assets/admin-integrations.png)
 
-- Screenshot: `docs/assets/admin-integrations.png` (1200×600, unconfigured state, demo seed user). Also embedded in the repo `README.md`. Regenerate with `.screenshots/shoot.mjs` (gitignored local Playwright driver) and re-copy.
+- Screenshot: `docs/assets/admin-integrations.png` (1200×600, unconfigured state, e2e fixture owner; AI providers pane with the full integrations list — AI, Email, Google Analytics, Speech, MCP Connectors, ClickUp, Slack, n8n). Also embedded in the repo `README.md`. Regenerate with a throwaway spec in `apps/web/e2e/` at a 1200×600 viewport, then re-encode with sharp `png({ palette: true })` — recipe in `/docs/notes/testing.md`.
 - `settings/page.tsx` — same `aiConfig`/`emailConfig` fetch + `ProviderConfig[]`/`EmailConfig` shapes; renders `IntegrationsView`.
 - `_components/integrations-view.tsx` (client shell) — 3-col: list (2 rows: "AI providers · N connected", "Email · Resend", status dots) + detail + `xl:` rail; `mobileDetail` stack < lg. List column `bg-background` (header canvas), detail `bg-card`, rail `bg-muted/50` over the shell's `bg-card`.
 - `ai-integration.tsx` — provider tabs (Anthropic/OpenAI/Google, status dot) + `ProviderPane` (`key`ed per provider): design-2a header (logo tile · `PACKAGE` mono badge · connected status · **Enabled** toggle) over credentials (masked key) + Default-model select + "Set as default" toggle + Save (`saveAiConfig`), then Available-models list. Models list is static (`MODELS`) pending L2-AI live-models approval.
