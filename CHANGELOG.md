@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/dev-geddy/backflip/compare/v1.3.0...v1.4.0) (2026-09-01)
+
+
+### Features
+
+* **web:** surface the MCP connector on the homepage ([58f261e](https://github.com/dev-geddy/backflip/commit/58f261e04fa064384bfc9301920505f4e6ad5c5b))
+
 # [1.3.0](https://github.com/dev-geddy/backflip/compare/v1.2.0...v1.3.0) (2026-09-01)
 
 
