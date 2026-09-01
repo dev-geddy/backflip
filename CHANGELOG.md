@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/dev-geddy/backflip/compare/v1.4.0...v1.5.0) (2026-09-01)
+
+
+### Features
+
+* **ui:** green on-state switch and cleaner command palette rows ([816b11c](https://github.com/dev-geddy/backflip/commit/816b11c6283b3c4b554fe6ba4daaade4790d8413))
+
 # [1.4.0](https://github.com/dev-geddy/backflip/compare/v1.3.0...v1.4.0) (2026-09-01)
 
 
