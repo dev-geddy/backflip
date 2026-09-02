@@ -349,7 +349,6 @@
 [data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
 [data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar"][data-mobile="true"] {
     --grad-surface: var(--sidebar);
-    --grad-glow: var(--sidebar-accent);
     --foreground: var(--sidebar-foreground);
     --muted: var(--sidebar-accent);
     --muted-foreground: color-mix(in oklab, var(--sidebar-foreground) 64%, var(--sidebar));
@@ -372,8 +371,13 @@
    Declared once for two consumers — the live sidebar, and the miniature
    sidebars in the account picker, which cannot use `bg-sidebar` (they render
    inside the themed shell, so they paint from inline colours: `L2-UI-33`).
-   Both supply `--grad-surface` / `--grad-glow`; the weights below are the
-   dark-theme defaults, and the light palettes override them.
+   Each supplies only `--grad-surface` — its own half of the chrome. `--grad-*`
+   stops, the glow included, are inherited from the theme block so both halves
+   ramp between identical colours. Do NOT re-point `--grad-glow` per element:
+   pointing the sidebar at `var(--sidebar-accent)` dropped the literal's alpha
+   and broke seam continuity by ~5% L on every light palette (the accent is
+   darker than the surface there, so an opaque glow darkened the sidebar while
+   the header kept the 35% one).
 
    `background-image` only: `bg-sidebar` stays underneath as the flat base, so
    an unset variable or a browser without `color-mix` degrades to today's look.
