@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/dev-geddy/backflip/compare/v1.9.0...v1.9.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **web:** keep the chrome ramp continuous across the sidebar seam ([5e85e37](https://github.com/dev-geddy/backflip/commit/5e85e37461a8c8f6a518fd0b7249f958258455c3))
+
 # [1.9.0](https://github.com/dev-geddy/backflip/compare/v1.8.0...v1.9.0) (2026-09-02)
 
 
