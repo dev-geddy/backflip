@@ -21,6 +21,7 @@ import {
 } from "@/app/_lib/email/send"
 import { isHexColor, resolveChromeTheme } from "@/app/_lib/theme/chrome-themes"
 import {
+  setChromeHeaderGlass,
   setChromeHeaderThemed,
   setChromeTheme,
   setCustomChrome,
@@ -307,6 +308,27 @@ export async function saveChromeHeaderThemed(
   return {
     ok: true,
     message: enabled ? "Header tinted." : "Header left plain.",
+  }
+}
+
+/**
+ * Pin the header over the page as frosted glass, or return it to the opaque
+ * strip that scrolls away. Self-scoped; revalidates the layout so the shell
+ * repaints without a reload.
+ *
+ * @spec L2-UI-45
+ */
+export async function saveChromeHeaderGlass(
+  enabled: boolean
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+
+  await setChromeHeaderGlass(session.user.id, enabled)
+  revalidatePath("/backflip", "layout")
+  return {
+    ok: true,
+    message: enabled ? "Header pinned as glass." : "Header unpinned.",
   }
 }
 

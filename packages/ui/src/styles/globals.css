@@ -10,6 +10,7 @@
 
 :root {
     --background: oklch(1 0 0);
+    --stock-background-glass: oklch(1 0 0 / 0.72);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
@@ -47,6 +48,7 @@
 
 .dark {
     --background: oklch(0.145 0 0);
+    --stock-background-glass: oklch(0.145 0 0 / 0.72);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
@@ -111,6 +113,7 @@
 :root,
 .dark {
     --chrome-header: var(--background);
+    --chrome-header-glass: var(--stock-background-glass);
     --chrome-header-foreground: var(--foreground);
     --chrome-header-muted: var(--muted-foreground);
     --chrome-header-border: var(--border);
@@ -127,6 +130,9 @@
 }
 
 [data-chrome-theme="slate"] {
+    --grad-top: oklch(0.271 0.026 258);
+    --grad-bottom: oklch(0.215 0.026 258);
+    --grad-glow: oklch(0.369 0.031 258 / 0.5);
     --sidebar: oklch(0.247 0.026 258);
     --sidebar-foreground: oklch(0.966 0.006 258);
     --sidebar-primary: oklch(0.966 0.006 258);
@@ -136,6 +142,7 @@
     --sidebar-border: oklch(0.292 0.028 258);
     --sidebar-ring: oklch(0.63 0.036 258);
     --chrome-header: oklch(0.247 0.026 258);
+    --chrome-header-glass: oklch(0.247 0.026 258 / 0.72);
     --chrome-header-foreground: oklch(0.966 0.006 258);
     --chrome-header-muted: oklch(0.742 0.02 258);
     --chrome-header-border: oklch(0.292 0.028 258);
@@ -143,6 +150,9 @@
 }
 
 [data-chrome-theme="graphite"] {
+    --grad-top: oklch(0.24 0 0);
+    --grad-bottom: oklch(0.184 0 0);
+    --grad-glow: oklch(0.338 0 0 / 0.5);
     --sidebar: oklch(0.216 0 0);
     --sidebar-foreground: oklch(0.968 0 0);
     --sidebar-primary: oklch(0.968 0 0);
@@ -152,6 +162,7 @@
     --sidebar-border: oklch(0.262 0 0);
     --sidebar-ring: oklch(0.6 0 0);
     --chrome-header: oklch(0.216 0 0);
+    --chrome-header-glass: oklch(0.216 0 0 / 0.72);
     --chrome-header-foreground: oklch(0.968 0 0);
     --chrome-header-muted: oklch(0.727 0 0);
     --chrome-header-border: oklch(0.262 0 0);
@@ -159,6 +170,9 @@
 }
 
 [data-chrome-theme="pine"] {
+    --grad-top: oklch(0.268 0.047 173);
+    --grad-bottom: oklch(0.212 0.047 173);
+    --grad-glow: oklch(0.366 0.054 173 / 0.5);
     --sidebar: oklch(0.244 0.047 173);
     --sidebar-foreground: oklch(0.964 0.011 173);
     --sidebar-primary: oklch(0.964 0.011 173);
@@ -168,13 +182,37 @@
     --sidebar-border: oklch(0.289 0.049 173);
     --sidebar-ring: oklch(0.628 0.062 173);
     --chrome-header: oklch(0.244 0.047 173);
+    --chrome-header-glass: oklch(0.244 0.047 173 / 0.72);
     --chrome-header-foreground: oklch(0.964 0.011 173);
     --chrome-header-muted: oklch(0.739 0.035 173);
     --chrome-header-border: oklch(0.289 0.049 173);
     --chrome-header-accent: oklch(0.306 0.054 173);
 }
 
+[data-chrome-theme="aubergine"] {
+    --grad-top: oklch(0.286 0.086 325);
+    --grad-bottom: oklch(0.23 0.086 325);
+    --grad-glow: oklch(0.384 0.098 325 / 0.5);
+    --sidebar: oklch(0.262 0.086 325);
+    --sidebar-foreground: oklch(0.966 0.014 325);
+    --sidebar-primary: oklch(0.966 0.014 325);
+    --sidebar-primary-foreground: oklch(0.262 0.086 325);
+    --sidebar-accent: oklch(0.324 0.098 325);
+    --sidebar-accent-foreground: oklch(0.985 0.009 325);
+    --sidebar-border: oklch(0.307 0.09 325);
+    --sidebar-ring: oklch(0.645 0.108 325);
+    --chrome-header: oklch(0.262 0.086 325);
+    --chrome-header-glass: oklch(0.262 0.086 325 / 0.72);
+    --chrome-header-foreground: oklch(0.966 0.014 325);
+    --chrome-header-muted: oklch(0.748 0.045 325);
+    --chrome-header-border: oklch(0.307 0.09 325);
+    --chrome-header-accent: oklch(0.324 0.098 325);
+}
+
 [data-chrome-theme="gold"] {
+    --grad-top: oklch(0.973 0.021 84);
+    --grad-bottom: oklch(0.935 0.021 84);
+    --grad-glow: oklch(0.921 0.032 84 / 0.35);
     --sidebar: oklch(0.961 0.021 84);
     --sidebar-foreground: oklch(0.271 0.019 84);
     --sidebar-primary: oklch(0.271 0.019 84);
@@ -184,6 +222,7 @@
     --sidebar-border: oklch(0.929 0.028 84);
     --sidebar-ring: oklch(0.68 0.038 84);
     --chrome-header: oklch(0.961 0.021 84);
+    --chrome-header-glass: oklch(0.961 0.021 84 / 0.72);
     --chrome-header-foreground: oklch(0.271 0.019 84);
     --chrome-header-muted: oklch(0.528 0.025 84);
     --chrome-header-border: oklch(0.929 0.028 84);
@@ -191,6 +230,9 @@
 }
 
 [data-chrome-theme="sky-blue"] {
+    --grad-top: oklch(0.971 0.018 246);
+    --grad-bottom: oklch(0.933 0.018 246);
+    --grad-glow: oklch(0.918 0.028 246 / 0.35);
     --sidebar: oklch(0.959 0.018 246);
     --sidebar-foreground: oklch(0.268 0.019 246);
     --sidebar-primary: oklch(0.268 0.019 246);
@@ -200,6 +242,7 @@
     --sidebar-border: oklch(0.926 0.024 246);
     --sidebar-ring: oklch(0.674 0.036 246);
     --chrome-header: oklch(0.959 0.018 246);
+    --chrome-header-glass: oklch(0.959 0.018 246 / 0.72);
     --chrome-header-foreground: oklch(0.268 0.019 246);
     --chrome-header-muted: oklch(0.525 0.024 246);
     --chrome-header-border: oklch(0.926 0.024 246);
@@ -207,6 +250,9 @@
 }
 
 [data-chrome-theme="sage"] {
+    --grad-top: oklch(0.969 0.021 154);
+    --grad-bottom: oklch(0.931 0.021 154);
+    --grad-glow: oklch(0.915 0.031 154 / 0.35);
     --sidebar: oklch(0.957 0.021 154);
     --sidebar-foreground: oklch(0.266 0.021 154);
     --sidebar-primary: oklch(0.266 0.021 154);
@@ -216,6 +262,7 @@
     --sidebar-border: oklch(0.923 0.027 154);
     --sidebar-ring: oklch(0.67 0.039 154);
     --chrome-header: oklch(0.957 0.021 154);
+    --chrome-header-glass: oklch(0.957 0.021 154 / 0.72);
     --chrome-header-foreground: oklch(0.266 0.021 154);
     --chrome-header-muted: oklch(0.522 0.026 154);
     --chrome-header-border: oklch(0.923 0.027 154);
@@ -223,6 +270,9 @@
 }
 
 [data-chrome-theme="rose-gold"] {
+    --grad-top: oklch(0.972 0.02 22);
+    --grad-bottom: oklch(0.934 0.02 22);
+    --grad-glow: oklch(0.92 0.03 22 / 0.35);
     --sidebar: oklch(0.96 0.02 22);
     --sidebar-foreground: oklch(0.27 0.02 22);
     --sidebar-primary: oklch(0.27 0.02 22);
@@ -232,6 +282,7 @@
     --sidebar-border: oklch(0.928 0.026 22);
     --sidebar-ring: oklch(0.678 0.038 22);
     --chrome-header: oklch(0.96 0.02 22);
+    --chrome-header-glass: oklch(0.96 0.02 22 / 0.72);
     --chrome-header-foreground: oklch(0.27 0.02 22);
     --chrome-header-muted: oklch(0.527 0.025 22);
     --chrome-header-border: oklch(0.928 0.026 22);
@@ -248,6 +299,7 @@
    this section has to gate itself. */
 [data-chrome-theme] [data-slot="site-header"] {
     background-color: var(--chrome-header);
+    --grad-surface: var(--chrome-header);
     color: var(--chrome-header-foreground);
     --foreground: var(--chrome-header-foreground);
     --muted: var(--chrome-header-accent);
@@ -265,6 +317,7 @@
    Declared after the theme blocks: same specificity, later wins. */
 [data-chrome-header="plain"] {
     --chrome-header: var(--stock-background);
+    --chrome-header-glass: var(--stock-background-glass);
     --chrome-header-foreground: var(--stock-foreground);
     --chrome-header-muted: var(--stock-muted-foreground);
     --chrome-header-border: var(--stock-border);
@@ -287,6 +340,8 @@
    a non-default theme so the stock shell keeps exactly the look it has. */
 [data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
 [data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar"][data-mobile="true"] {
+    --grad-surface: var(--sidebar);
+    --grad-glow: var(--sidebar-accent);
     --foreground: var(--sidebar-foreground);
     --muted: var(--sidebar-accent);
     --muted-foreground: color-mix(in oklab, var(--sidebar-foreground) 64%, var(--sidebar));
@@ -295,6 +350,90 @@
     --border: var(--sidebar-border);
     --input: var(--sidebar-border);
     --ring: var(--sidebar-ring);
+}
+
+/* Chrome gradient — a tonal ramp plus one corner glow, both derived from the
+   theme's own two colours rather than hand-authored per palette, so a new
+   theme gets its gradient by declaring a surface and an accent and nothing
+   else. Deliberately shallow: the stops sit close together, so the eye reads
+   depth rather than "one purple fading into another purple".
+
+   The 160deg ramp runs light at the top-left to dark at the bottom-right; the
+   radial glow lifts the top-left corner, where the brand tile sits.
+
+   Declared once for two consumers — the live sidebar, and the miniature
+   sidebars in the account picker, which cannot use `bg-sidebar` (they render
+   inside the themed shell, so they paint from inline colours: `L2-UI-33`).
+   Both supply `--grad-surface` / `--grad-glow`; the weights below are the
+   dark-theme defaults, and the light palettes override them.
+
+   `background-image` only: `bg-sidebar` stays underneath as the flat base, so
+   an unset variable or a browser without `color-mix` degrades to today's look.
+
+   @spec L2-UI-44 */
+.chrome-gradient,
+[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
+[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar"][data-mobile="true"],
+[data-chrome-theme]:not([data-chrome-theme="default"])[data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
+    background-image:
+        radial-gradient(circle at 0% 0%, var(--grad-glow), transparent 45%),
+        linear-gradient(
+            160deg,
+            var(--grad-top) 0%,
+            var(--grad-surface) 55%,
+            var(--grad-bottom) 100%
+        );
+}
+
+/* The chrome is an L: a full-height sidebar and, to its right, a header strip.
+   Painted per element each would restart its own ramp, and the seam would show
+   two different gradients meeting at a corner. `fixed` makes the viewport the
+   positioning area for both, so each paints its own slice of ONE ramp — the
+   glow sits in the sidebar's top-left, and the header continues where the
+   sidebar's top edge leaves off.
+
+   The header only joins in when it is tinted (`L2-UI-32`); untinted it keeps
+   the flat stock chrome. The mobile sheet is left box-local on purpose — it is
+   an overlay with no header beside it, so it has nothing to line up with.
+
+   @spec L2-UI-44 */
+[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
+[data-chrome-theme]:not([data-chrome-theme="default"])[data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
+    background-attachment: fixed;
+}
+
+/* Frosted-glass header (`L2-UI-45`) — opt-in, off by default.
+ *
+ * It is orthogonal to the tint: a plain header can float too, which is why it
+ * rides its own attribute rather than a third value of `data-chrome-header`.
+ *
+ * The header stays in flow and sticks to the top of the scroll container, and
+ * its own paint drops to a translucent wash so the page reads through it,
+ * blurred. `backdrop-filter` is what does the blurring; it needs something to
+ * see, so the gradient image is removed here — an opaque `background-image`
+ * would sit in front of the blur and defeat it. The tint still comes from the
+ * theme, just at 72% rather than solid.
+ *
+ * `-webkit-backdrop-filter` is still required by Safari.
+ *
+ * A browser with no `backdrop-filter` support gets no wash at all — an
+ * unblurred translucent strip with page content sliding under it is worse than
+ * an opaque one — so it falls back to the solid header colour and keeps only
+ * the pinning. */
+[data-chrome-glass="on"] [data-slot="site-header"] {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-image: none;
+    background-color: var(--chrome-header-glass);
+    -webkit-backdrop-filter: blur(14px) saturate(1.6);
+    backdrop-filter: blur(14px) saturate(1.6);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    [data-chrome-glass="on"] [data-slot="site-header"] {
+        background-color: var(--chrome-header);
+    }
 }
 
 @theme inline {

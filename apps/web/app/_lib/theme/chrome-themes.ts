@@ -10,9 +10,11 @@
  * That is the point — the chrome is how you tell two Backflip platforms apart
  * at a glance, so it must not change under you when the mode flips.
  *
- * Saturation stays low (chroma ≤ 0.06) — enough hue that four dark themes are
- * told apart at a glance, far short of anything that competes with page
- * content or tires the eye over a working day.
+ * Saturation stays low — ≤ 0.10 on the dark surfaces, ≤ 0.03 on the light
+ * ones. Enough hue that the themes are told apart at a glance, far short of
+ * anything that competes with page content or tires the eye over a working
+ * day. Aubergine sits at the top of that range on purpose: below ~0.08 a plum
+ * reads as grey-violet rather than as a colour.
  *
  * @spec L2-UI-26
  */
@@ -23,6 +25,7 @@ export type ChromeThemeId =
   | "slate"
   | "graphite"
   | "pine"
+  | "aubergine"
   | "gold"
   | "sky-blue"
   | "sage"
@@ -33,8 +36,19 @@ export type ChromeTheme = {
   label: string
   /** Grouping in the picker. `default` is its own group of one. */
   group: "default" | "dark" | "light"
-  /** Preview swatch: sidebar surface + its foreground, as CSS colors. */
-  swatch: { surface: string; foreground: string; accent: string }
+  /**
+   * Preview swatch: sidebar surface + its foreground, as CSS colors, plus the
+   * three stops the chrome gradient ramps between (`L2-UI-44`). The stops
+   * duplicate what the theme's stylesheet block declares — a preview tile
+   * cannot read them off the live shell, because it renders *inside* it — and
+   * `chrome-themes.test.ts` locks the two copies together.
+   */
+  swatch: {
+    surface: string
+    foreground: string
+    accent: string
+    grad?: { top: string; bottom: string; glow: string }
+  }
 }
 
 export const CHROME_THEMES: ChromeTheme[] = [
@@ -59,6 +73,11 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.247 0.026 258)",
       foreground: "oklch(0.966 0.006 258)",
       accent: "oklch(0.309 0.031 258)",
+      grad: {
+        top: "oklch(0.271 0.026 258)",
+        bottom: "oklch(0.215 0.026 258)",
+        glow: "oklch(0.369 0.031 258 / 0.5)",
+      },
     },
   },
   {
@@ -69,6 +88,11 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.216 0 0)",
       foreground: "oklch(0.968 0 0)",
       accent: "oklch(0.278 0 0)",
+      grad: {
+        top: "oklch(0.24 0 0)",
+        bottom: "oklch(0.184 0 0)",
+        glow: "oklch(0.338 0 0 / 0.5)",
+      },
     },
   },
   {
@@ -79,6 +103,26 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.244 0.047 173)",
       foreground: "oklch(0.964 0.011 173)",
       accent: "oklch(0.306 0.054 173)",
+      grad: {
+        top: "oklch(0.268 0.047 173)",
+        bottom: "oklch(0.212 0.047 173)",
+        glow: "oklch(0.366 0.054 173 / 0.5)",
+      },
+    },
+  },
+  {
+    id: "aubergine",
+    label: "Aubergine",
+    group: "dark",
+    swatch: {
+      surface: "oklch(0.262 0.086 325)",
+      foreground: "oklch(0.966 0.014 325)",
+      accent: "oklch(0.324 0.098 325)",
+      grad: {
+        top: "oklch(0.286 0.086 325)",
+        bottom: "oklch(0.23 0.086 325)",
+        glow: "oklch(0.384 0.098 325 / 0.5)",
+      },
     },
   },
 
@@ -90,6 +134,11 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.961 0.021 84)",
       foreground: "oklch(0.271 0.019 84)",
       accent: "oklch(0.921 0.032 84)",
+      grad: {
+        top: "oklch(0.973 0.021 84)",
+        bottom: "oklch(0.935 0.021 84)",
+        glow: "oklch(0.921 0.032 84 / 0.35)",
+      },
     },
   },
   {
@@ -100,6 +149,11 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.959 0.018 246)",
       foreground: "oklch(0.268 0.019 246)",
       accent: "oklch(0.918 0.028 246)",
+      grad: {
+        top: "oklch(0.971 0.018 246)",
+        bottom: "oklch(0.933 0.018 246)",
+        glow: "oklch(0.918 0.028 246 / 0.35)",
+      },
     },
   },
   {
@@ -110,6 +164,11 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.957 0.021 154)",
       foreground: "oklch(0.266 0.021 154)",
       accent: "oklch(0.915 0.031 154)",
+      grad: {
+        top: "oklch(0.969 0.021 154)",
+        bottom: "oklch(0.931 0.021 154)",
+        glow: "oklch(0.915 0.031 154 / 0.35)",
+      },
     },
   },
   {
@@ -120,9 +179,41 @@ export const CHROME_THEMES: ChromeTheme[] = [
       surface: "oklch(0.96 0.02 22)",
       foreground: "oklch(0.27 0.02 22)",
       accent: "oklch(0.92 0.03 22)",
+      grad: {
+        top: "oklch(0.972 0.02 22)",
+        bottom: "oklch(0.934 0.02 22)",
+        glow: "oklch(0.92 0.03 22 / 0.35)",
+      },
     },
   },
 ]
+
+/**
+ * Inputs for the shared chrome gradient (`.chrome-gradient` in `globals.css`),
+ * as a style object for a preview tile. The recipe itself lives in CSS and is
+ * declared exactly once — a tile only supplies the stops it ramps between.
+ *
+ * The stops are explicit rather than derived with `color-mix()`: the
+ * production CSS minifier folds a `color-mix()` whose arguments are `var()`
+ * references down to its first colour, which silently turned the built ramp
+ * into white → surface → black while it looked right in dev.
+ *
+ * The live shell needs none of this: its rule reads `--sidebar` and
+ * `--sidebar-accent` straight off the active theme, custom palettes included.
+ *
+ * @spec L2-UI-44
+ */
+export function gradientVars(
+  swatch: ChromeTheme["swatch"]
+): Record<string, string> {
+  if (!swatch.grad) return {}
+  return {
+    "--grad-surface": swatch.surface,
+    "--grad-top": swatch.grad.top,
+    "--grad-bottom": swatch.grad.bottom,
+    "--grad-glow": swatch.grad.glow,
+  }
+}
 
 // `custom` is deliberately absent from CHROME_THEMES — it renders as its own
 // card, not a swatch tile — but it is still a storable, resolvable id.
@@ -210,7 +301,19 @@ export function customChromeVars(
   const border = `color-mix(in oklab, ${ink} 18%, ${safeSurface})`
   const muted = `color-mix(in oklab, ${ink} 62%, ${safeSurface})`
 
+  // The gradient stops (`L2-UI-44`). A named theme lists these literally in
+  // its stylesheet block, because the production minifier folds a `color-mix()`
+  // built from `var()` references; here they are derived and shipped as inline
+  // style, which no build step rewrites, so `color-mix()` is safe.
+  const gradient = {
+    "--grad-surface": safeSurface,
+    "--grad-top": `color-mix(in oklab, #fff 6%, ${safeSurface})`,
+    "--grad-bottom": `color-mix(in oklab, #000 10%, ${safeSurface})`,
+    "--grad-glow": `color-mix(in oklab, ${safeAccent} 50%, transparent)`,
+  }
+
   const sidebar = {
+    ...gradient,
     "--sidebar": safeSurface,
     "--sidebar-foreground": ink,
     "--sidebar-primary": ink,
@@ -225,6 +328,9 @@ export function customChromeVars(
   return {
     ...sidebar,
     "--chrome-header": safeSurface,
+    // Inline style is never minified, so `color-mix()` is safe here; a named
+    // theme has to spell the same wash out literally (`L2-UI-45`).
+    "--chrome-header-glass": `color-mix(in oklab, ${safeSurface} 72%, transparent)`,
     "--chrome-header-foreground": ink,
     "--chrome-header-muted": muted,
     "--chrome-header-border": border,
@@ -235,6 +341,7 @@ export function customChromeVars(
 /** The header-only half of a custom palette — what the toggle adds/removes. */
 export const CUSTOM_CHROME_HEADER_VARS = [
   "--chrome-header",
+  "--chrome-header-glass",
   "--chrome-header-foreground",
   "--chrome-header-muted",
   "--chrome-header-border",

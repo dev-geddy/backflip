@@ -21,6 +21,8 @@ export type ChromePreferences = {
   theme: ChromeThemeId
   /** False → the header keeps the plain light/dark chrome (`L2-UI-32`). */
   headerThemed: boolean
+  /** True → the header is pinned and frosted over the page (`L2-UI-45`). */
+  headerGlass: boolean
   /** Colors behind the `custom` theme; seeded until the user picks (`L2-UI-33`). */
   custom: { surface: string; accent: string }
 }
@@ -28,6 +30,7 @@ export type ChromePreferences = {
 export const DEFAULT_CHROME_PREFERENCES: ChromePreferences = {
   theme: "default",
   headerThemed: true,
+  headerGlass: false,
   custom: CUSTOM_CHROME_SEED,
 }
 
@@ -40,6 +43,7 @@ export async function getChromePreferences(
     columns: {
       chromeTheme: true,
       chromeHeaderThemed: true,
+      chromeHeaderGlass: true,
       chromeCustomSurface: true,
       chromeCustomAccent: true,
     },
@@ -47,6 +51,7 @@ export async function getChromePreferences(
   return {
     theme: resolveChromeTheme(row?.chromeTheme),
     headerThemed: row?.chromeHeaderThemed ?? true,
+    headerGlass: row?.chromeHeaderGlass ?? false,
     custom: {
       surface: row?.chromeCustomSurface ?? CUSTOM_CHROME_SEED.surface,
       accent: row?.chromeCustomAccent ?? CUSTOM_CHROME_SEED.accent,
@@ -79,6 +84,20 @@ export async function setChromeHeaderThemed(
     .onConflictDoUpdate({
       target: userPreferences.userId,
       set: { chromeHeaderThemed, updatedAt: new Date() },
+    })
+}
+
+/** Upsert whether the header floats over the page as frosted glass. */
+export async function setChromeHeaderGlass(
+  userId: string,
+  chromeHeaderGlass: boolean
+): Promise<void> {
+  await db
+    .insert(userPreferences)
+    .values({ userId, chromeHeaderGlass, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: userPreferences.userId,
+      set: { chromeHeaderGlass, updatedAt: new Date() },
     })
 }
 

@@ -129,6 +129,7 @@ export default async function AccountPage() {
               <AppearanceSection
                 theme={chrome.theme}
                 headerThemed={chrome.headerThemed}
+                headerGlass={chrome.headerGlass}
                 custom={chrome.custom}
               />
             </div>

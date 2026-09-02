@@ -7,6 +7,7 @@ import {
   CHROME_THEMES,
   CUSTOM_CHROME_HEADER_VARS,
   customChromeVars,
+  gradientVars,
   DEFAULT_CHROME_THEME,
   isHexColor,
   resolveChromeTheme,
@@ -80,7 +81,77 @@ describe("chrome theme catalog", () => {
       expect(body).toContain("--sidebar:")
       expect(body).toContain("--chrome-header:")
       expect(body).toContain("--chrome-header-foreground:")
+      // The glass wash is a literal per palette: `color-mix()` built from a
+      // `var()` is folded to its first colour by the minifier (`L2-UI-45`).
+      expect(body).toContain("--chrome-header-glass:")
     }
+  })
+
+  it("paints every named theme with the shared gradient", () => {
+    // The recipe is declared once and reached by two selectors — the live
+    // sidebar and the picker's `.chrome-gradient` tiles (`L2-UI-44`). A theme
+    // opts in by declaring a surface and an accent, which the block above
+    // already asserts, so the only drift worth locking is the recipe going
+    // missing or losing one of its two consumers.
+    expect(GLOBALS_CSS).toContain(".chrome-gradient,")
+    expect(GLOBALS_CSS).toContain("--grad-surface: var(--sidebar)")
+    expect(GLOBALS_CSS).toContain("--grad-glow: var(--sidebar-accent)")
+  })
+
+  it("keeps each theme's gradient stops identical to its stylesheet block", () => {
+    // The stops live twice — the CSS block paints the live chrome, the catalog
+    // feeds the account preview tile, which cannot read the live shell because
+    // it renders inside it (`L2-UI-44`). A drift here shows up as a tile that
+    // does not look like the theme it is selling.
+    for (const theme of CHROME_THEMES) {
+      if (theme.id === DEFAULT_CHROME_THEME) {
+        expect(theme.swatch.grad, "default is flat by design").toBeUndefined()
+        continue
+      }
+      const grad = theme.swatch.grad
+      expect(grad, `${theme.id} has no gradient stops`).toBeDefined()
+      const block = GLOBALS_CSS.split(`[data-chrome-theme="${theme.id}"]`)[1]
+      const body = (block as string).slice(0, (block as string).indexOf("}"))
+      expect(body, `${theme.id} block`).toContain(`--grad-top: ${grad?.top};`)
+      expect(body, `${theme.id} block`).toContain(
+        `--grad-bottom: ${grad?.bottom};`
+      )
+      expect(body, `${theme.id} block`).toContain(`--grad-glow: ${grad?.glow};`)
+    }
+  })
+
+  it("hands a tile every variable the gradient reads", () => {
+    for (const theme of CHROME_THEMES) {
+      const vars = gradientVars(theme.swatch)
+      if (theme.id === DEFAULT_CHROME_THEME) {
+        expect(vars).toEqual({})
+        continue
+      }
+      for (const key of [
+        "--grad-surface",
+        "--grad-top",
+        "--grad-bottom",
+        "--grad-glow",
+      ]) {
+        expect(vars[key], `${theme.id} ${key}`).toBeTruthy()
+      }
+    }
+  })
+
+  it("keeps color-mix out of the gradient recipe", () => {
+    // The production minifier folds a `color-mix()` built from `var()`
+    // references down to its first colour, which turned the ramp into
+    // white → surface → black in the built stylesheet while dev looked right.
+    const recipe = GLOBALS_CSS.slice(
+      GLOBALS_CSS.indexOf(".chrome-gradient,")
+    ).slice(
+      0,
+      GLOBALS_CSS.slice(GLOBALS_CSS.indexOf(".chrome-gradient,")).indexOf("}")
+    )
+    expect(recipe).not.toContain("color-mix")
+    expect(recipe).toContain("var(--grad-top)")
+    expect(recipe).toContain("var(--grad-bottom)")
+    expect(recipe).toContain("var(--grad-glow)")
   })
 
   it("keeps ids unique", () => {
@@ -111,6 +182,7 @@ describe("custom chrome palette", () => {
       "--sidebar-border",
       "--sidebar-ring",
       "--chrome-header",
+      "--chrome-header-glass",
       "--chrome-header-foreground",
       "--chrome-header-muted",
       "--chrome-header-border",

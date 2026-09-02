@@ -12,10 +12,12 @@ import {
   CHROME_THEMES,
   CUSTOM_CHROME_HEADER_VARS,
   customChromeVars,
+  gradientVars,
   type ChromeTheme,
   type ChromeThemeId,
 } from "@/app/_lib/theme/chrome-themes"
 import {
+  saveChromeHeaderGlass,
   saveChromeHeaderThemed,
   saveChromeTheme,
   saveCustomChrome,
@@ -50,14 +52,17 @@ function applyToShell(attribute: string, value: string) {
 export function AppearanceSection({
   theme,
   headerThemed,
+  headerGlass,
   custom,
 }: {
   theme: ChromeThemeId
   headerThemed: boolean
+  headerGlass: boolean
   custom: { surface: string; accent: string }
 }) {
   const [selected, setSelected] = useState<ChromeThemeId>(theme)
   const [tintHeader, setTintHeader] = useState(headerThemed)
+  const [glass, setGlass] = useState(headerGlass)
   const [colors, setColors] = useState(custom)
   const [pending, start] = useTransition()
 
@@ -141,6 +146,20 @@ export function AppearanceSection({
     })
   }
 
+  function toggleGlass(next: boolean) {
+    setGlass(next)
+    applyToShell("data-chrome-glass", next ? "on" : "off")
+
+    start(async () => {
+      const res = await saveChromeHeaderGlass(next)
+      if (!res?.ok) {
+        setGlass(!next)
+        applyToShell("data-chrome-glass", !next ? "on" : "off")
+        toast.error(res?.message ?? "Couldn't save that.")
+      }
+    })
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
@@ -172,6 +191,7 @@ export function AppearanceSection({
                   theme={t}
                   active={selected === t.id}
                   headerThemed={tintHeader}
+                  glass={glass}
                   onSelect={() => choose(t.id)}
                 />
               ))}
@@ -180,6 +200,7 @@ export function AppearanceSection({
                   colors={colors}
                   active={selected === "custom"}
                   headerThemed={tintHeader}
+                  glass={glass}
                   onSelect={() => choose("custom")}
                   onPick={pickCustomColor}
                 />
@@ -207,6 +228,29 @@ export function AppearanceSection({
                 />
               </label>
             ) : null}
+
+            {/* Sits with the tint switch because both qualify the header
+                rather than pick a palette. Independent of it: a plain header
+                can float too (`L2-UI-45`). */}
+            {group === "default" ? (
+              <label className="flex items-start justify-between gap-4 rounded-lg border bg-muted/40 p-3">
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">
+                    Float the header over the page
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Pins it to the top so it stays put as you scroll, and frosts
+                    it so the page blurs through.
+                  </span>
+                </span>
+                <Switch
+                  checked={glass}
+                  onCheckedChange={toggleGlass}
+                  aria-label="Float the header over the page"
+                  className="mt-0.5 flex-none"
+                />
+              </label>
+            ) : null}
           </div>
         )
       })}
@@ -224,11 +268,13 @@ function ThemeTile({
   theme,
   active,
   headerThemed,
+  glass,
   onSelect,
 }: {
   theme: ChromeTheme
   active: boolean
   headerThemed: boolean
+  glass: boolean
   onSelect: () => void
 }) {
   return (
@@ -238,14 +284,16 @@ function ThemeTile({
       aria-pressed={active}
       className={cn(
         // Selection is a 1px border swap — no ring, which would read as a
-        // second, thicker outline. The check disc carries the rest.
+        // second, thicker outline. The tick beside the label confirms it in
+        // plain ink; a filled primary disc was a second, louder signal for a
+        // state the border already states.
         "group flex flex-col gap-3 rounded-xl border p-3 text-left transition-colors",
         active
           ? "border-primary"
           : "border-border hover:border-muted-foreground/40"
       )}
     >
-      <ShellPreview theme={theme} headerThemed={headerThemed} />
+      <ShellPreview theme={theme} headerThemed={headerThemed} glass={glass} />
 
       <span className="flex items-start justify-between gap-2">
         <span className="min-w-0">
@@ -258,13 +306,11 @@ function ThemeTile({
         </span>
         <span
           className={cn(
-            "flex size-5 flex-none items-center justify-center rounded-full border",
-            active
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border"
+            "flex size-5 flex-none items-center justify-center rounded-full",
+            active ? "text-foreground" : "border border-border"
           )}
         >
-          {active ? <RiCheckLine className="size-3" /> : null}
+          {active ? <RiCheckLine className="size-3.5" /> : null}
         </span>
       </span>
     </button>
@@ -284,9 +330,11 @@ function ThemeTile({
 function ShellPreview({
   theme,
   headerThemed,
+  glass,
 }: {
   theme: ChromeTheme
   headerThemed: boolean
+  glass: boolean
 }) {
   const stock = theme.group === "default"
   const paint = stock
@@ -320,16 +368,32 @@ function ShellPreview({
     opacity,
   })
 
+  // The tile mirrors the live chrome's continuation trick (`L2-UI-44`) in
+  // miniature: the gradient is painted once on the whole shell box, and the
+  // sidebar column and header strip go transparent to let their own slice of
+  // it through. Painting each separately would restart the ramp at the seam.
+  const gradient = !stock
   return (
     <span
       aria-hidden
-      className="flex h-[104px] overflow-hidden rounded-lg border"
-      style={{ borderColor: paint.edge }}
+      className={cn(
+        "flex h-[104px] overflow-hidden rounded-lg border",
+        gradient ? "chrome-gradient" : undefined
+      )}
+      style={{
+        borderColor: paint.edge,
+        ...(gradient
+          ? {
+              backgroundColor: paint.surface,
+              ...gradientVars(theme.swatch),
+            }
+          : null),
+      }}
     >
       {/* Sidebar */}
       <span
         className="flex w-[34%] flex-col gap-1.5 p-2"
-        style={{ backgroundColor: paint.surface }}
+        style={gradient ? undefined : { backgroundColor: paint.surface }}
       >
         {/* Brand row */}
         <span className="flex items-center gap-1 pb-1">
@@ -365,7 +429,16 @@ function ShellPreview({
       <span className="flex min-w-0 flex-1 flex-col">
         <span
           className="flex h-[22px] flex-none items-center gap-1 px-2"
-          style={{ backgroundColor: paint.header }}
+          style={{
+            // Glass thins the strip so the surface behind shows through, the
+            // one part of `L2-UI-45` a static miniature can honestly show.
+            backgroundColor:
+              gradient && headerThemed && !glass
+                ? "transparent"
+                : glass
+                  ? `color-mix(in oklab, ${paint.header} 72%, transparent)`
+                  : paint.header,
+          }}
         >
           <span className="h-1 w-6 rounded-full" style={headerInk(0.5)} />
           <span className="flex-1" />
@@ -407,12 +480,14 @@ function CustomThemeCard({
   colors,
   active,
   headerThemed,
+  glass,
   onSelect,
   onPick,
 }: {
   colors: { surface: string; accent: string }
   active: boolean
   headerThemed: boolean
+  glass: boolean
   onSelect: () => void
   onPick: (part: "surface" | "accent", value: string) => void
 }) {
@@ -425,6 +500,11 @@ function CustomThemeCard({
       surface: vars["--sidebar"] as string,
       foreground: vars["--sidebar-foreground"] as string,
       accent: vars["--sidebar-accent"] as string,
+      grad: {
+        top: vars["--grad-top"] as string,
+        bottom: vars["--grad-bottom"] as string,
+        glow: vars["--grad-glow"] as string,
+      },
     },
   }
 
@@ -442,7 +522,11 @@ function CustomThemeCard({
           aria-pressed={active}
           className="min-w-0 flex-1 text-left"
         >
-          <ShellPreview theme={preview} headerThemed={headerThemed} />
+          <ShellPreview
+            theme={preview}
+            headerThemed={headerThemed}
+            glass={glass}
+          />
         </button>
 
         <div className="flex w-[150px] flex-none flex-col gap-2">
@@ -478,13 +562,11 @@ function CustomThemeCard({
         </span>
         <span
           className={cn(
-            "flex size-5 flex-none items-center justify-center rounded-full border",
-            active
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border"
+            "flex size-5 flex-none items-center justify-center rounded-full",
+            active ? "text-foreground" : "border border-border"
           )}
         >
-          {active ? <RiCheckLine className="size-3" /> : null}
+          {active ? <RiCheckLine className="size-3.5" /> : null}
         </span>
       </button>
     </div>

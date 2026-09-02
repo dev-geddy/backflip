@@ -19,7 +19,9 @@ import type { SessionUser } from "./_components/types"
  * wrapper as `data-chrome-theme` + `data-chrome-header`, so the themed chrome
  * arrives with the server HTML — no flash of the default palette on every
  * navigation (`L2-UI-25`). `data-chrome-header="plain"` keeps the sidebar
- * themed while the header falls back to plain light/dark (`L2-UI-32`).
+ * themed while the header falls back to plain light/dark (`L2-UI-32`), and
+ * `data-chrome-glass="on"` floats the header over the page as frosted glass
+ * (`L2-UI-45`) — a separate attribute because it is orthogonal to the tint.
  *
  * @spec L2-UI-25
  */
@@ -54,6 +56,7 @@ export default async function ProtectedLayout({
     <SidebarProvider
       data-chrome-theme={chrome.theme}
       data-chrome-header={chrome.headerThemed ? "themed" : "plain"}
+      data-chrome-glass={chrome.headerGlass ? "on" : "off"}
       style={
         {
           "--sidebar-width": "15.5rem",

@@ -458,6 +458,13 @@ export const userPreferences = pgTable("user_preference", {
    */
   chromeHeaderThemed: boolean("chromeHeaderThemed").notNull().default(true),
   /**
+   * Whether the header floats over the page as frosted glass: pinned to the
+   * top, translucent, with whatever scrolls beneath it blurred. Off → the
+   * header is opaque and scrolls away with the page, which is the layout
+   * every other surface was built against, so it stays the default.
+   */
+  chromeHeaderGlass: boolean("chromeHeaderGlass").notNull().default(false),
+  /**
    * Colors behind the `custom` theme — `#rrggbb`, validated in the action.
    * Null until the user picks; the UI then falls back to its seed colors. Kept
    * as two plain columns rather than JSON: two scalars, queried as scalars.
