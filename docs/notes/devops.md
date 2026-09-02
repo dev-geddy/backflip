@@ -153,3 +153,7 @@ Deliberately **not** wired into the deploy scripts: deploying an older commit le
 
 The `apps/web/package.json` version (0.1.0-ish, private workspace) is unrelated and displayed nowhere.
 
+## Telemetry edge limit (nginx flavor)
+- `backflip-http.conf` declares `limit_req_zone ... zone=backflip_telemetry:10m rate=5r/m`; `backflip.conf` applies it to `location = /api/public/telemetry/start` with `burst=5 nodelay`, `limit_req_status 429`, and `client_max_body_size 2k` (a well-formed report is ~120 bytes). Satisfies `L2-DEVOPS-27`.
+- Rate matches the app's burst budget (`L2-TELEMETRY-05`) on purpose: the app's copy resets on every deploy, nginx's does not.
+- Caddy flavor has no zone, same gap as the OAuth endpoints (`L2-DEVOPS-26`). Adding one needs the `caddy-ratelimit` plugin, i.e. a custom Caddy build — not worth it for a counter.

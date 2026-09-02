@@ -46,7 +46,9 @@ export const accounts = pgTable(
     userId: text("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").$type<"oauth" | "oidc" | "email" | "webauthn">().notNull(),
+    type: text("type")
+      .$type<"oauth" | "oidc" | "email" | "webauthn">()
+      .notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
     refresh_token: text("refresh_token"),
@@ -112,7 +114,11 @@ export const userTokens = pgTable("user_token", {
 })
 
 /** AI providers supported by the integration config. */
-export const aiProvider = pgEnum("ai_provider", ["anthropic", "openai", "google"])
+export const aiProvider = pgEnum("ai_provider", [
+  "anthropic",
+  "openai",
+  "google",
+])
 
 /**
  * AI integration config — one row per provider. Consumed by the (future)
@@ -473,3 +479,70 @@ export const userPreferences = pgTable("user_preference", {
   chromeCustomAccent: text("chromeCustomAccent"),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 })
+
+/**
+ * Telemetry — one row per known install of the starter (a clone/machine that
+ * ran `yarn dev` at least once). The client's raw install id never lands here:
+ * it arrives as a UUID and is stored only as `installIdHash`, an HMAC keyed by
+ * the server's `TELEMETRY_HASH_SALT`. Without that env var the endpoint stores
+ * nothing at all, so a self-hosted deployment collects no telemetry unless its
+ * operator opts in.
+ *
+ * This is the dedupe + rate-budget anchor. `lastSeenAt` enforces the
+ * minimum interval between counted starts; `activeDays` backs the "seen on ≥2
+ * distinct days" rule that keeps one-shot forged installs out of the headline
+ * figure. `ignored` excludes a row from every aggregate — the escape hatch for
+ * the maintainer's own installs and for pruning abuse after the fact.
+ *
+ * @spec L2-DB-34, L2-TELEMETRY-01
+ */
+export const telemetryInstall = pgTable("telemetry_install", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  installIdHash: text("installIdHash").notNull().unique(),
+  firstSeenAt: timestamp("firstSeenAt", { mode: "date" })
+    .notNull()
+    .defaultNow(),
+  lastSeenAt: timestamp("lastSeenAt", { mode: "date" }).notNull().defaultNow(),
+  /** Counted starts, all time. Bumped at most once per `MIN_START_INTERVAL_MS`. */
+  startCount: integer("startCount").notNull().default(1),
+  /** Distinct UTC days this install reported on. 1 on creation. */
+  activeDays: integer("activeDays").notNull().default(1),
+  /** UTC day of the most recent counted start — how `activeDays` stays honest. */
+  lastActiveDay: text("lastActiveDay").notNull(),
+  appVersion: text("appVersion"),
+  platform: text("platform"),
+  nodeMajor: integer("nodeMajor"),
+  ignored: boolean("ignored").notNull().default(false),
+})
+
+/**
+ * Telemetry — one row per counted start. The charts read only this table
+ * (daily totals = row count, daily uniques = distinct `installIdHash`), so the
+ * aggregate above never has to be trusted for display.
+ *
+ * `ipHash` is an HMAC of the source IP under the same salt, kept for abuse
+ * forensics (installs per IP, IPs per install). The raw IP is used for rate
+ * limiting in memory and is never written or logged.
+ *
+ * @spec L2-DB-35, L2-TELEMETRY-02
+ */
+export const telemetryStart = pgTable(
+  "telemetry_start",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    installIdHash: text("installIdHash").notNull(),
+    ipHash: text("ipHash"),
+    appVersion: text("appVersion"),
+    platform: text("platform"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    // The dashboard's only query shape: a date window, grouped by day.
+    index("telemetry_start_created_idx").on(t.createdAt),
+    index("telemetry_start_install_idx").on(t.installIdHash),
+  ]
+)

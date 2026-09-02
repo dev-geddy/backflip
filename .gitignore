@@ -68,3 +68,6 @@ next-env.d.ts
 
 # local credential files
 gauth-client-secret*.json
+
+# anonymous start telemetry state (per-checkout install id)
+.backflip/

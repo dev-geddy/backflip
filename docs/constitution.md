@@ -62,6 +62,7 @@ Tailored for AI-assisted dev — non-technical builders extend it via establishe
 - `clickup` → `/docs/contracts/clickup.md`
 - `slack` → `/docs/contracts/slack.md`
 - `n8n` → `/docs/contracts/n8n.md`
+- `telemetry` → `/docs/contracts/telemetry.md`
 
 ---
 IDs: `L1-<CAT>-<NN>`. Permanent, never renumber. Retire with `[DEPRECATED]`, never delete.

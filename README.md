@@ -102,6 +102,20 @@ in place. Re-seed anytime by recreating `.env.init` and rerunning `init-owner`.
 - **Full Docker** (app + db): `docker compose --profile web up -d --build` → migrations run, app on `3071`. Owner seed: `docker compose --profile seed run --rm db-seed`.
 - More commands + conventions: `.claude/skills/dev-workflow`.
 
+## Anonymous usage telemetry
+`corepack yarn dev` sends **one anonymous ping** so the project can see that people actually run it — the only signal a self-hosted starter ever gets.
+
+**Sent:** a random install id generated on first run, the app version, your OS (`process.platform`), and your Node major version.
+**Not sent:** hostname, username, file paths, git remotes, environment variables, or anything from your project. On the receiving end the install id and the source IP are stored only as salted hashes; the raw IP is never written or logged.
+
+Opt out any time — add to `.env.local`:
+```
+BACKFLIP_TELEMETRY=off
+```
+The ping is fire-and-forget with a 1.5s timeout: offline, blocked, or endpoint down, your dev server starts exactly the same.
+
+**Your own deployment collects nothing** unless you set `TELEMETRY_HASH_SALT` — without it the ingest endpoint accepts requests and stores nothing. With it set, the figures appear on `/backflip` for owners.
+
 ## Deployment
 Deploy to a DigitalOcean droplet — from your machine, GitHub Actions, or Drone CI.
 See [devops.md](./devops.md).

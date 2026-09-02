@@ -13,7 +13,9 @@ import { RiCheckLine } from "@remixicon/react"
 import { AppVersion } from "@/app/_components/app-version"
 import { BuildLoopTranscript } from "@/app/_components/build-loop"
 import { requireCapability } from "@/app/_lib/auth/guard"
-import { canViewUsers } from "@/app/_lib/auth/permissions"
+import { canAccessSettings, canViewUsers } from "@/app/_lib/auth/permissions"
+import { getTelemetrySummary } from "@/app/_lib/telemetry/queries"
+import { TelemetryCards } from "./_components/telemetry-cards"
 import { SectionLabel } from "./_components/page-heading"
 
 const DATE_FMT = new Intl.DateTimeFormat("en-US", {
@@ -31,12 +33,21 @@ function initials(value: string) {
  * /backflip — admin Overview (design 5A): greeting + quick-jump + real stat
  * cards + a setup checklist and recent members. All figures derive from real
  * data (users / ai_config / email_config); no mock metrics.
+ *
+ * Also the only surface the adoption figures are shown on — gated to roles
+ * holding `settings`, and never allowed to fail the page.
+ *
+ * @spec L2-TELEMETRY-19, L2-TELEMETRY-25
  */
 export default async function BackflipOverviewPage() {
   const sessionUser = await requireCapability("dashboard")
   // The member roster (names + emails) is user data — only `users.view` roles
   // (owner/admin) see it; teammates get the dashboard without the roster.
   const canView = canViewUsers(sessionUser.role)
+  // Adoption figures describe the deployment itself, not the workspace — the
+  // same operator-level reach as system settings, so they ride that capability
+  // rather than earning a fourth one.
+  const canViewTelemetry = canAccessSettings(sessionUser.role)
 
   const userRows = await db
     .select({
@@ -72,6 +83,12 @@ export default async function BackflipOverviewPage() {
     .from(emailConfig)
     .where(eq(emailConfig.provider, "resend"))
   const emailConfigured = Boolean(emailRow?.apiKeyEnc)
+
+  // Never let a telemetry read take the dashboard down: the tables are young,
+  // and this is the one panel on the page nobody's work depends on.
+  const telemetry = canViewTelemetry
+    ? await getTelemetrySummary().catch(() => null)
+    : null
 
   const recent = userRows.slice(0, 4)
   const firstName = sessionUser.name?.split(" ")[0] || "there"
@@ -153,6 +170,19 @@ export default async function BackflipOverviewPage() {
               </span>
             </StatCard>
           </div>
+
+          {/* Adoption — how many checkouts of this starter actually run it. */}
+          {telemetry ? (
+            <div className="flex flex-col gap-3">
+              <div>
+                <div className="text-sm font-semibold">Adoption</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  Anonymous start reports, last 30 days
+                </div>
+              </div>
+              <TelemetryCards summary={telemetry} />
+            </div>
+          ) : null}
 
           {/* The same pitch the homepage leads with (`L2-UI-48`) — here it
               reads as a reminder of the loop you are already in. */}

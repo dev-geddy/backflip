@@ -40,3 +40,8 @@
 
 ## TODO
 - Auth.js DrizzleAdapter + Credentials/Google (auth domain) consumes these tables next.
+
+## Telemetry tables (0017)
+- `telemetry_install` + `telemetry_start`, drizzle-kit generated, no seed. Owned by the `telemetry` domain (`L2-TELEMETRY-01`, `L2-TELEMETRY-02`); `L2-DB-34`/`L2-DB-35` are the db-side counterparts.
+- Both key on `installIdHash`, never a raw install id, and `telemetry_start.ipHash` is an HMAC of the source IP (`L2-DB-36`). The salt is `TELEMETRY_HASH_SALT`, deliberately not `ENCRYPTION_KEY`: these values are only ever compared, never decrypted, so they want a keyed digest rather than reversible encryption.
+- No fk between the two tables. `telemetry_start` rows are written by an unauthenticated endpoint and the join is on the hash; a fk would turn a race between two concurrent first-reports into a write error for something that is allowed to be lossy.
