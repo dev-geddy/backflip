@@ -7,10 +7,10 @@ A full-stack **platform foundation** for kicking off new projects fast — auth,
 **You have Docker and dev tools ready.**
 
 ```
-Claude> clone github.com/dev-geddy/backflip
-Claude> set up and run this project locally
-Claude> create a user for me and give me the login URL
-Claude> build feature X
+Prompt: clone github.com/dev-geddy/backflip
+Prompt: set up and run this project locally
+Prompt: create a user for me and give me the login URL
+Prompt: build feature <...>
 …
 ```
 

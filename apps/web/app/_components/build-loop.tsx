@@ -16,7 +16,7 @@ export const BUILD_LOOP_PROMPTS = [
   "clone github.com/dev-geddy/backflip",
   "set up and run this project locally",
   "create a user for me and give me the login URL",
-  "build feature X",
+  "build feature <...>",
 ]
 
 export const BUILD_LOOP_PRELUDE = "You have Docker and dev tools ready."
@@ -49,9 +49,9 @@ export function BuildLoopTranscript({ compact }: { compact?: boolean }) {
         {BUILD_LOOP_PROMPTS.map((prompt) => (
           <div key={prompt} className="flex gap-2.5">
             {/* `select-none` so copying the block gives you the prompts, not
-                a column of shell markers you then have to strip. */}
+                a column of markers you then have to strip. */}
             <span aria-hidden className="flex-none text-primary select-none">
-              Claude&gt;
+              Prompt:
             </span>
             <span className="min-w-0">{prompt}</span>
           </div>

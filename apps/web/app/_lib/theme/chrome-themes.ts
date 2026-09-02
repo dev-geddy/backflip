@@ -72,7 +72,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.247 0.026 258)",
       foreground: "oklch(0.966 0.006 258)",
-      accent: "oklch(0.309 0.031 258)",
+      accent: "oklch(0.332 0.031 258)",
       grad: {
         top: "oklch(0.271 0.026 258)",
         bottom: "oklch(0.215 0.026 258)",
@@ -87,7 +87,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.216 0 0)",
       foreground: "oklch(0.968 0 0)",
-      accent: "oklch(0.278 0 0)",
+      accent: "oklch(0.301 0 0)",
       grad: {
         top: "oklch(0.24 0 0)",
         bottom: "oklch(0.184 0 0)",
@@ -102,7 +102,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.244 0.047 173)",
       foreground: "oklch(0.964 0.011 173)",
-      accent: "oklch(0.306 0.054 173)",
+      accent: "oklch(0.329 0.054 173)",
       grad: {
         top: "oklch(0.268 0.047 173)",
         bottom: "oklch(0.212 0.047 173)",
@@ -117,7 +117,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.262 0.086 325)",
       foreground: "oklch(0.966 0.014 325)",
-      accent: "oklch(0.324 0.098 325)",
+      accent: "oklch(0.347 0.098 325)",
       grad: {
         top: "oklch(0.286 0.086 325)",
         bottom: "oklch(0.23 0.086 325)",
@@ -133,7 +133,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.961 0.021 84)",
       foreground: "oklch(0.271 0.019 84)",
-      accent: "oklch(0.921 0.032 84)",
+      accent: "oklch(0.886 0.032 84)",
       grad: {
         top: "oklch(0.973 0.021 84)",
         bottom: "oklch(0.935 0.021 84)",
@@ -148,7 +148,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.959 0.018 246)",
       foreground: "oklch(0.268 0.019 246)",
-      accent: "oklch(0.918 0.028 246)",
+      accent: "oklch(0.884 0.028 246)",
       grad: {
         top: "oklch(0.971 0.018 246)",
         bottom: "oklch(0.933 0.018 246)",
@@ -163,7 +163,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.957 0.021 154)",
       foreground: "oklch(0.266 0.021 154)",
-      accent: "oklch(0.915 0.031 154)",
+      accent: "oklch(0.882 0.031 154)",
       grad: {
         top: "oklch(0.969 0.021 154)",
         bottom: "oklch(0.931 0.021 154)",
@@ -178,7 +178,7 @@ export const CHROME_THEMES: ChromeTheme[] = [
     swatch: {
       surface: "oklch(0.96 0.02 22)",
       foreground: "oklch(0.27 0.02 22)",
-      accent: "oklch(0.92 0.03 22)",
+      accent: "oklch(0.885 0.03 22)",
       grad: {
         top: "oklch(0.972 0.02 22)",
         bottom: "oklch(0.934 0.02 22)",
