@@ -166,3 +166,6 @@ Approved and merged into `/docs/constitution.md` — recorded here for traceabil
 - Governed domains (L2): `mcp` → `/docs/contracts/mcp.md`
 - `L1-STACK-12` — Model Context Protocol SDK (`@modelcontextprotocol/server`) — remote MCP connector surface, Streamable HTTP, OAuth 2.1 protected.
 - `L1-CON-06` — Connector access is read-only and opt-in (owner-enabled, default off); it grants no capability the connected user's role does not already hold.
+
+## `clientIp` moved up
+- The forwarded-header handling that keys the connector limiters now lives in `apps/web/app/_lib/client-ip.ts`; `_lib/oauth/limits.ts` re-exports it, so connector imports are unchanged. Telemetry ingest needed identical last-hop semantics (`L2-TELEMETRY-05`) and duplicating that logic is exactly how two surfaces end up disagreeing about which hop to trust. `L2-MCP-30` is unaffected.

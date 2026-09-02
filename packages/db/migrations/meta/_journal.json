@@ -120,6 +120,13 @@
       "when": 1788381083430,
       "tag": "0016_equal_norman_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788385602107,
+      "tag": "0017_curved_inhumans",
+      "breakpoints": true
     }
   ]
 }

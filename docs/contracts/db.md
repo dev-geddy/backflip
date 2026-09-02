@@ -35,6 +35,8 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-32` — `n8n_config` table (single row, `kind` unique default `n8n`): `id`, `kind`, `baseUrl` (nullable plaintext instance origin), `apiKeyEnc` (AES), `enabled` (default false), `updatedAt`. Migration `0012` creates. Owned by the `n8n` domain (`L2-N8N-01`).
 
 - `L2-DB-33` — `user_preference` table (one row per user): `userId` (text pk, fk → `user`, cascade — pk-as-fk makes a second row impossible), `chromeTheme` (text, default `default`), `chromeHeaderThemed` (bool, default true — `L2-UI-32`), `chromeHeaderGlass` (bool, default false — the pinned frosted header, `L2-UI-45`), `chromeCustomSurface` + `chromeCustomAccent` (nullable `#rrggbb`, the `custom` theme's palette — `L2-UI-33`), `updatedAt`. Migration `0013` creates; `0014` adds `chromeHeaderThemed`; `0015` adds the custom colors; `0016` adds `chromeHeaderGlass`. Absent row = all defaults; nothing is seeded at signup. Owned by the `ui` domain (`L2-UI-26`, `L2-UI-27`).
+- `L2-DB-34` — `telemetry_install` table: one row per known install of the starter, keyed by `installIdHash` (unique). Columns `firstSeenAt`, `lastSeenAt`, `startCount`, `activeDays`, `lastActiveDay`, `appVersion`, `platform`, `nodeMajor`, `ignored`. Migration `0017` creates it. `telemetry` counterpart: `L2-TELEMETRY-01`.
+- `L2-DB-35` — `telemetry_start` table: one row per counted start (`installIdHash`, `ipHash`, `appVersion`, `platform`, `createdAt`), indexed on `createdAt` and `installIdHash`. Migration `0017` creates it. `telemetry` counterpart: `L2-TELEMETRY-02`.
 
 - `L2-DB-25` — `oauth_client` table: `id`, `clientId` (random, unique), `clientName`, `redirectUris` (text array), `grantTypes` (text array), `scopes` (text array), `tokenEndpointAuthMethod` (default `none`), `clientSecretHash` (nullable — null for public clients, this connector phase mints only public clients), `createdAt`, `lastUsedAt` (nullable). Owned by the `mcp` domain (`L2-MCP-21`).
 - `L2-DB-26` — `oauth_auth_code` table: `id`, `codeHash` (hash-only, sha256, same pattern as `L2-DB-21`), `clientId` (fk → `oauth_client`, cascade), `userId` (fk → `user`, cascade), `redirectUri`, `scopes` (text array), `resource`, `codeChallenge`, `codeChallengeMethod`, `expiresAt` (60 s TTL), `consumedAt` (nullable — single-use). Owned by the `mcp` domain (`L2-MCP-22`).
@@ -43,6 +45,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 
 ## Invariants
 - `L2-DB-09` — One schema source: `packages/db/src/schema.ts`. Apps import types/tables from `@workspace/db`, never redeclare.
+- `L2-DB-36` — Telemetry identifiers are stored only as salted HMACs: neither the client-generated install id nor the source IP is ever written in the clear. Same one-way principle as `L2-DB-10`/`L2-DB-21`, different key material (`TELEMETRY_HASH_SALT`, not `ENCRYPTION_KEY` — these are compared, never read back).
 - `L2-DB-10` — Passwords stored only as bcrypt hashes (`passwordHash`). Never plaintext.
 - `L2-DB-21` — One-time tokens stored only as `hashToken` output (`tokenHash`), never the raw token. Raw exists only in the emailed link. Validity requires un-consumed + un-expired.
 - `L2-DB-11` — Migrations are forward-only committed artifacts; schema change → `db:generate` + commit the SQL.
@@ -52,7 +55,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 - `L2-DB-13` — `init-owner` without `ADMIN_EMAIL` → throws (define in `.env.init`). `ADMIN_PASSWORD` is optional (omit → Google-only owner).
 
 ## Acceptance
-- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token, analytics_config, speech_config, clickup_config, slack_app, slack_webhook, n8n_config); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`; `0005`+`0006` add + seed `analytics_config`; `0007` adds `speech_config`; `0012` adds the ClickUp/Slack/n8n tables.
+- `L2-DB-14` — `db:migrate` on the docker db creates all tables (user, account, session, verificationToken, ai_config, email_config, user_token, analytics_config, speech_config, clickup_config, slack_app, slack_webhook, n8n_config, telemetry_install, telemetry_start); migration `0002` renames role `member`→`teammate`; `0003` adds `user_token`; `0004` adds `user.tokenVersion`; `0005`+`0006` add + seed `analytics_config`; `0007` adds `speech_config`; `0012` adds the ClickUp/Slack/n8n tables; `0017` adds `telemetry_install` + `telemetry_start`.
 - `L2-DB-15` — `init-owner` yields a `user` row: email from `.env.init`, role `owner`. `passwordHash` non-null when `ADMIN_PASSWORD` is set, else null (Google-only owner). Re-run updates, no duplicate.
 
 ## Constrained L3

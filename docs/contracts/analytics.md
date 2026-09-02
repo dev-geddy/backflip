@@ -9,7 +9,7 @@
 ## Owns
 Google Analytics (gtag.js) on the **public** surface, its operator config under `/backflip/settings` (backed by `analytics_config`), and the cookie-consent gate that decides whether analytics may run at all.
 
-Explicitly **not** owned: any analytics inside `/backflip/*` (admin is never measured), server-side event tracking, non-Google providers.
+Explicitly **not** owned: any analytics inside `/backflip/*` (admin is never measured), server-side event tracking, non-Google providers. Server-side start telemetry — how many people run the starter locally — is the `telemetry` domain (`/docs/contracts/telemetry.md`); it shares nothing with this one: no cookies, no browser, no consent surface, admin-only display.
 
 ## Interfaces
 - `L2-ANALYTICS-02` — Server action `saveAnalyticsConfig(prev, formData)` — upserts the single `analytics_config` row on `kind`. `settings`-gated. Normalizes the measurement id to upper case; blank clears it. (`apps/web/app/backflip/(protected)/settings/_actions.ts`)
