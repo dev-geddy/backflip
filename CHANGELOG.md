@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/dev-geddy/backflip/compare/v1.5.1...v1.6.0) (2026-09-02)
+
+
+### Features
+
+* **auth:** sync the Google profile picture into the user avatar ([1ec96f5](https://github.com/dev-geddy/backflip/commit/1ec96f5e7b72baa24d34616e132eccdd326528ba))
+
 ## [1.5.1](https://github.com/dev-geddy/backflip/compare/v1.5.0...v1.5.1) (2026-09-02)
 
 
