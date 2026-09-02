@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/dev-geddy/backflip/compare/v1.5.0...v1.5.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **web:** use the brand glyph for the favicon and the auth page logos ([bbaf209](https://github.com/dev-geddy/backflip/commit/bbaf2098793c89427b13906d3b73bf25a4febf82))
+
 # [1.5.0](https://github.com/dev-geddy/backflip/compare/v1.4.0...v1.5.0) (2026-09-01)
 
 
