@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/dev-geddy/backflip/compare/v1.8.0...v1.9.0) (2026-09-02)
+
+
+### Features
+
+* **web:** correct the glass header backdrop per palette tone and mode ([857b5ef](https://github.com/dev-geddy/backflip/commit/857b5efcc74b8fb27ae2f592139d72dc9d7db922))
+
 # [1.8.0](https://github.com/dev-geddy/backflip/compare/v1.7.0...v1.8.0) (2026-09-02)
 
 
