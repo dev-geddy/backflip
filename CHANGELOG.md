@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/dev-geddy/backflip/compare/v1.7.0...v1.8.0) (2026-09-02)
+
+
+### Features
+
+* **web:** paint the admin chrome as a gradient and add a glass header ([b2e37e4](https://github.com/dev-geddy/backflip/commit/b2e37e454fe16c461ff89a606e1e1edb9e8ec6d3))
+
 # [1.7.0](https://github.com/dev-geddy/backflip/compare/v1.6.0...v1.7.0) (2026-09-02)
 
 
