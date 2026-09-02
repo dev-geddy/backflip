@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { BrandIcon } from "@/app/_components/brand-icon"
 import { ForgotPasswordForm } from "./_components/forgot-password-form"
 
 /**
@@ -14,10 +15,10 @@ export default function ForgotPasswordPage() {
           href="/backflip/login"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-            b
+          <div className="flex size-6 items-center justify-center rounded-md border bg-card">
+            <BrandIcon size={12} className="text-primary" />
           </div>
-          backflip
+          Backflip
         </Link>
         <ForgotPasswordForm />
       </div>

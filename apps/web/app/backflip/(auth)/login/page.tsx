@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { BrandIcon } from "@/app/_components/brand-icon"
 import { auth } from "@/app/_lib/auth"
 import {
   isCredentialsEnabled,
@@ -29,10 +30,10 @@ export default async function LoginPage({
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex items-center gap-2 self-center font-medium">
-          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-            b
+          <div className="flex size-6 items-center justify-center rounded-md border bg-card">
+            <BrandIcon size={12} className="text-primary" />
           </div>
-          backflip
+          Backflip
         </div>
         <LoginForm
           callbackUrl={callbackUrl}
