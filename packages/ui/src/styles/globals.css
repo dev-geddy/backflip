@@ -129,6 +129,7 @@
     --chrome-header-foreground: var(--foreground);
     --chrome-header-muted: var(--muted-foreground);
     --chrome-header-border: var(--border);
+    --chrome-header-input: var(--input);
     --chrome-header-accent: var(--accent);
     --stock-sidebar: var(--sidebar);
     --stock-sidebar-foreground: var(--sidebar-foreground);
@@ -138,6 +139,7 @@
     --stock-foreground: var(--foreground);
     --stock-muted-foreground: var(--muted-foreground);
     --stock-border: var(--border);
+    --stock-input: var(--input);
     --stock-accent: var(--accent);
 }
 
@@ -157,6 +159,7 @@
     --chrome-header-glass: oklch(0.247 0.033 258 / 0.8);
     --chrome-header-foreground: oklch(0.966 0.006 258);
     --chrome-header-muted: oklch(0.742 0.02 258);
+    --chrome-header-input: oklch(0.53 0.028 258);
     --chrome-header-border: oklch(0.292 0.028 258);
     --chrome-header-accent: oklch(0.332 0.031 258);
 }
@@ -177,6 +180,7 @@
     --chrome-header-glass: oklch(0.216 0 0 / 0.8);
     --chrome-header-foreground: oklch(0.968 0 0);
     --chrome-header-muted: oklch(0.727 0 0);
+    --chrome-header-input: oklch(0.5 0 0);
     --chrome-header-border: oklch(0.262 0 0);
     --chrome-header-accent: oklch(0.301 0 0);
 }
@@ -197,6 +201,7 @@
     --chrome-header-glass: oklch(0.244 0.059 173 / 0.8);
     --chrome-header-foreground: oklch(0.964 0.011 173);
     --chrome-header-muted: oklch(0.739 0.035 173);
+    --chrome-header-input: oklch(0.527 0.049 173);
     --chrome-header-border: oklch(0.289 0.049 173);
     --chrome-header-accent: oklch(0.329 0.054 173);
 }
@@ -217,6 +222,7 @@
     --chrome-header-glass: oklch(0.262 0.107 325 / 0.8);
     --chrome-header-foreground: oklch(0.966 0.014 325);
     --chrome-header-muted: oklch(0.748 0.045 325);
+    --chrome-header-input: oklch(0.545 0.09 325);
     --chrome-header-border: oklch(0.307 0.09 325);
     --chrome-header-accent: oklch(0.347 0.098 325);
 }
@@ -237,6 +243,7 @@
     --chrome-header-glass: oklch(0.961 0.026 84 / 0.8);
     --chrome-header-foreground: oklch(0.271 0.019 84);
     --chrome-header-muted: oklch(0.528 0.025 84);
+    --chrome-header-input: oklch(0.705 0.028 84);
     --chrome-header-border: oklch(0.929 0.028 84);
     --chrome-header-accent: oklch(0.886 0.032 84);
 }
@@ -257,6 +264,7 @@
     --chrome-header-glass: oklch(0.959 0.023 246 / 0.8);
     --chrome-header-foreground: oklch(0.268 0.019 246);
     --chrome-header-muted: oklch(0.525 0.024 246);
+    --chrome-header-input: oklch(0.703 0.024 246);
     --chrome-header-border: oklch(0.926 0.024 246);
     --chrome-header-accent: oklch(0.884 0.028 246);
 }
@@ -277,6 +285,7 @@
     --chrome-header-glass: oklch(0.957 0.026 154 / 0.8);
     --chrome-header-foreground: oklch(0.266 0.021 154);
     --chrome-header-muted: oklch(0.522 0.026 154);
+    --chrome-header-input: oklch(0.701 0.027 154);
     --chrome-header-border: oklch(0.923 0.027 154);
     --chrome-header-accent: oklch(0.882 0.031 154);
 }
@@ -297,6 +306,7 @@
     --chrome-header-glass: oklch(0.96 0.025 22 / 0.8);
     --chrome-header-foreground: oklch(0.27 0.02 22);
     --chrome-header-muted: oklch(0.527 0.025 22);
+    --chrome-header-input: oklch(0.704 0.026 22);
     --chrome-header-border: oklch(0.928 0.026 22);
     --chrome-header-accent: oklch(0.885 0.03 22);
 }
@@ -319,7 +329,7 @@
     --accent: var(--chrome-header-accent);
     --accent-foreground: var(--chrome-header-foreground);
     --border: var(--chrome-header-border);
-    --input: var(--chrome-header-border);
+    --input: var(--chrome-header-input);
     --ring: var(--chrome-header-muted);
 }
 
@@ -335,6 +345,7 @@
     --chrome-header-foreground: var(--stock-foreground);
     --chrome-header-muted: var(--stock-muted-foreground);
     --chrome-header-border: var(--stock-border);
+    --chrome-header-input: var(--stock-input);
     --chrome-header-accent: var(--stock-accent);
 }
 
