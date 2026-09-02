@@ -11,6 +11,9 @@
 :root {
     --background: oklch(1 0 0);
     --stock-background-glass: oklch(1 0 0 / 0.8);
+    --grad-top: oklch(0.988 0 0);
+    --grad-bottom: oklch(0.959 0 0);
+    --grad-glow: oklch(0.955 0 0 / 0.5);
     --stock-glass-filter: blur(14px) saturate(1.6) brightness(1.08);
     --stock-glass-sheen: rgb(255 255 255 / 0.25);
     --foreground: oklch(0.145 0 0);
@@ -42,7 +45,7 @@
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent: oklch(0.94 0 0);
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
@@ -51,6 +54,9 @@
 .dark {
     --background: oklch(0.145 0 0);
     --stock-background-glass: oklch(0.145 0 0 / 0.8);
+    --grad-top: oklch(0.229 0 0);
+    --grad-bottom: oklch(0.173 0 0);
+    --grad-glow: oklch(0.3 0 0 / 0.5);
     --stock-glass-filter: blur(14px) saturate(1.4) brightness(1.5);
     --stock-glass-sheen: rgb(255 255 255 / 0.04);
     --foreground: oklch(0.985 0 0);
@@ -81,7 +87,7 @@
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.488 0.243 264.376);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent: oklch(0.292 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
@@ -143,7 +149,7 @@
     --sidebar-foreground: oklch(0.966 0.006 258);
     --sidebar-primary: oklch(0.966 0.006 258);
     --sidebar-primary-foreground: oklch(0.247 0.026 258);
-    --sidebar-accent: oklch(0.309 0.031 258);
+    --sidebar-accent: oklch(0.332 0.031 258);
     --sidebar-accent-foreground: oklch(0.985 0.004 258);
     --sidebar-border: oklch(0.292 0.028 258);
     --sidebar-ring: oklch(0.63 0.036 258);
@@ -152,7 +158,7 @@
     --chrome-header-foreground: oklch(0.966 0.006 258);
     --chrome-header-muted: oklch(0.742 0.02 258);
     --chrome-header-border: oklch(0.292 0.028 258);
-    --chrome-header-accent: oklch(0.309 0.031 258);
+    --chrome-header-accent: oklch(0.332 0.031 258);
 }
 
 [data-chrome-theme="graphite"] {
@@ -163,7 +169,7 @@
     --sidebar-foreground: oklch(0.968 0 0);
     --sidebar-primary: oklch(0.968 0 0);
     --sidebar-primary-foreground: oklch(0.216 0 0);
-    --sidebar-accent: oklch(0.278 0 0);
+    --sidebar-accent: oklch(0.301 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(0.262 0 0);
     --sidebar-ring: oklch(0.6 0 0);
@@ -172,7 +178,7 @@
     --chrome-header-foreground: oklch(0.968 0 0);
     --chrome-header-muted: oklch(0.727 0 0);
     --chrome-header-border: oklch(0.262 0 0);
-    --chrome-header-accent: oklch(0.278 0 0);
+    --chrome-header-accent: oklch(0.301 0 0);
 }
 
 [data-chrome-theme="pine"] {
@@ -183,7 +189,7 @@
     --sidebar-foreground: oklch(0.964 0.011 173);
     --sidebar-primary: oklch(0.964 0.011 173);
     --sidebar-primary-foreground: oklch(0.244 0.047 173);
-    --sidebar-accent: oklch(0.306 0.054 173);
+    --sidebar-accent: oklch(0.329 0.054 173);
     --sidebar-accent-foreground: oklch(0.984 0.008 173);
     --sidebar-border: oklch(0.289 0.049 173);
     --sidebar-ring: oklch(0.628 0.062 173);
@@ -192,7 +198,7 @@
     --chrome-header-foreground: oklch(0.964 0.011 173);
     --chrome-header-muted: oklch(0.739 0.035 173);
     --chrome-header-border: oklch(0.289 0.049 173);
-    --chrome-header-accent: oklch(0.306 0.054 173);
+    --chrome-header-accent: oklch(0.329 0.054 173);
 }
 
 [data-chrome-theme="aubergine"] {
@@ -203,7 +209,7 @@
     --sidebar-foreground: oklch(0.966 0.014 325);
     --sidebar-primary: oklch(0.966 0.014 325);
     --sidebar-primary-foreground: oklch(0.262 0.086 325);
-    --sidebar-accent: oklch(0.324 0.098 325);
+    --sidebar-accent: oklch(0.347 0.098 325);
     --sidebar-accent-foreground: oklch(0.985 0.009 325);
     --sidebar-border: oklch(0.307 0.09 325);
     --sidebar-ring: oklch(0.645 0.108 325);
@@ -212,7 +218,7 @@
     --chrome-header-foreground: oklch(0.966 0.014 325);
     --chrome-header-muted: oklch(0.748 0.045 325);
     --chrome-header-border: oklch(0.307 0.09 325);
-    --chrome-header-accent: oklch(0.324 0.098 325);
+    --chrome-header-accent: oklch(0.347 0.098 325);
 }
 
 [data-chrome-theme="gold"] {
@@ -223,7 +229,7 @@
     --sidebar-foreground: oklch(0.271 0.019 84);
     --sidebar-primary: oklch(0.271 0.019 84);
     --sidebar-primary-foreground: oklch(0.961 0.021 84);
-    --sidebar-accent: oklch(0.921 0.032 84);
+    --sidebar-accent: oklch(0.886 0.032 84);
     --sidebar-accent-foreground: oklch(0.244 0.022 84);
     --sidebar-border: oklch(0.929 0.028 84);
     --sidebar-ring: oklch(0.68 0.038 84);
@@ -232,7 +238,7 @@
     --chrome-header-foreground: oklch(0.271 0.019 84);
     --chrome-header-muted: oklch(0.528 0.025 84);
     --chrome-header-border: oklch(0.929 0.028 84);
-    --chrome-header-accent: oklch(0.921 0.032 84);
+    --chrome-header-accent: oklch(0.886 0.032 84);
 }
 
 [data-chrome-theme="sky-blue"] {
@@ -243,7 +249,7 @@
     --sidebar-foreground: oklch(0.268 0.019 246);
     --sidebar-primary: oklch(0.268 0.019 246);
     --sidebar-primary-foreground: oklch(0.959 0.018 246);
-    --sidebar-accent: oklch(0.918 0.028 246);
+    --sidebar-accent: oklch(0.884 0.028 246);
     --sidebar-accent-foreground: oklch(0.242 0.022 246);
     --sidebar-border: oklch(0.926 0.024 246);
     --sidebar-ring: oklch(0.674 0.036 246);
@@ -252,7 +258,7 @@
     --chrome-header-foreground: oklch(0.268 0.019 246);
     --chrome-header-muted: oklch(0.525 0.024 246);
     --chrome-header-border: oklch(0.926 0.024 246);
-    --chrome-header-accent: oklch(0.918 0.028 246);
+    --chrome-header-accent: oklch(0.884 0.028 246);
 }
 
 [data-chrome-theme="sage"] {
@@ -263,7 +269,7 @@
     --sidebar-foreground: oklch(0.266 0.021 154);
     --sidebar-primary: oklch(0.266 0.021 154);
     --sidebar-primary-foreground: oklch(0.957 0.021 154);
-    --sidebar-accent: oklch(0.915 0.031 154);
+    --sidebar-accent: oklch(0.882 0.031 154);
     --sidebar-accent-foreground: oklch(0.24 0.024 154);
     --sidebar-border: oklch(0.923 0.027 154);
     --sidebar-ring: oklch(0.67 0.039 154);
@@ -272,7 +278,7 @@
     --chrome-header-foreground: oklch(0.266 0.021 154);
     --chrome-header-muted: oklch(0.522 0.026 154);
     --chrome-header-border: oklch(0.923 0.027 154);
-    --chrome-header-accent: oklch(0.915 0.031 154);
+    --chrome-header-accent: oklch(0.882 0.031 154);
 }
 
 [data-chrome-theme="rose-gold"] {
@@ -283,7 +289,7 @@
     --sidebar-foreground: oklch(0.27 0.02 22);
     --sidebar-primary: oklch(0.27 0.02 22);
     --sidebar-primary-foreground: oklch(0.96 0.02 22);
-    --sidebar-accent: oklch(0.92 0.03 22);
+    --sidebar-accent: oklch(0.885 0.03 22);
     --sidebar-accent-foreground: oklch(0.243 0.023 22);
     --sidebar-border: oklch(0.928 0.026 22);
     --sidebar-ring: oklch(0.678 0.038 22);
@@ -292,7 +298,7 @@
     --chrome-header-foreground: oklch(0.27 0.02 22);
     --chrome-header-muted: oklch(0.527 0.025 22);
     --chrome-header-border: oklch(0.928 0.026 22);
-    --chrome-header-accent: oklch(0.92 0.03 22);
+    --chrome-header-accent: oklch(0.885 0.03 22);
 }
 
 /* The header paints itself from the chrome tokens and re-points the base
@@ -346,8 +352,8 @@
 
 /* Same idea inside the sidebar, derived from its own token family. Scoped to
    a non-default theme so the stock shell keeps exactly the look it has. */
-[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
-[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar"][data-mobile="true"] {
+[data-chrome-theme] [data-slot="sidebar-inner"],
+[data-chrome-theme] [data-slot="sidebar"][data-mobile="true"] {
     --grad-surface: var(--sidebar);
     --foreground: var(--sidebar-foreground);
     --muted: var(--sidebar-accent);
@@ -384,16 +390,17 @@
 
    @spec L2-UI-44 */
 .chrome-gradient,
-[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
-[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar"][data-mobile="true"],
-[data-chrome-theme]:not([data-chrome-theme="default"])[data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
+[data-chrome-glass="on"] [data-slot="site-header"]::after,
+[data-chrome-theme] [data-slot="sidebar-inner"],
+[data-chrome-theme] [data-slot="sidebar"][data-mobile="true"],
+[data-chrome-theme][data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
     background-image:
         radial-gradient(circle at 0% 0%, var(--grad-glow), transparent 45%),
         linear-gradient(
             160deg,
             var(--grad-top) 0%,
-            var(--grad-surface) 55%,
-            var(--grad-bottom) 100%
+            var(--grad-surface) 30%,
+            var(--grad-bottom) 60%
         );
 }
 
@@ -409,8 +416,9 @@
    an overlay with no header beside it, so it has nothing to line up with.
 
    @spec L2-UI-44 */
-[data-chrome-theme]:not([data-chrome-theme="default"]) [data-slot="sidebar-inner"],
-[data-chrome-theme]:not([data-chrome-theme="default"])[data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
+[data-chrome-theme] [data-slot="sidebar-inner"],
+[data-chrome-glass="on"] [data-slot="site-header"]::after,
+[data-chrome-theme][data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
     background-attachment: fixed;
 }
 
@@ -505,6 +513,35 @@
     );
     -webkit-backdrop-filter: var(--chrome-glass-filter);
     backdrop-filter: var(--chrome-glass-filter);
+}
+
+/* Glass steps at the seam: the wash is one flat colour while the sidebar beside
+   it is mid-ramp, so the boundary shows (measured +4% L on the light palettes,
+   −1% on the dark ones). Fixed by starting the header opaque and fading it
+   into the glass: this `::after` paints the real ramp — same recipe, same
+   viewport-fixed positioning, so it is literally the sidebar's own gradient
+   continuing — and a horizontal mask fades it out over ~340px, revealing the
+   blurred `::before` beneath. Continuity at the seam is then exact, and the
+   glass still reads across the rest of the strip.
+
+   Masking `::after` and not `::before` matters: a mask clips an element's
+   backdrop-filter result along with its paint, so masking the blur layer would
+   punch raw unblurred page through the holes.
+
+   @spec L2-UI-45 */
+[data-chrome-glass="on"] [data-slot="site-header"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(
+        to right,
+        #000 0,
+        #000 72px,
+        transparent 340px
+    );
+    mask-image: linear-gradient(to right, #000 0, #000 72px, transparent 340px);
 }
 
 /* No `backdrop-filter` → no wash either. An unblurred translucent strip with

@@ -96,7 +96,11 @@ describe("chrome theme catalog", () => {
     // missing or losing one of its two consumers.
     expect(GLOBALS_CSS).toContain(".chrome-gradient,")
     expect(GLOBALS_CSS).toContain("--grad-surface: var(--sidebar)")
-    expect(GLOBALS_CSS).toContain("--grad-glow: var(--sidebar-accent)")
+    // Each half of the chrome declares ONLY its own surface. Re-pointing a
+    // stop per element is what stepped the seam ~5% L on the light palettes
+    // (`L2-UI-46`), so assert it stays gone.
+    expect(GLOBALS_CSS).not.toContain("--grad-glow: var(--sidebar-accent)")
+    expect(GLOBALS_CSS).not.toContain("--grad-top: var(")
   })
 
   it("keeps each theme's gradient stops identical to its stylesheet block", () => {
