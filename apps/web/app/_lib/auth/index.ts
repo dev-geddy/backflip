@@ -59,6 +59,12 @@ function clientIp(request?: Request): string {
   return request?.headers?.get?.("x-real-ip")?.trim() || "unknown"
 }
 
+/** Google's OIDC profile carries the avatar as `picture`; anything else → null. */
+function googlePicture(profile: unknown): string | null {
+  const picture = (profile as { picture?: unknown } | undefined)?.picture
+  return typeof picture === "string" && picture.length > 0 ? picture : null
+}
+
 /** Normalize an email for lookup/compare — matches how every write path stores it. */
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase()
@@ -73,7 +79,7 @@ function normalizeEmail(value: string): string {
  * Session strategy is JWT (required by the Credentials provider). The Drizzle
  * adapter persists OAuth accounts. Runs on the Node runtime (uses `pg`).
  *
- * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36, L2-AUTH-40, L2-AUTH-41, L2-AUTH-43
+ * @spec L2-AUTH-02, L2-AUTH-05, L2-AUTH-09, L2-AUTH-10, L2-AUTH-11, L2-AUTH-36, L2-AUTH-40, L2-AUTH-41, L2-AUTH-43, L2-AUTH-45
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -159,15 +165,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const existing = await db.query.users.findFirst({
         where: eq(users.email, normalizeEmail(rawEmail)),
       })
-      return Boolean(existing)
+      if (!existing) return false
+      // Keep the stored avatar in step with Google's. Linking never touches
+      // the existing row, so without this a pre-registered user has no image.
+      const picture = googlePicture(profile)
+      if (picture && picture !== existing.image) {
+        await db
+          .update(users)
+          .set({ image: picture })
+          .where(eq(users.id, existing.id))
+      }
+      return true
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, account, profile }) => {
       // Sign-in: stamp identity + the current token version into the JWT.
       if (user) {
         token.id = user.id
         token.role = user.role
         token.tokenVersion = user.tokenVersion ?? 0
         token.invalid = false
+        // `user` is the row as it was before `signIn` synced the avatar, so
+        // take the picture from the profile — that is what the session shows.
+        if (account?.provider === "google") {
+          const picture = googlePicture(profile)
+          if (picture) token.picture = picture
+        }
         return token
       }
       // Subsequent requests: revalidate against the DB so a password/email

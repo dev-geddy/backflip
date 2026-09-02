@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
  * Auth.js provider/callback behaviour that e2e cannot reach (the Google OAuth
  * round-trip and the per-request revocation check). Locks:
  * - L2-AUTH-10/11/14 — `signIn`: Google only for pre-registered emails.
+ * - L2-AUTH-45 — Google sign-in syncs the profile picture into `users.image`.
  * - L2-AUTH-36 — `jwt` revalidates `tokenVersion`; `session` drops `user`.
  * - L2-AUTH-09 — credentials `authorize` uses bcrypt, never plaintext.
  * - L2-AUTH-05/33/34 — provider composition per auth-mode flags.
@@ -15,6 +16,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
  */
 
 const findFirst = vi.fn()
+// `db.update(users).set({...}).where(...)` — resolves like a drizzle query.
+const set = vi.fn()
+const where = vi.fn().mockResolvedValue(undefined)
+const update = vi.fn(() => ({ set: set.mockReturnValue({ where }) }))
 const captured: { config?: NextAuthConfig } = {}
 
 vi.mock("@auth/drizzle-adapter", () => ({ DrizzleAdapter: () => ({}) }))
@@ -23,7 +28,7 @@ vi.mock("@workspace/db", async () => {
   const schema = await vi.importActual<typeof import("@workspace/db/schema")>(
     "@workspace/db/schema"
   )
-  return { ...schema, db: { query: { users: { findFirst } } } }
+  return { ...schema, db: { query: { users: { findFirst } }, update } }
 })
 
 vi.mock("next-auth", () => ({
@@ -97,6 +102,8 @@ let config: NextAuthConfig
 beforeEach(async () => {
   findFirst.mockReset()
   findFirst.mockResolvedValue(undefined)
+  update.mockClear()
+  set.mockClear()
   config = await loadConfig()
 })
 
@@ -168,6 +175,52 @@ describe("signIn callback (L2-AUTH-10, L2-AUTH-11, L2-AUTH-14)", () => {
         profile: { email_verified: true },
       })
     ).resolves.toBe(true)
+  })
+
+  it("stores the Google picture on a user who has none (L2-AUTH-45)", async () => {
+    findFirst.mockResolvedValue(USER_ROW)
+    await expect(
+      signIn({
+        account: { provider: "google" },
+        user: { email: USER_ROW.email },
+        profile: { email_verified: true, picture: "https://lh3/pic.jpg" },
+      })
+    ).resolves.toBe(true)
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(set).toHaveBeenCalledWith({ image: "https://lh3/pic.jpg" })
+  })
+
+  it("replaces a stale picture, skips an unchanged one (L2-AUTH-45)", async () => {
+    findFirst.mockResolvedValue({ ...USER_ROW, image: "https://lh3/old.jpg" })
+    await signIn({
+      account: { provider: "google" },
+      user: { email: USER_ROW.email },
+      profile: { email_verified: true, picture: "https://lh3/new.jpg" },
+    })
+    expect(set).toHaveBeenCalledWith({ image: "https://lh3/new.jpg" })
+
+    update.mockClear()
+    await signIn({
+      account: { provider: "google" },
+      user: { email: USER_ROW.email },
+      profile: { email_verified: true, picture: "https://lh3/old.jpg" },
+    })
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it("never writes when the profile has no usable picture (L2-AUTH-45)", async () => {
+    findFirst.mockResolvedValue(USER_ROW)
+    await signIn({
+      account: { provider: "google" },
+      user: { email: USER_ROW.email },
+      profile: { email_verified: true, picture: "" },
+    })
+    await signIn({
+      account: { provider: "google" },
+      user: { email: USER_ROW.email },
+      profile: { email_verified: true, picture: 42 },
+    })
+    expect(update).not.toHaveBeenCalled()
   })
 
   it("denies Google sign-in when the email is not verified", async () => {
@@ -286,8 +339,34 @@ describe("credentials authorize (L2-AUTH-09)", () => {
 })
 
 describe("jwt callback — session revocation (L2-AUTH-36)", () => {
-  const jwt = (args: Partial<{ token: unknown; user: unknown }>) =>
-    config.callbacks!.jwt!(args as unknown as JwtArgs)
+  const jwt = (
+    args: Partial<{
+      token: unknown
+      user: unknown
+      account: unknown
+      profile: unknown
+    }>
+  ) => config.callbacks!.jwt!(args as unknown as JwtArgs)
+
+  it("takes the Google picture from the profile at sign-in (L2-AUTH-45)", async () => {
+    const token = await jwt({
+      token: { picture: null },
+      user: USER_ROW,
+      account: { provider: "google" },
+      profile: { picture: "https://lh3/pic.jpg" },
+    })
+    expect(token?.picture).toBe("https://lh3/pic.jpg")
+  })
+
+  it("leaves the picture alone for non-Google sign-ins", async () => {
+    const token = await jwt({
+      token: { picture: "kept" },
+      user: USER_ROW,
+      account: { provider: "credentials" },
+      profile: { picture: "https://lh3/pic.jpg" },
+    })
+    expect(token?.picture).toBe("kept")
+  })
 
   it("stamps identity and tokenVersion at sign-in without a DB read", async () => {
     const token = await jwt({ token: {}, user: USER_ROW })
