@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/dev-geddy/backflip/compare/v1.10.0...v1.11.0) (2026-09-02)
+
+
+### Features
+
+* **web:** count anonymous project starts and chart them in admin ([#39](https://github.com/dev-geddy/backflip/issues/39)) ([fc4533f](https://github.com/dev-geddy/backflip/commit/fc4533f45a0dfc8ed8e9e8ed34a02ef341063c11))
+
 # [1.10.0](https://github.com/dev-geddy/backflip/compare/v1.9.1...v1.10.0) (2026-09-02)
 
 
