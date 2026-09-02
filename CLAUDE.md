@@ -3,12 +3,12 @@
 ## Documentation discipline
 This repo uses a **three-level doc system**: L1 Constitution (`/docs/constitution.md`, why/invariants), L2 Contracts (`/docs/contracts/<domain>.md`, what/interfaces), L3 Notes (`/docs/notes/`, how/volatile).
 
-Rules: cite upward only (L3→L2→L1, by stable ID); conflict order L1>L2>L3; promote up by human decision, regenerate down automatically.
+Rules: cite upward only (L3→L2→L1, by stable ID); conflict order L1>L2>L3; L1 changes by human decision only, L2 by the AI's judgement, L3 regenerated automatically.
 
 **Every code change loads the `docs-sync` skill and maintains docs as part of the change** — not just reads them:
 - Before: read L1 + touched L2.
-- During/after: update L3 live; new feature → update/propose L2; new domain → new L2 + L3; deleted code → prune docs.
-- **Halt for approval on any L2 change** (never edit L1).
+- During/after: update L3 live; new feature → update L2; new domain → new L2 + L3; deleted code → prune docs.
+- **L2 changes are autonomous**: write the clause with the most sensible reading, stamp it in the same commit as the code, and report it in the summary — no approval round-trip. Ask (with concrete variants to pick from) only when two readings would produce materially different contracts and nothing in L1/L2/code settles it. Never edit L1.
 - Not done until docs current — no code lands with stale docs.
 
 If `/docs/constitution.md` missing, run skill Bootstrap first.
