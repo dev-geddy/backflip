@@ -11,6 +11,7 @@ import Link from "next/link"
 import { RiCheckLine } from "@remixicon/react"
 
 import { AppVersion } from "@/app/_components/app-version"
+import { BuildLoopTranscript } from "@/app/_components/build-loop"
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { canViewUsers } from "@/app/_lib/auth/permissions"
 import { SectionLabel } from "./_components/page-heading"
@@ -151,6 +152,15 @@ export default async function BackflipOverviewPage() {
                 Awaiting first sign-in
               </span>
             </StatCard>
+          </div>
+
+          {/* The same pitch the homepage leads with (`L2-UI-48`) — here it
+              reads as a reminder of the loop you are already in. */}
+          <div className="rounded-xl border bg-card p-5">
+            <div className="text-sm font-semibold">How you build from here</div>
+            <div className="mt-3">
+              <BuildLoopTranscript compact />
+            </div>
           </div>
 
           {/* Info cards */}

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 
 import { auth } from "@/app/_lib/auth"
-import { customChromeVars } from "@/app/_lib/theme/chrome-themes"
+import { chromeToneOf, customChromeVars } from "@/app/_lib/theme/chrome-themes"
 import { getChromePreferences } from "@/app/_lib/theme/preferences"
 import { AppSidebar } from "./_components/app-sidebar"
 import { SiteHeader } from "./_components/site-header"
@@ -22,6 +22,9 @@ import type { SessionUser } from "./_components/types"
  * themed while the header falls back to plain light/dark (`L2-UI-32`), and
  * `data-chrome-glass="on"` floats the header over the page as frosted glass
  * (`L2-UI-45`) — a separate attribute because it is orthogonal to the tint.
+ * `data-chrome-tone` says whether the palette is fixed-dark or fixed-light, so
+ * the glass filter chain can be picked per tone × mode; `default` carries none
+ * because it follows the mode.
  *
  * @spec L2-UI-25
  */
@@ -57,6 +60,7 @@ export default async function ProtectedLayout({
       data-chrome-theme={chrome.theme}
       data-chrome-header={chrome.headerThemed ? "themed" : "plain"}
       data-chrome-glass={chrome.headerGlass ? "on" : "off"}
+      data-chrome-tone={chromeToneOf(chrome.theme, chrome.custom.surface)}
       style={
         {
           "--sidebar-width": "15.5rem",

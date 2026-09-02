@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { BuildLoop } from "./_components/build-loop"
 import { CapabilityList } from "./_components/capability-list"
 import { ClaudeConnector } from "./_components/claude-connector"
 import { FeatureList } from "./_components/feature-list"
@@ -23,6 +24,9 @@ export default function HomePage() {
       <SiteHeader />
       <main>
         <Hero />
+        {/* Directly under the hero: the fastest way to explain what this is
+            is to show the four prompts it takes (`L2-UI-48`). */}
+        <BuildLoop />
         <CapabilityList />
         <FeatureList />
         <HowItWorks />

@@ -10,7 +10,9 @@
 
 :root {
     --background: oklch(1 0 0);
-    --stock-background-glass: oklch(1 0 0 / 0.72);
+    --stock-background-glass: oklch(1 0 0 / 0.8);
+    --stock-glass-filter: blur(14px) saturate(1.6) brightness(1.08);
+    --stock-glass-sheen: rgb(255 255 255 / 0.25);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
@@ -48,7 +50,9 @@
 
 .dark {
     --background: oklch(0.145 0 0);
-    --stock-background-glass: oklch(0.145 0 0 / 0.72);
+    --stock-background-glass: oklch(0.145 0 0 / 0.8);
+    --stock-glass-filter: blur(14px) saturate(1.4) brightness(1.5);
+    --stock-glass-sheen: rgb(255 255 255 / 0.04);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
@@ -114,6 +118,8 @@
 .dark {
     --chrome-header: var(--background);
     --chrome-header-glass: var(--stock-background-glass);
+    --chrome-glass-filter: var(--stock-glass-filter);
+    --chrome-glass-sheen: var(--stock-glass-sheen);
     --chrome-header-foreground: var(--foreground);
     --chrome-header-muted: var(--muted-foreground);
     --chrome-header-border: var(--border);
@@ -142,7 +148,7 @@
     --sidebar-border: oklch(0.292 0.028 258);
     --sidebar-ring: oklch(0.63 0.036 258);
     --chrome-header: oklch(0.247 0.026 258);
-    --chrome-header-glass: oklch(0.247 0.026 258 / 0.72);
+    --chrome-header-glass: oklch(0.247 0.033 258 / 0.8);
     --chrome-header-foreground: oklch(0.966 0.006 258);
     --chrome-header-muted: oklch(0.742 0.02 258);
     --chrome-header-border: oklch(0.292 0.028 258);
@@ -162,7 +168,7 @@
     --sidebar-border: oklch(0.262 0 0);
     --sidebar-ring: oklch(0.6 0 0);
     --chrome-header: oklch(0.216 0 0);
-    --chrome-header-glass: oklch(0.216 0 0 / 0.72);
+    --chrome-header-glass: oklch(0.216 0 0 / 0.8);
     --chrome-header-foreground: oklch(0.968 0 0);
     --chrome-header-muted: oklch(0.727 0 0);
     --chrome-header-border: oklch(0.262 0 0);
@@ -182,7 +188,7 @@
     --sidebar-border: oklch(0.289 0.049 173);
     --sidebar-ring: oklch(0.628 0.062 173);
     --chrome-header: oklch(0.244 0.047 173);
-    --chrome-header-glass: oklch(0.244 0.047 173 / 0.72);
+    --chrome-header-glass: oklch(0.244 0.059 173 / 0.8);
     --chrome-header-foreground: oklch(0.964 0.011 173);
     --chrome-header-muted: oklch(0.739 0.035 173);
     --chrome-header-border: oklch(0.289 0.049 173);
@@ -202,7 +208,7 @@
     --sidebar-border: oklch(0.307 0.09 325);
     --sidebar-ring: oklch(0.645 0.108 325);
     --chrome-header: oklch(0.262 0.086 325);
-    --chrome-header-glass: oklch(0.262 0.086 325 / 0.72);
+    --chrome-header-glass: oklch(0.262 0.107 325 / 0.8);
     --chrome-header-foreground: oklch(0.966 0.014 325);
     --chrome-header-muted: oklch(0.748 0.045 325);
     --chrome-header-border: oklch(0.307 0.09 325);
@@ -222,7 +228,7 @@
     --sidebar-border: oklch(0.929 0.028 84);
     --sidebar-ring: oklch(0.68 0.038 84);
     --chrome-header: oklch(0.961 0.021 84);
-    --chrome-header-glass: oklch(0.961 0.021 84 / 0.72);
+    --chrome-header-glass: oklch(0.961 0.026 84 / 0.8);
     --chrome-header-foreground: oklch(0.271 0.019 84);
     --chrome-header-muted: oklch(0.528 0.025 84);
     --chrome-header-border: oklch(0.929 0.028 84);
@@ -242,7 +248,7 @@
     --sidebar-border: oklch(0.926 0.024 246);
     --sidebar-ring: oklch(0.674 0.036 246);
     --chrome-header: oklch(0.959 0.018 246);
-    --chrome-header-glass: oklch(0.959 0.018 246 / 0.72);
+    --chrome-header-glass: oklch(0.959 0.023 246 / 0.8);
     --chrome-header-foreground: oklch(0.268 0.019 246);
     --chrome-header-muted: oklch(0.525 0.024 246);
     --chrome-header-border: oklch(0.926 0.024 246);
@@ -262,7 +268,7 @@
     --sidebar-border: oklch(0.923 0.027 154);
     --sidebar-ring: oklch(0.67 0.039 154);
     --chrome-header: oklch(0.957 0.021 154);
-    --chrome-header-glass: oklch(0.957 0.021 154 / 0.72);
+    --chrome-header-glass: oklch(0.957 0.026 154 / 0.8);
     --chrome-header-foreground: oklch(0.266 0.021 154);
     --chrome-header-muted: oklch(0.522 0.026 154);
     --chrome-header-border: oklch(0.923 0.027 154);
@@ -282,7 +288,7 @@
     --sidebar-border: oklch(0.928 0.026 22);
     --sidebar-ring: oklch(0.678 0.038 22);
     --chrome-header: oklch(0.96 0.02 22);
-    --chrome-header-glass: oklch(0.96 0.02 22 / 0.72);
+    --chrome-header-glass: oklch(0.96 0.025 22 / 0.8);
     --chrome-header-foreground: oklch(0.27 0.02 22);
     --chrome-header-muted: oklch(0.527 0.025 22);
     --chrome-header-border: oklch(0.928 0.026 22);
@@ -318,6 +324,8 @@
 [data-chrome-header="plain"] {
     --chrome-header: var(--stock-background);
     --chrome-header-glass: var(--stock-background-glass);
+    --chrome-glass-filter: var(--stock-glass-filter);
+    --chrome-glass-sheen: var(--stock-glass-sheen);
     --chrome-header-foreground: var(--stock-foreground);
     --chrome-header-muted: var(--stock-muted-foreground);
     --chrome-header-border: var(--stock-border);
@@ -407,32 +415,110 @@
  * It is orthogonal to the tint: a plain header can float too, which is why it
  * rides its own attribute rather than a third value of `data-chrome-header`.
  *
- * The header stays in flow and sticks to the top of the scroll container, and
- * its own paint drops to a translucent wash so the page reads through it,
- * blurred. `backdrop-filter` is what does the blurring; it needs something to
- * see, so the gradient image is removed here — an opaque `background-image`
- * would sit in front of the blur and defeat it. The tint still comes from the
- * theme, just at 72% rather than solid.
+ * The header sticks to the top of the scroll container and its paint moves to
+ * a `::before` that carries the wash, a sheen and the blur. On the pseudo, not
+ * the header: Safari jitters with `backdrop-filter` on a `position: sticky`
+ * element, and `backdrop-filter` creates a containing block for fixed/absolute
+ * descendants — on the header that would trap a non-portaled menu, on a pseudo
+ * with no descendants it traps nothing. The gradient image is dropped here; an
+ * opaque `background-image` sits in front of the blur and defeats it.
  *
- * `-webkit-backdrop-filter` is still required by Safari.
+ * WHY THE FILTER CHAIN IS NOT JUST `blur()`
  *
- * A browser with no `backdrop-filter` support gets no wash at all — an
- * unblurred translucent strip with page content sliding under it is worse than
- * an opaque one — so it falls back to the solid header colour and keeps only
- * the pinning. */
+ * The composite is `α·wash + (1−α)·filter(backdrop)`. A named palette is a
+ * FIXED colour but the canvas under it follows light/dark, so there are four
+ * cases, not two — and the wash alone was wrong in most of them: a dark
+ * palette over the light canvas read visibly lighter and flatter than its own
+ * sidebar, and a light palette over the dark canvas turned to beige mud.
+ *
+ * So the chain drags the backdrop's mean onto the header's own lightness
+ * first; the leftover 20% is then texture rather than a colour shift, which is
+ * what real tinted glass does. Same-polarity cases (dark palette in dark mode,
+ * light in light) only need `brightness()`. Opposite-polarity cases cannot use
+ * it — pulling a white canvas down to 0.13 needs `brightness(0.14)`, which
+ * scales the content variation by the same factor and leaves a flat grey, and
+ * `contrast()` pivots on 0.5 so it clips first. `invert()` is the only op that
+ * moves the mean across without crushing the variance, with `grayscale(1)`
+ * ahead of it so hues cannot flip: the page supplies luminance texture, the
+ * palette supplies the hue.
+ *
+ * Keyed on `data-chrome-tone`, stamped by the layout from the catalog's own
+ * `group` (and from luminance for `custom`) — not on a hand-kept list of
+ * palette ids, which would need editing every time a theme is added.
+ *
+ * Alpha is 0.80 everywhere: at 0.72 blurred text sat ~0.10 L off under a dark
+ * header and looked patchy, and past ~0.85 the modulation drops below 0.02 L
+ * and stops reading as glass at all. */
+[data-chrome-tone="dark"] {
+    /* Fixed-dark palette over the light-mode canvas — opposite polarity. */
+    --chrome-glass-filter: blur(14px) grayscale(1) invert(0.9) brightness(1.3);
+    --chrome-glass-sheen: rgb(255 255 255 / 0.04);
+}
+.dark [data-chrome-tone="dark"] {
+    --chrome-glass-filter: blur(14px) saturate(1.4) brightness(2);
+}
+[data-chrome-tone="light"] {
+    /* Fixed-light palette over the light-mode canvas — same polarity. The
+       1.08 also clips the canvas to white while lifting blurred text, which
+       is what stops card edges reading as grey smudges. */
+    --chrome-glass-filter: blur(14px) saturate(1.6) brightness(1.08);
+    --chrome-glass-sheen: rgb(255 255 255 / 0.25);
+}
+.dark [data-chrome-tone="light"] {
+    --chrome-glass-filter: blur(14px) grayscale(1) invert(1);
+}
+
+/* An untinted header follows the mode, so it is always same-polarity and takes
+   the stock chain. Both selectors: `.dark [data-chrome-tone]` above is (0,2,0)
+   and would otherwise outrank a bare attribute. */
+[data-chrome-header="plain"],
+.dark [data-chrome-header="plain"] {
+    --chrome-glass-filter: var(--stock-glass-filter);
+    --chrome-glass-sheen: var(--stock-glass-sheen);
+}
+
 [data-chrome-glass="on"] [data-slot="site-header"] {
     position: sticky;
     top: 0;
+    /* sticky + z-index makes the stacking context that keeps `::before` under
+       the header's own children rather than under the page. */
     z-index: 20;
     background-image: none;
-    background-color: var(--chrome-header-glass);
-    -webkit-backdrop-filter: blur(14px) saturate(1.6);
-    backdrop-filter: blur(14px) saturate(1.6);
+    background-color: transparent;
 }
 
+[data-chrome-glass="on"] [data-slot="site-header"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--chrome-header-glass);
+    background-image: linear-gradient(
+        to bottom,
+        var(--chrome-glass-sheen),
+        transparent 60%
+    );
+    -webkit-backdrop-filter: var(--chrome-glass-filter);
+    backdrop-filter: var(--chrome-glass-filter);
+}
+
+/* No `backdrop-filter` → no wash either. An unblurred translucent strip with
+   content sliding under it is worse than an opaque one. Same for a reader who
+   has asked for less transparency, and for print. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    [data-chrome-glass="on"] [data-slot="site-header"] {
+    [data-chrome-glass="on"] [data-slot="site-header"]::before {
         background-color: var(--chrome-header);
+        background-image: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce), print {
+    [data-chrome-glass="on"] [data-slot="site-header"]::before {
+        background-color: var(--chrome-header);
+        background-image: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
     }
 }
 

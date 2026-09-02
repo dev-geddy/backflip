@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest"
 import {
   CHROME_THEMES,
   CUSTOM_CHROME_HEADER_VARS,
+  chromeToneOf,
   customChromeVars,
   gradientVars,
   DEFAULT_CHROME_THEME,
@@ -152,6 +153,30 @@ describe("chrome theme catalog", () => {
     expect(recipe).toContain("var(--grad-top)")
     expect(recipe).toContain("var(--grad-bottom)")
     expect(recipe).toContain("var(--grad-glow)")
+  })
+
+  it("gives every fixed palette a tone, and `default` none", () => {
+    // The glass filter chains are keyed on tone × app mode (`L2-UI-45`); a
+    // palette with no tone would silently fall through to the stock chain and
+    // wash out exactly the way the flat wash did.
+    for (const theme of CHROME_THEMES) {
+      const tone = chromeToneOf(theme.id)
+      if (theme.id === DEFAULT_CHROME_THEME) {
+        expect(tone, "default follows the mode").toBeUndefined()
+        continue
+      }
+      expect(tone, `${theme.id} has no tone`).toBe(theme.group)
+      expect(GLOBALS_CSS).toContain(`[data-chrome-tone="${tone}"]`)
+      expect(GLOBALS_CSS).toContain(`.dark [data-chrome-tone="${tone}"]`)
+    }
+  })
+
+  it("reads a custom palette's tone off its own surface", () => {
+    expect(chromeToneOf("custom", "#241448")).toBe("dark")
+    expect(chromeToneOf("custom", "#f4f1ea")).toBe("light")
+    // Junk and absent both fall back to the seed, which is dark.
+    expect(chromeToneOf("custom", "nonsense")).toBe("dark")
+    expect(chromeToneOf("custom", null)).toBe("dark")
   })
 
   it("keeps ids unique", () => {

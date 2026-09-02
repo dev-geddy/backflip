@@ -4,6 +4,18 @@ Live: [backflip.dev-geddy.com](https://backflip.dev-geddy.com/)
 
 A full-stack **platform foundation** for kicking off new projects fast — auth, admin dashboard, database, and UI system already wired, so you build features instead of boilerplate.
 
+**You have Docker and dev tools ready.**
+
+```
+Claude> clone github.com/dev-geddy/backflip
+Claude> set up and run this project locally
+Claude> create a user for me and give me the login URL
+Claude> build feature X
+…
+```
+
+That's how you start a project now. Auth, database, admin console and UI system are already wired, so there is no boilerplate left to describe — you start at the feature.
+
 Stack: Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · Drizzle + Postgres · Auth.js · Turborepo · yarn 4.
 
 ![Backflip admin console — Integrations, with AI providers and email configured per workspace](./docs/assets/admin-integrations.png)

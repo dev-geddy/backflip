@@ -330,12 +330,38 @@ export function customChromeVars(
     "--chrome-header": safeSurface,
     // Inline style is never minified, so `color-mix()` is safe here; a named
     // theme has to spell the same wash out literally (`L2-UI-45`).
-    "--chrome-header-glass": `color-mix(in oklab, ${safeSurface} 72%, transparent)`,
+    // The glass wash (`L2-UI-45`). The backdrop-correcting filter is NOT set
+    // here: it depends on the app's light/dark mode as well as the palette's
+    // tone, which inline style cannot express — the layout stamps
+    // `data-chrome-tone` instead and CSS picks the chain.
+    "--chrome-header-glass": `color-mix(in oklab, ${safeSurface} 80%, transparent)`,
     "--chrome-header-foreground": ink,
     "--chrome-header-muted": muted,
     "--chrome-header-border": border,
     "--chrome-header-accent": safeAccent,
   }
+}
+
+/**
+ * Which glass filter chain a theme takes (`L2-UI-45`): the chains are keyed on
+ * tone × app mode, and only the tone is knowable on the server. `default` has
+ * no fixed tone — it follows the mode — so it gets no attribute and falls
+ * through to the stock chain.
+ */
+export function chromeToneOf(
+  theme: ChromeThemeId,
+  customSurface?: string | null
+): "dark" | "light" | undefined {
+  if (theme === "custom") {
+    const surface =
+      customSurface && isHexColor(customSurface)
+        ? customSurface
+        : CUSTOM_CHROME_SEED.surface
+    // Same threshold the ink uses, so tone and ink can never disagree.
+    return luminance(surface) > 0.45 ? "light" : "dark"
+  }
+  const group = CHROME_THEMES.find((t) => t.id === theme)?.group
+  return group === "dark" || group === "light" ? group : undefined
 }
 
 /** The header-only half of a custom palette — what the toggle adds/removes. */
