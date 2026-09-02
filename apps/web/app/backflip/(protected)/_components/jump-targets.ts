@@ -1,5 +1,5 @@
-/** Quick-jump destinations — real routes + action shortcuts. Shared by the
- *  header search and the Overview quick-jump. */
+/** Quick-jump destinations — real routes + action shortcuts, rendered by the
+ *  header search (the only palette entry point). */
 export const JUMP_GROUPS: {
   heading: string
   items: { label: string; href: string; keywords: string }[]
@@ -22,6 +22,11 @@ export const JUMP_GROUPS: {
         label: "Docs",
         href: "/backflip/docs",
         keywords: "documentation constitution contracts notes spec l1 l2 l3",
+      },
+      {
+        label: "UI samples",
+        href: "/backflip/ui-samples",
+        keywords: "components gallery reference shadcn design system",
       },
       {
         label: "Integrations",

@@ -14,7 +14,6 @@ import { AppVersion } from "@/app/_components/app-version"
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { canViewUsers } from "@/app/_lib/auth/permissions"
 import { SectionLabel } from "./_components/page-heading"
-import { OverviewJump } from "./_components/overview-jump"
 
 const DATE_FMT = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
@@ -119,11 +118,9 @@ export default async function BackflipOverviewPage() {
               Welcome back, {firstName}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Jump to anything, or pick up where you left off.
+              Pick up where you left off.
             </p>
           </div>
-
-          <OverviewJump />
 
           {/* Stat cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

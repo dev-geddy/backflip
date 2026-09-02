@@ -10,13 +10,9 @@ import { AppSidebar } from "./_components/app-sidebar"
 import { SiteHeader } from "./_components/site-header"
 import type { SessionUser } from "./_components/types"
 
-function initials(nameOrEmail: string) {
-  return nameOrEmail.slice(0, 2).toUpperCase()
-}
-
 /**
  * Authenticated /backflip shell (Flat Admin design): a flush left sidebar
- * (248px) against a soft canvas, with a 56px header. The proxy already gates
+ * (248px) against a soft canvas, with a 48px header. The proxy already gates
  * this subtree; `auth()` provides the user.
  *
  * The user's chrome preferences are resolved here and stamped on the shell
@@ -62,17 +58,14 @@ export default async function ProtectedLayout({
         {
           "--sidebar-width": "15.5rem",
           "--sidebar-width-icon": "3.5rem",
-          "--header-height": "3.5rem",
+          "--header-height": "3rem",
           ...customVars,
         } as CSSProperties
       }
     >
       <AppSidebar user={user} />
       <SidebarInset>
-        <SiteHeader
-          userName={user.name}
-          userInitials={initials(user.name || user.email)}
-        />
+        <SiteHeader />
         {/* No outer padding: master-detail pages go full-bleed edge-to-edge;
             padded pages (dashboard/account) add their own padding. */}
         <div className="flex min-h-0 flex-1 flex-col bg-muted/40">

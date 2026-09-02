@@ -20,10 +20,16 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar"
-import { RiMore2Line, RiLogoutBoxLine, RiUserLine } from "@remixicon/react"
+import {
+  RiMore2Line,
+  RiLogoutBoxLine,
+  RiUserLine,
+  RiGroupLine,
+} from "@remixicon/react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
 
+import { can } from "@/app/_lib/auth/permissions"
 import type { SessionUser } from "./types"
 
 function initials(nameOrEmail: string) {
@@ -91,13 +97,26 @@ export function NavUser({ user }: { user: SessionUser }) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem render={<Link href="/backflip/account" />}>
+              {can(user.role, "users.view") ? (
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  render={<Link href="/backflip/users" />}
+                >
+                  <RiGroupLine />
+                  Members
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem
+                className="cursor-pointer"
+                render={<Link href="/backflip/account" />}
+              >
                 <RiUserLine />
                 Account
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              className="cursor-pointer"
               onClick={() => signOut({ callbackUrl: "/backflip/login" })}
             >
               <RiLogoutBoxLine />

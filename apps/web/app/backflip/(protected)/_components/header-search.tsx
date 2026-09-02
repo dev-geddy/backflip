@@ -45,11 +45,11 @@ export function HeaderSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-8 w-40 min-w-0 shrink items-center gap-2 rounded-md border px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 sm:w-56"
+        className="flex h-7 w-36 min-w-0 shrink items-center gap-1.5 rounded-md border pr-0.5 pl-2 text-xs text-muted-foreground transition-colors hover:bg-muted/50 sm:w-48"
       >
-        <RiSearchLine className="size-4" />
+        <RiSearchLine className="size-3.5" />
         <span className="flex-1 truncate text-left">Jump to…</span>
-        <kbd className="hidden items-center rounded border px-1.5 py-0.5 font-sans text-xs leading-none sm:inline-flex">
+        <kbd className="hidden h-[22px] items-center rounded-sm border bg-muted/60 px-1.5 font-sans text-[11px] leading-none sm:inline-flex">
           ⌘K
         </kbd>
       </button>

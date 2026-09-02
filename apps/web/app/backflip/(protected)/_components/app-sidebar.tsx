@@ -16,13 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar"
-import {
-  RiDashboardLine,
-  RiGroupLine,
-  RiCheckboxMultipleBlankLine,
-  RiShapesLine,
-  RiUserLine,
-} from "@remixicon/react"
+import { RiDashboardLine, RiLinksLine } from "@remixicon/react"
 
 import { BrandIcon } from "@/app/_components/brand-icon"
 import { can, type Capability } from "@/app/_lib/auth/permissions"
@@ -48,12 +42,6 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
         icon: RiDashboardLine,
         capability: "dashboard",
       },
-      {
-        title: "UI samples",
-        url: "/backflip/ui-samples",
-        icon: RiShapesLine,
-        capability: "dashboard",
-      },
     ],
   },
   {
@@ -61,21 +49,9 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
     pinBottom: true,
     items: [
       {
-        title: "Members",
-        url: "/backflip/users",
-        icon: RiGroupLine,
-        capability: "users.view",
-      },
-      {
-        title: "Account",
-        url: "/backflip/account",
-        icon: RiUserLine,
-        capability: "account",
-      },
-      {
         title: "Integrations",
         url: "/backflip/settings",
-        icon: RiCheckboxMultipleBlankLine,
+        icon: RiLinksLine,
         capability: "settings",
       },
     ],

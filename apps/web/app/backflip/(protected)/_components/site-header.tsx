@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
 import { ThemeToggle } from "@/app/_components/theme-toggle"
@@ -31,13 +30,7 @@ function crumbsFor(pathname: string): string[] {
   return CRUMBS.find((c) => c.match(pathname))?.trail ?? ["Backflip"]
 }
 
-export function SiteHeader({
-  userName,
-  userInitials,
-}: {
-  userName: string
-  userInitials: string
-}) {
+export function SiteHeader() {
   const pathname = usePathname()
   const trail = crumbsFor(pathname)
 
@@ -83,11 +76,6 @@ export function SiteHeader({
             variant="ghost"
             className="size-7 text-muted-foreground hover:text-foreground"
           />
-          <Avatar className="size-7 rounded-full">
-            <AvatarFallback className="rounded-full text-xs" title={userName}>
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
         </div>
       </div>
     </header>

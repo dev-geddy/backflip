@@ -1,6 +1,6 @@
 "use client"
 
-import { RiArrowRightLine } from "@remixicon/react"
+import { RiArrowRightLine, RiShapesLine } from "@remixicon/react"
 
 import { exampleTrace, type DocsGraph } from "../_lib/docs-graph"
 import { IdChip } from "./drift-badge"
@@ -35,7 +35,7 @@ const LEVELS: {
     name: "Contracts",
     question: "What",
     detail: "Interfaces, schemas, invariants, errors — one file per domain.",
-    cadence: "Per feature · human-approved",
+    cadence: "Per feature · written with the code",
   },
   {
     level: 3,
@@ -104,6 +104,28 @@ export function DocsGuide({
           currently reachable from source via <code>@spec</code> tags.
         </p>
       </div>
+
+      <a
+        href="/backflip/ui-samples"
+        className="mt-3 flex items-center gap-3 rounded-lg border p-3 text-[13px] hover:border-primary/40"
+      >
+        <RiShapesLine
+          aria-hidden
+          className="size-4 flex-none text-muted-foreground"
+        />
+        <span className="min-w-0 flex-1">
+          <span className="font-medium">UI samples</span>
+          <span className="text-muted-foreground">
+            {" "}
+            — every component in this theme, on one page. Point at one by name
+            when you describe a feature.
+          </span>
+        </span>
+        <RiArrowRightLine
+          aria-hidden
+          className="size-4 flex-none text-muted-foreground"
+        />
+      </a>
 
       {example ? (
         <>
