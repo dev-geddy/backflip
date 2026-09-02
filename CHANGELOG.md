@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/dev-geddy/backflip/compare/v1.9.1...v1.10.0) (2026-09-02)
+
+
+### Features
+
+* **web:** ramp the default chrome and start the glass header opaque ([#38](https://github.com/dev-geddy/backflip/issues/38)) ([3a56848](https://github.com/dev-geddy/backflip/commit/3a56848e4cab9bd2513063757a4e2816ba225cc2))
+
 ## [1.9.1](https://github.com/dev-geddy/backflip/compare/v1.9.0...v1.9.1) (2026-09-02)
 
 
