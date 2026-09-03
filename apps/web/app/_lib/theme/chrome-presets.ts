@@ -27,6 +27,72 @@ export type ChromePreset = {
 }
 
 export const BUILT_IN_CHROME_PRESETS: ChromePreset[] = [
+  // The eight palettes that used to be selectable as fixed themes. They now
+  // apply the same way everything else in the shelf does — as a colour pair on
+  // the `custom` theme — so one shelf has one behaviour.
+  //
+  // The hex values are their `oklch()` originals converted to sRGB. Three of
+  // them clip a channel on the way (`pine` and `rose-gold` hardest), so a pair
+  // is very close to, but not identical with, the stylesheet block of the same
+  // name. The blocks themselves stay in `globals.css`: a user whose stored
+  // `chromeTheme` is still `slate` must keep rendering (`L2-UI-26`).
+  {
+    id: "slate",
+    name: "Slate",
+    tone: "dark",
+    surface: "#19212d",
+    accent: "#2c3646",
+  },
+  {
+    id: "graphite",
+    name: "Graphite",
+    tone: "dark",
+    surface: "#1a1a1a",
+    accent: "#2e2e2e",
+  },
+  {
+    id: "pine",
+    name: "Pine",
+    tone: "dark",
+    surface: "#00271e",
+    accent: "#0f3e32",
+  },
+  {
+    id: "aubergine",
+    name: "Aubergine",
+    tone: "dark",
+    surface: "#38123b",
+    accent: "#522455",
+  },
+  {
+    id: "gold",
+    name: "Gold",
+    tone: "light",
+    surface: "#f9f1e3",
+    accent: "#e3d8c2",
+  },
+  {
+    id: "sky-blue",
+    name: "Sky Blue",
+    tone: "light",
+    surface: "#e8f3fd",
+    accent: "#cadbeb",
+  },
+  {
+    id: "sage",
+    name: "Sage",
+    tone: "light",
+    surface: "#e7f5ea",
+    accent: "#c9dfcf",
+  },
+  {
+    id: "rose-gold",
+    name: "Rose Gold",
+    tone: "light",
+    surface: "#ffedec",
+    accent: "#edd2d0",
+  },
+
   {
     id: "midnight",
     name: "Midnight",

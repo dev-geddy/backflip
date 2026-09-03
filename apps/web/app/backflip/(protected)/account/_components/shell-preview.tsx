@@ -18,10 +18,14 @@ export function ShellPreview({
   theme,
   headerThemed,
   glass,
+  size = "tile",
 }: {
   theme: ChromeTheme
   headerThemed: boolean
   glass: boolean
+  /** `tile` is the grid card's miniature; `tall` is the dialog's, where the
+   *  preview is the thing being judged rather than a label for a name. */
+  size?: "tile" | "tall"
 }) {
   const stock = theme.group === "default"
   const paint = stock
@@ -64,7 +68,8 @@ export function ShellPreview({
     <span
       aria-hidden
       className={cn(
-        "flex h-[104px] overflow-hidden rounded-lg border",
+        "flex overflow-hidden rounded-lg border",
+        size === "tall" ? "h-[220px]" : "h-[104px]",
         gradient ? "chrome-gradient" : undefined
       )}
       style={{

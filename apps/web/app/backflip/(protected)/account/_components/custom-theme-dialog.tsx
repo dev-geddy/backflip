@@ -25,7 +25,6 @@ import {
   samePair,
 } from "@/app/_lib/theme/chrome-presets"
 import {
-  CHROME_THEMES,
   customChromeVars,
   type ChromeTheme,
   type ChromeThemeId,
@@ -36,12 +35,6 @@ import { createChromePreset, deleteChromePreset } from "../_actions"
 import { ShellPreview } from "./shell-preview"
 
 type Pair = { surface: string; accent: string }
-
-/** The fixed palettes, split the way the dialog shelves them. */
-const FIXED = {
-  dark: CHROME_THEMES.filter((t) => t.group === "dark"),
-  light: CHROME_THEMES.filter((t) => t.group === "light"),
-}
 
 /**
  * The chrome picker, in a dialog: the eight fixed palettes, the colour pairs
@@ -74,7 +67,6 @@ export function CustomThemeDialog({
   glass,
   onPick,
   onApplyPair,
-  onSelectTheme,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -85,10 +77,10 @@ export function CustomThemeDialog({
   glass: boolean
   onPick: (part: "surface" | "accent", value: string) => void
   onApplyPair: (pair: Pair) => void
-  onSelectTheme: (id: ChromeThemeId) => void
 }) {
   const [presets, setPresets] = useState(saved)
   const [name, setName] = useState("")
+  const [naming, setNaming] = useState(false)
   const [pending, start] = useTransition()
 
   // The server revalidates `/backflip/account` after every write, so props are
@@ -103,6 +95,12 @@ export function CustomThemeDialog({
   }
 
   const full = presets.length >= MAX_SAVED_PRESETS
+
+  // Saving is only offered for a pair that is not already on a shelf — there
+  // is nothing to keep about colours you can already click.
+  const match =
+    BUILT_IN_CHROME_PRESETS.find((preset) => samePair(colors, preset)) ??
+    presets.find((preset) => samePair(colors, preset))
 
   function save() {
     const trimmed = name.trim()
@@ -125,6 +123,7 @@ export function CustomThemeDialog({
         ...current.filter((p) => p.name !== trimmed),
       ])
       setName("")
+      setNaming(false)
       toast.success(res.message)
     })
   }
@@ -173,51 +172,81 @@ export function CustomThemeDialog({
                 value={colors.accent}
                 onChange={(v) => onPick("accent", v)}
               />
+
+              {match ? (
+                <p className="text-[11px] leading-tight text-muted-foreground">
+                  These are {match.name}.
+                </p>
+              ) : naming ? (
+                <div className="flex flex-col gap-2">
+                  <Input
+                    autoFocus
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault()
+                        save()
+                      }
+                      if (event.key === "Escape") setNaming(false)
+                    }}
+                    maxLength={MAX_PRESET_NAME}
+                    placeholder="Name these colours"
+                    aria-label="Preset name"
+                    className="h-9"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 flex-1"
+                      disabled={pending || !name.trim() || full}
+                      onClick={save}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8"
+                      onClick={() => setNaming(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  {full ? (
+                    <p className="text-[11px] leading-tight text-muted-foreground">
+                      Shelf is full — delete one below.
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-full"
+                  onClick={() => setNaming(true)}
+                >
+                  <RiAddLine className="size-4" />
+                  Save preset
+                </Button>
+              )}
             </div>
           </div>
 
-          <Section title="Dark" hint="Stays dark in either mode">
-            <SwatchGrid>
-              {FIXED.dark.map((theme) => (
-                <Swatch
-                  key={theme.id}
-                  name={theme.label}
-                  pair={{
-                    surface: theme.swatch.surface,
-                    accent: theme.swatch.accent,
-                  }}
-                  active={selected === theme.id}
-                  onSelect={() => onSelectTheme(theme.id)}
-                />
-              ))}
-            </SwatchGrid>
-          </Section>
-
-          <Section title="Light" hint="Stays light in either mode">
-            <SwatchGrid>
-              {FIXED.light.map((theme) => (
-                <Swatch
-                  key={theme.id}
-                  name={theme.label}
-                  pair={{
-                    surface: theme.swatch.surface,
-                    accent: theme.swatch.accent,
-                  }}
-                  active={selected === theme.id}
-                  onSelect={() => onSelectTheme(theme.id)}
-                />
-              ))}
-            </SwatchGrid>
-          </Section>
-
-          <Section title="Custom presets">
+          <Section title="System presets">
             <SwatchGrid>
               {BUILT_IN_CHROME_PRESETS.map((preset) => (
                 <Swatch
                   key={preset.id}
                   name={preset.name}
                   pair={preset}
-                  active={samePair(colors, preset)}
+                  // Only "on" while the custom theme is the applied one —
+                  // matching hexes under some other theme is a coincidence,
+                  // not a selection.
+                  active={selected === "custom" && samePair(colors, preset)}
                   onSelect={() => onApplyPair(preset)}
                 />
               ))}
@@ -225,7 +254,7 @@ export function CustomThemeDialog({
           </Section>
 
           <Section
-            title="Saved"
+            title="User presets"
             hint={
               presets.length > 0
                 ? `${presets.length} of ${MAX_SAVED_PRESETS}`
@@ -250,41 +279,6 @@ export function CustomThemeDialog({
                 ))}
               </SwatchGrid>
             )}
-
-            <div className="flex gap-2">
-              <Input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault()
-                    save()
-                  }
-                }}
-                maxLength={MAX_PRESET_NAME}
-                placeholder="Name these colours"
-                aria-label="Preset name"
-                className="h-9"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-9 flex-none"
-                // A full shelf still allows a save — it may be an update to a
-                // name already held. The action decides; this only stops the
-                // obviously-new case from looking available.
-                disabled={
-                  pending ||
-                  !name.trim() ||
-                  (full && !presets.some((p) => p.name === name.trim()))
-                }
-                onClick={save}
-              >
-                <RiAddLine className="size-4" />
-                Save
-              </Button>
-            </div>
           </Section>
         </div>
 
@@ -379,9 +373,10 @@ function Swatch({
           type="button"
           onClick={onRemove}
           aria-label={`Remove ${name}`}
-          // Hidden until hover/focus so the shelf reads as swatches, not as a
-          // management table; keyboard users get it via focus-visible.
-          className="absolute top-1 right-1 hidden size-5 items-center justify-center rounded-md bg-background/90 text-muted-foreground group-hover:flex hover:text-foreground focus-visible:flex"
+          // Always visible, never hover-gated: a `hidden` control cannot take
+          // keyboard focus, and a delete nobody can find is a delete that does
+          // not exist.
+          className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-md border bg-background/90 text-muted-foreground shadow-sm transition-colors hover:border-destructive/40 hover:text-destructive"
         >
           <RiDeleteBinLine className="size-3.5" />
         </button>
@@ -417,7 +412,12 @@ function LivePreview({
     },
   }
   return (
-    <ShellPreview theme={theme} headerThemed={headerThemed} glass={glass} />
+    <ShellPreview
+      theme={theme}
+      headerThemed={headerThemed}
+      glass={glass}
+      size="tall"
+    />
   )
 }
 

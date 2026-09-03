@@ -212,7 +212,6 @@ export function AppearanceSection({
         glass={glass}
         onPick={pickCustomColor}
         onApplyPair={applyCustomPair}
-        onSelectTheme={choose}
       />
 
       {GROUP_ORDER.map((group) => {

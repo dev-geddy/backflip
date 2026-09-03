@@ -48,7 +48,7 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - Sidebar `collapsible="icon"` (was offcanvas) → contracted = 60px icon rail (design 1B); `--sidebar-width-icon: 3.5rem`; logo/user buttons get `group-data-[collapsible=icon]:p-0!` so tile/avatar fit. **Icon-only when contracted:** `p-0` alone was not enough — the brand label block and the user chip's label + `RiMore2Line` are `flex-1`/`ml-auto` siblings that keep their intrinsic width, so inside the 32px button (`overflow-hidden`, `justify-center`) they pushed the icon out of the box (measured brand tile `x = -24px`, footer avatar `x = -8.5px` — the mark disappeared). Both label blocks now carry `group-data-[collapsible=icon]:hidden` so they leave the flow entirely. Guarded by `e2e/admin-chrome.spec.ts`. Header divider is a plain `h-4 w-px bg-border` span (base-mira `Separator` forces `data-vertical:self-stretch`, so it stretched/misaligned — a fixed span centered by the header's `items-center` is reliable).
 
 ## Custom palette presets (L2-UI-55)
-- `apps/web/app/_lib/theme/chrome-presets.ts` — `BUILT_IN_CHROME_PRESETS` (9 pairs, 5 dark + 4 light — `brick` is the one with real chroma, on purpose: a deep red reads as "production" at a glance), `MAX_SAVED_PRESETS` 24, `MAX_PRESET_NAME` 32, `normalizePresetName`, `samePair`. Client-safe (no `server-only`) — the dialog imports it directly. `chrome-presets.test.ts` locks the built-ins to valid `#rrggbb`, unique ids/names, and surface ≠ accent.
+- `apps/web/app/_lib/theme/chrome-presets.ts` — `BUILT_IN_CHROME_PRESETS` (17 pairs: the 8 ex-fixed palettes converted to hex, plus 9 others — `brick` is the one with real chroma, on purpose: a deep red reads as "production" at a glance), `MAX_SAVED_PRESETS` 24, `MAX_PRESET_NAME` 32, `normalizePresetName`, `samePair`. Client-safe (no `server-only`) — the dialog imports it directly. `chrome-presets.test.ts` locks every pair to valid `#rrggbb`, unique ids/names, and surface ≠ accent.
 - `apps/web/app/_lib/theme/preferences.ts` — gained the preset data layer: `listChromePresets`, `countChromePresets`, `insertChromePreset` (upsert on `(userId, name)`), `deleteChromePresetRow` (scoped by `userId`, never id alone).
 - `account/_actions.ts` — `createChromePreset` / `deleteChromePreset`, session-scoped. The cap is checked *before* the insert but only bites a genuinely new name, so a full shelf can still be edited.
 - `account/_components/custom-theme-dialog.tsx` — the editor. Preview + two colour wells + built-in shelf + saved shelf + name field.
@@ -56,15 +56,22 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - `account/_components/appearance-section.tsx` — `GROUP_ORDER` is `["default"]`: only the Default tile and the Custom card render on the page, plus the two header switches. `CustomThemeCard` no longer edits — preview, read-only echo of the two colours, and a button. The dialog is rendered once at section level and its `open` state lives here, so the header's "Browse themes…" and the card's "Customize…" drive the same instance. New `applyCustomPair` commits both colours in one write; `pickCustomColor` is a one-line wrapper over it.
 
 ### Why a dialog
-The picker is a *browsing* task — twenty-odd swatches compared against a preview — sitting in a page that is otherwise a list of settings. Inline, the eight fixed palettes rendered as preview tiles pushed password, email and connections below the fold, and the preset shelves would have doubled it again.
+The picker is a *browsing* task — seventeen swatches compared against a preview — sitting in a page that is otherwise a list of settings. Inline, the eight fixed palettes rendered as preview tiles pushed password, email and connections below the fold, and the preset shelves would have doubled it again.
 
-The fixed palettes were **moved**, not converted. Flattening them into hex pairs would have thrown away the authored oklch blocks and, with them, the literal gradient stops a `color-mix()` cannot reproduce under the production minifier (`L2-UI-47`). In the dialog they are still `data-chrome-theme` ids; only their *presentation* dropped from a preview tile to a swatch.
+### Why the fixed palettes became colour pairs
+They were first *moved* into the dialog as real themes, then flattened to pairs so the shelf has one behaviour: every swatch sets two colours on `custom`. The cost is real and worth stating — a pair derives its gradient stops, ink and borders through `customChromeVars`, where the stylesheet block spelled them out literally (`L2-UI-47`), and three of the eight clip an sRGB channel on the way out of `oklch()` (`pine` and `rose-gold` hardest). So "Slate" the pair is very close to, but not the same pixels as, "Slate" the block.
+
+The blocks stay in `globals.css` and the ids stay in `CHROME_THEMES`. They are no longer reachable from the picker, but a user whose stored `chromeTheme` is `slate` keeps rendering exactly as before — `resolveChromeTheme` would otherwise silently drop them to `default`.
+
+### Why the save button sits under the colour wells
+It is the answer to "I like what I just made", so it belongs where the making happened, not at the bottom of a shelf. It only appears when the pair matches nothing on either shelf; a match shows "These are Slate." instead. Clicking reveals the name field in place (Enter saves, Escape cancels).
 
 ### Why saving under an existing name updates it
 There is no separate edit affordance, and inventing one (pencil icon → inline rename → separate colour update) is three controls for what a user already expresses by typing a name they recognise. `insertChromePreset` upserts on `(userId, name)`; the unique index makes that the natural behaviour rather than an error to handle.
 
 ### Gotchas
 - The `<input type="color">` wells are **uncontrolled** (`defaultValue`) so dragging the OS colour wheel doesn't fire a write per frame — they commit on `change`. That means applying a preset elsewhere in the dialog wouldn't repaint them, so each well is `key={value}`: a new colour remounts the input.
+- The delete on a user preset is **always visible**, not revealed on hover. `hidden` cannot take keyboard focus, so the earlier `group-hover:flex focus-visible:flex` was unreachable by keyboard and hard to find with a mouse.
 - The saved shelf keeps local state for optimism, reconciled against props **during render** (the `lastSaved` pattern), not in an effect. An effect paints the stale list first and immediately re-renders — and the repo's lint rule flags exactly that.
 - A preset stores only the two colours. Ink, borders, ring and gradient stay derived by `customChromeVars`, so a saved pair cannot go stale against a change in that derivation (`L2-UI-33`).
 
