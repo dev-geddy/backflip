@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/dev-geddy/backflip/compare/v1.11.0...v1.12.0) (2026-09-03)
+
+
+### Features
+
+* **web:** manage ignored installs and prune old start rows ([#40](https://github.com/dev-geddy/backflip/issues/40)) ([0a37f6c](https://github.com/dev-geddy/backflip/commit/0a37f6c758b83bcb6dc7a6dfd75302d6ec5a1a2b))
+
 # [1.11.0](https://github.com/dev-geddy/backflip/compare/v1.10.0...v1.11.0) (2026-09-02)
 
 
