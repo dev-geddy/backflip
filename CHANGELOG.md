@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/dev-geddy/backflip/compare/v1.14.0...v1.15.0) (2026-09-03)
+
+
+### Features
+
+* **ui:** sidebar and header theme presets, and a branded homepage hero ([#43](https://github.com/dev-geddy/backflip/issues/43)) ([d2adfbe](https://github.com/dev-geddy/backflip/commit/d2adfbe8144684256f6ad5bd45600e83b6304d0f))
+
 # [1.14.0](https://github.com/dev-geddy/backflip/compare/v1.13.0...v1.14.0) (2026-09-03)
 
 
