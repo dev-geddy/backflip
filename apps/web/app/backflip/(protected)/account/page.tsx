@@ -19,6 +19,11 @@ import { ConnectionsSection } from "./_components/connections-section"
 import { AccountEmailSection } from "./_components/email-section"
 import { PasswordSection } from "./_components/password-section"
 import { ProfileSection } from "./_components/profile-section"
+import { SignInMethodSection } from "./_components/sign-in-method-section"
+import type { Metadata } from "next"
+import { titleFor } from "../../_lib/crumbs"
+
+export const metadata: Metadata = { title: titleFor("/backflip/account") }
 
 /** OAuth provider id → display label. */
 const PROVIDER_LABELS: Record<string, string> = { google: "Google" }
@@ -29,9 +34,12 @@ function initials(value: string) {
 
 /**
  * /backflip/account — the signed-in user's own area (all roles, capability
- * `account`). Two-column: self-service Profile / Email / Password details on
- * the left, a security context rail on the right. The `passwordHash` is read
- * only to derive a boolean — never sent to client.
+ * `account`). Two-column: self-service Profile / Email / Sign-in method /
+ * Password details on the left, a security context rail on the right. The
+ * `passwordHash` is read only to derive a boolean — never sent to client; it
+ * doubles as the "Password" entry in the derived sign-in method list.
+ *
+ * @spec L2-UI-53
  */
 export default async function AccountPage() {
   const sessionUser = await requireCapability("account")
@@ -58,6 +66,7 @@ export default async function AccountPage() {
   for (const { provider } of providerRows) {
     loginMethods.push(PROVIDER_LABELS[provider] ?? provider)
   }
+  const usesGoogle = providerRows.some(({ provider }) => provider === "google")
 
   const label = row?.name || row?.email || "Account"
   const emailVerified = Boolean(row?.emailVerified)
@@ -93,7 +102,7 @@ export default async function AccountPage() {
               <div className="truncate text-base font-semibold">
                 {row?.name || "Unnamed"}
               </div>
-              <div className="truncate font-mono text-xs text-muted-foreground">
+              <div className="truncate text-xs text-muted-foreground">
                 {row?.email}
               </div>
             </div>
@@ -114,6 +123,12 @@ export default async function AccountPage() {
                   email={row?.email ?? ""}
                   emailVerified={emailVerified}
                   hasPassword={Boolean(row?.passwordHash)}
+                />
+              </div>
+              <div className="border-t p-4">
+                <SignInMethodSection
+                  loginMethods={loginMethods}
+                  usesGoogle={usesGoogle}
                 />
               </div>
               <div className="border-t p-4">

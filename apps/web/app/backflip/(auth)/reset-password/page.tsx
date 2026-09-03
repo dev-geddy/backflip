@@ -2,6 +2,9 @@ import Link from "next/link"
 
 import { BrandIcon } from "@/app/_components/brand-icon"
 import { ResetPasswordForm } from "./_components/reset-password-form"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Choose a new password" }
 
 /**
  * /backflip/reset-password — public. Sets a new password from a reset link.

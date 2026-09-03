@@ -7,6 +7,9 @@ import {
   isGoogleConfigured,
 } from "@/app/_lib/auth/config"
 import { LoginForm } from "./_components/login-form"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Sign in" }
 
 /**
  * /backflip/login — public admin login (credentials + Google).

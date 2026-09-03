@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
  * Auth.js provider/callback behaviour that e2e cannot reach (the Google OAuth
  * round-trip and the per-request revocation check). Locks:
  * - L2-AUTH-10/11/14 — `signIn`: Google only for pre-registered emails.
- * - L2-AUTH-45 — Google sign-in syncs the profile picture into `users.image`.
+ * - L2-AUTH-45 — Google sign-in syncs the profile picture into `users.image`,
+ *   and the JWT tracks that stored value on every later request.
  * - L2-AUTH-36 — `jwt` revalidates `tokenVersion`; `session` drops `user`.
  * - L2-AUTH-09 — credentials `authorize` uses bcrypt, never plaintext.
  * - L2-AUTH-05/33/34 — provider composition per auth-mode flags.
@@ -400,6 +401,47 @@ describe("jwt callback — session revocation (L2-AUTH-36)", () => {
       token: { id: USER_ROW.id, role: "owner", tokenVersion: 3 },
     })
     expect(token?.role).toBe("teammate")
+  })
+
+  it("refreshes the stored avatar from the DB (L2-AUTH-45)", async () => {
+    findFirst.mockResolvedValue({
+      role: "owner",
+      tokenVersion: 3,
+      image: "https://lh3/new.jpg",
+    })
+    const token = await jwt({
+      token: { id: USER_ROW.id, tokenVersion: 3, picture: null },
+    })
+    expect(token?.picture).toBe("https://lh3/new.jpg")
+  })
+
+  it("clears the avatar when the stored one is gone (L2-AUTH-45)", async () => {
+    findFirst.mockResolvedValue({ role: "owner", tokenVersion: 3, image: null })
+    const token = await jwt({
+      token: {
+        id: USER_ROW.id,
+        tokenVersion: 3,
+        picture: "https://lh3/old.jpg",
+      },
+    })
+    expect(token?.picture).toBeNull()
+  })
+
+  it("leaves the avatar alone on an invalidated token (L2-AUTH-45)", async () => {
+    findFirst.mockResolvedValue({
+      role: "owner",
+      tokenVersion: 4,
+      image: "https://lh3/new.jpg",
+    })
+    const token = await jwt({
+      token: {
+        id: USER_ROW.id,
+        tokenVersion: 3,
+        picture: "https://lh3/old.jpg",
+      },
+    })
+    expect(token?.invalid).toBe(true)
+    expect(token?.picture).toBe("https://lh3/old.jpg")
   })
 
   it("invalidates the token when tokenVersion no longer matches", async () => {

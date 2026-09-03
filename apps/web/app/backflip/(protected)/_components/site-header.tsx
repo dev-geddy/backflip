@@ -6,29 +6,8 @@ import { usePathname } from "next/navigation"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
 import { ThemeToggle } from "@/app/_components/theme-toggle"
+import { crumbsFor } from "../../_lib/crumbs"
 import { HeaderSearch } from "./header-search"
-
-/** Route → breadcrumb trail (design shows a parent · page crumb on sub-pages). */
-const CRUMBS: { match: (p: string) => boolean; trail: string[] }[] = [
-  { match: (p) => p === "/backflip", trail: ["Overview"] },
-  { match: (p) => p.startsWith("/backflip/users"), trail: ["Members"] },
-  {
-    match: (p) => p.startsWith("/backflip/docs"),
-    trail: ["Platform", "Docs"],
-  },
-  {
-    match: (p) => p.startsWith("/backflip/account"),
-    trail: ["Settings", "My account"],
-  },
-  {
-    match: (p) => p.startsWith("/backflip/settings"),
-    trail: ["Workspace", "Integrations"],
-  },
-]
-
-function crumbsFor(pathname: string): string[] {
-  return CRUMBS.find((c) => c.match(pathname))?.trail ?? ["Backflip"]
-}
 
 export function SiteHeader() {
   const pathname = usePathname()

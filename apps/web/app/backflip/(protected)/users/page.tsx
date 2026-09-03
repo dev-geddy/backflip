@@ -4,6 +4,10 @@ import { desc } from "drizzle-orm"
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { MembersView } from "./_components/members-view"
 import type { Member, WorkspaceCounts } from "./_components/types"
+import type { Metadata } from "next"
+import { titleFor } from "../../_lib/crumbs"
+
+export const metadata: Metadata = { title: titleFor("/backflip/users") }
 
 /** OAuth provider id → display label for the login-method line. */
 const PROVIDER_LABELS: Record<string, string> = { google: "Google" }

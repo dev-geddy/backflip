@@ -339,6 +339,21 @@ export function customChromeVars(
     "--chrome-header-muted": muted,
     "--chrome-header-border": border,
     "--chrome-header-accent": safeAccent,
+    // Control borders take the menu highlight, stepped away from the surface
+    // (`L2-UI-50`) — lighter on a dark chrome, darker on a light one, matching
+    // the direction the accent already sits in. The two factors are not
+    // symmetric: a near-white surface turns the same L step into far more
+    // contrast, so the light side is pulled back to land both tones near the
+    // same ~1.7:1 the built-in palettes hit. Relative color syntax
+    // rather than a `color-mix()` toward white/black: the scale has to apply
+    // to the accent's own L, which only `from` can read. Safe here because
+    // this ships as inline style, which no build step rewrites (`L2-UI-47`).
+    // Set explicitly, too: the `:root` fallback would resolve against the
+    // stock palette, since a `var()` inside a custom property is substituted
+    // where that property is declared — never seeing this inline accent.
+    "--chrome-header-input": `oklch(from ${safeAccent} calc(l * ${
+      luminance(safeSurface) > 0.45 ? "0.9" : "1.2"
+    }) c h)`,
   }
 }
 
