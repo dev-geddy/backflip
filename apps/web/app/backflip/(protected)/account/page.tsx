@@ -14,6 +14,7 @@ import { listGrants } from "@/app/_lib/oauth/tokens"
 import {
   getChromePreferences,
   listChromePresets,
+  listSystemPresets,
 } from "@/app/_lib/theme/preferences"
 import { PageHeading, SectionLabel } from "../_components/page-heading"
 import { AccountRail } from "./_components/account-rail"
@@ -80,8 +81,9 @@ export default async function AccountPage() {
   const mcpEnabled = await isMcpEnabled()
   const grants = mcpEnabled ? await listGrants(sessionUser.id) : []
 
-  const [chrome, chromePresets] = await Promise.all([
+  const [chrome, systemPresets, chromePresets] = await Promise.all([
     getChromePreferences(sessionUser.id),
+    listSystemPresets(),
     listChromePresets(sessionUser.id),
   ])
 
@@ -152,6 +154,7 @@ export default async function AccountPage() {
                 headerThemed={chrome.headerThemed}
                 headerGlass={chrome.headerGlass}
                 custom={chrome.custom}
+                systemPresets={systemPresets}
                 presets={chromePresets}
               />
             </div>

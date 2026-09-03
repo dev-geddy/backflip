@@ -19,7 +19,6 @@ import { cn } from "@workspace/ui/lib/utils"
 import { RiAddLine, RiCheckLine, RiDeleteBinLine } from "@remixicon/react"
 
 import {
-  BUILT_IN_CHROME_PRESETS,
   MAX_PRESET_NAME,
   MAX_SAVED_PRESETS,
   samePair,
@@ -62,6 +61,7 @@ export function CustomThemeDialog({
   onOpenChange,
   selected,
   colors,
+  system,
   saved,
   headerThemed,
   glass,
@@ -72,6 +72,7 @@ export function CustomThemeDialog({
   onOpenChange: (open: boolean) => void
   selected: ChromeThemeId
   colors: Pair
+  system: SavedChromePreset[]
   saved: SavedChromePreset[]
   headerThemed: boolean
   glass: boolean
@@ -99,7 +100,7 @@ export function CustomThemeDialog({
   // Saving is only offered for a pair that is not already on a shelf — there
   // is nothing to keep about colours you can already click.
   const match =
-    BUILT_IN_CHROME_PRESETS.find((preset) => samePair(colors, preset)) ??
+    system.find((preset) => samePair(colors, preset)) ??
     presets.find((preset) => samePair(colors, preset))
 
   function save() {
@@ -243,7 +244,7 @@ export function CustomThemeDialog({
 
           <Section title="System presets">
             <SwatchGrid>
-              {BUILT_IN_CHROME_PRESETS.map((preset) => (
+              {system.map((preset) => (
                 <Swatch
                   key={preset.id}
                   name={preset.name}

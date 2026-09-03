@@ -1,7 +1,7 @@
 import "server-only"
 
 import { chromePresets, db, userPreferences } from "@workspace/db"
-import { and, desc, eq } from "drizzle-orm"
+import { and, asc, desc, eq } from "drizzle-orm"
 
 import {
   CUSTOM_CHROME_SEED,
@@ -131,19 +131,35 @@ export type SavedChromePreset = {
   accent: string
 }
 
-/** One user's saved presets, newest first. */
+const presetColumns = {
+  id: chromePresets.id,
+  name: chromePresets.name,
+  surface: chromePresets.surface,
+  accent: chromePresets.accent,
+}
+
+/**
+ * The shipped palettes, alphabetical. Ownerless rows (`type = 'system'`), so
+ * every user sees the same set and nobody can delete one.
+ */
+export async function listSystemPresets(): Promise<SavedChromePreset[]> {
+  return db
+    .select(presetColumns)
+    .from(chromePresets)
+    .where(eq(chromePresets.type, "system"))
+    .orderBy(asc(chromePresets.createdAt))
+}
+
+/** One user's own presets, newest first. Never returns a system row. */
 export async function listChromePresets(
   userId: string
 ): Promise<SavedChromePreset[]> {
   return db
-    .select({
-      id: chromePresets.id,
-      name: chromePresets.name,
-      surface: chromePresets.surface,
-      accent: chromePresets.accent,
-    })
+    .select(presetColumns)
     .from(chromePresets)
-    .where(eq(chromePresets.userId, userId))
+    .where(
+      and(eq(chromePresets.type, "user"), eq(chromePresets.userId, userId))
+    )
     .orderBy(desc(chromePresets.createdAt))
 }
 
@@ -152,7 +168,9 @@ export async function countChromePresets(userId: string): Promise<number> {
   const rows = await db
     .select({ id: chromePresets.id })
     .from(chromePresets)
-    .where(eq(chromePresets.userId, userId))
+    .where(
+      and(eq(chromePresets.type, "user"), eq(chromePresets.userId, userId))
+    )
   return rows.length
 }
 
@@ -170,7 +188,7 @@ export async function insertChromePreset(
 ): Promise<void> {
   await db
     .insert(chromePresets)
-    .values({ userId, name, surface, accent })
+    .values({ type: "user", userId, name, surface, accent })
     .onConflictDoUpdate({
       target: [chromePresets.userId, chromePresets.name],
       set: { surface, accent },
@@ -182,7 +200,16 @@ export async function deleteChromePresetRow(
   userId: string,
   id: string
 ): Promise<void> {
+  // Scoped by owner *and* kind: a system row has a null `userId`, so the owner
+  // check alone would already miss it, but stating the kind makes "this can
+  // never delete a shipped preset" true by reading rather than by inference.
   await db
     .delete(chromePresets)
-    .where(and(eq(chromePresets.id, id), eq(chromePresets.userId, userId)))
+    .where(
+      and(
+        eq(chromePresets.id, id),
+        eq(chromePresets.type, "user"),
+        eq(chromePresets.userId, userId)
+      )
+    )
 }

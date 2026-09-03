@@ -62,12 +62,14 @@ export function AppearanceSection({
   headerThemed,
   headerGlass,
   custom,
+  systemPresets,
   presets,
 }: {
   theme: ChromeThemeId
   headerThemed: boolean
   headerGlass: boolean
   custom: { surface: string; accent: string }
+  systemPresets: SavedChromePreset[]
   presets: SavedChromePreset[]
 }) {
   const [selected, setSelected] = useState<ChromeThemeId>(theme)
@@ -207,6 +209,7 @@ export function AppearanceSection({
         onOpenChange={setEditorOpen}
         selected={selected}
         colors={colors}
+        system={systemPresets}
         saved={presets}
         headerThemed={tintHeader}
         glass={glass}

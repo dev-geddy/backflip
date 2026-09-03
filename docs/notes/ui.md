@@ -48,8 +48,8 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - Sidebar `collapsible="icon"` (was offcanvas) → contracted = 60px icon rail (design 1B); `--sidebar-width-icon: 3.5rem`; logo/user buttons get `group-data-[collapsible=icon]:p-0!` so tile/avatar fit. **Icon-only when contracted:** `p-0` alone was not enough — the brand label block and the user chip's label + `RiMore2Line` are `flex-1`/`ml-auto` siblings that keep their intrinsic width, so inside the 32px button (`overflow-hidden`, `justify-center`) they pushed the icon out of the box (measured brand tile `x = -24px`, footer avatar `x = -8.5px` — the mark disappeared). Both label blocks now carry `group-data-[collapsible=icon]:hidden` so they leave the flow entirely. Guarded by `e2e/admin-chrome.spec.ts`. Header divider is a plain `h-4 w-px bg-border` span (base-mira `Separator` forces `data-vertical:self-stretch`, so it stretched/misaligned — a fixed span centered by the header's `items-center` is reliable).
 
 ## Custom palette presets (L2-UI-55)
-- `apps/web/app/_lib/theme/chrome-presets.ts` — `BUILT_IN_CHROME_PRESETS` (17 pairs: the 8 ex-fixed palettes converted to hex, plus 9 others — `brick` is the one with real chroma, on purpose: a deep red reads as "production" at a glance), `MAX_SAVED_PRESETS` 24, `MAX_PRESET_NAME` 32, `normalizePresetName`, `samePair`. Client-safe (no `server-only`) — the dialog imports it directly. `chrome-presets.test.ts` locks every pair to valid `#rrggbb`, unique ids/names, and surface ≠ accent.
-- `apps/web/app/_lib/theme/preferences.ts` — gained the preset data layer: `listChromePresets`, `countChromePresets`, `insertChromePreset` (upsert on `(userId, name)`), `deleteChromePresetRow` (scoped by `userId`, never id alone).
+- `apps/web/app/_lib/theme/chrome-presets.ts` — constraints only, no catalog: `MAX_SAVED_PRESETS` 24, `MAX_PRESET_NAME` 32, `normalizePresetName`, `samePair`. Client-safe (no `server-only`) — the dialog imports it directly. The presets themselves are rows (`L2-DB-37`).
+- `apps/web/app/_lib/theme/preferences.ts` — the preset data layer: `listSystemPresets` (`type = 'system'`, oldest first so the seed order holds), `listChromePresets` (`type = 'user'` **and** owner), `countChromePresets`, `insertChromePreset` (upsert on `(userId, name)`, always `type: 'user'`), `deleteChromePresetRow` (scoped by owner *and* kind).
 - `account/_actions.ts` — `createChromePreset` / `deleteChromePreset`, session-scoped. The cap is checked *before* the insert but only bites a genuinely new name, so a full shelf can still be edited.
 - `account/_components/custom-theme-dialog.tsx` — the editor. Preview + two colour wells + built-in shelf + saved shelf + name field.
 - `account/_components/shell-preview.tsx` — `ShellPreview`, lifted out of `appearance-section.tsx` so the card and the dialog paint the same miniature. Pure move, no behaviour change.
@@ -63,7 +63,14 @@ They were first *moved* into the dialog as real themes, then flattened to pairs 
 
 The blocks stay in `globals.css` and the ids stay in `CHROME_THEMES`. They are no longer reachable from the picker, but a user whose stored `chromeTheme` is `slate` keeps rendering exactly as before — `resolveChromeTheme` would otherwise silently drop them to `default`.
 
-### Why the save button sits under the colour wells
+### Why presets are rows, not a TypeScript catalog
+The shipped set and a person's saved set are the same thing to everything that reads them: a named surface/accent pair. Keeping the shipped half in code and the saved half in Postgres meant two shapes, two queries and two branches in every component that rendered a shelf. One table with a `type` column collapses that — the UI takes two arrays of the same type and renders the same `Swatch`.
+
+It also puts the seed under migration control, which is how `Brick` can ship *into a user's own shelf* (deletable, renameable) while the eight palettes ship ownerless. That distinction is not expressible when the catalog is a constant.
+
+The trade: `Brick` is seeded only for accounts that exist when `0018` runs. A later account starts with an empty user shelf — the honest default for a list whose whole meaning is "what you saved", and the alternative (re-seeding on read) would resurrect a preset the user deliberately deleted.
+
+### Why the save button sits under the colour wells### Why the save button sits under the colour wells
 It is the answer to "I like what I just made", so it belongs where the making happened, not at the bottom of a shelf. It only appears when the pair matches nothing on either shelf; a match shows "These are Slate." instead. Clicking reveals the name field in place (Enter saves, Escape cancels).
 
 ### Naming: "chrome" stays in the code, never in the UI
