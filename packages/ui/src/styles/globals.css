@@ -149,6 +149,44 @@
     --stock-accent: var(--accent);
 }
 
+/* ---------------------------------------------------------------------
+ * Public brand palette — the violet the marketing surface leads with.
+ *
+ * Scoped to `[data-surface="public"]`, stamped on the root element of every
+ * public page. The admin never carries that attribute, so nothing here can
+ * reach `/backflip/*`: this file's shared tokens (`--primary`, `--accent`,
+ * `--foreground`, …) are left exactly as they were, and the brand is
+ * additive rather than a re-point of anything the admin renders.
+ *
+ * That is the whole separation rule. A colour the public surface wants and
+ * the admin does not gets a new token behind this attribute — never a new
+ * value for an existing one.
+ *
+ * Two stops, because the hero ramps between them: `--brand` is the solid
+ * accent (buttons, the last headline line) and `--brand-soft` the lighter
+ * step above it. `--brand-stripe` is the backdrop texture's thread, held far
+ * lower in chroma so it reads as tint rather than as a second accent.
+ *
+ * Fixed hex for the two brand stops, matching the design source exactly;
+ * they are a brand mark, not a derived palette, so they do not move with the
+ * neutral ramp the way the chrome tokens do.
+ *
+ * @spec L2-UI-56
+ * ------------------------------------------------------------------ */
+[data-surface="public"] {
+    --brand: #5546f0;
+    --brand-foreground: #ffffff;
+    --brand-soft: #8d84fb;
+    --brand-stripe: oklch(0.905 0.045 280);
+}
+
+.dark [data-surface="public"] {
+    --brand: #6a5cfb;
+    --brand-foreground: #ffffff;
+    --brand-soft: #bcbdff;
+    --brand-stripe: oklch(0.31 0.045 275);
+}
+
 [data-chrome-theme="slate"] {
     --grad-top: oklch(0.271 0.026 258);
     --grad-bottom: oklch(0.215 0.026 258);
@@ -419,7 +457,7 @@
 
    @spec L2-UI-44 */
 .chrome-gradient,
-[data-chrome-glass="on"] [data-slot="site-header"]::after,
+[data-chrome-glass="on"][data-chrome-header="themed"] [data-slot="site-header"]::after,
 [data-chrome-theme] [data-slot="sidebar-inner"],
 [data-chrome-theme] [data-slot="sidebar"][data-mobile="true"],
 [data-chrome-theme][data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
@@ -446,7 +484,7 @@
 
    @spec L2-UI-44 */
 [data-chrome-theme] [data-slot="sidebar-inner"],
-[data-chrome-glass="on"] [data-slot="site-header"]::after,
+[data-chrome-glass="on"][data-chrome-header="themed"] [data-slot="site-header"]::after,
 [data-chrome-theme][data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
     background-attachment: fixed;
 }
@@ -557,8 +595,14 @@
    backdrop-filter result along with its paint, so masking the blur layer would
    punch raw unblurred page through the holes.
 
+   Gated on `data-chrome-header="themed"` as well as on the glass: the ramp
+   exists to line the header up with the sidebar beside it, and an untinted
+   header has no seam to match. Without the gate it painted the sidebar's
+   gradient into a header the user had just asked to leave alone — a coloured
+   wash bleeding in from the left of an otherwise stock strip.
+
    @spec L2-UI-45 */
-[data-chrome-glass="on"] [data-slot="site-header"]::after {
+[data-chrome-glass="on"][data-chrome-header="themed"] [data-slot="site-header"]::after {
     content: "";
     position: absolute;
     inset: 0;

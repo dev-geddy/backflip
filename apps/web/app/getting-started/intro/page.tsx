@@ -57,7 +57,10 @@ const AUDIENCE = [
 /** Phase 1 of getting started — discovery: what this is, whom it's for. */
 export default function IntroPage() {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div
+      data-surface="public"
+      className="min-h-dvh bg-background text-foreground"
+    >
       <SiteHeader />
       <main>
         <section className="border-b">

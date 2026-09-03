@@ -127,6 +127,13 @@
       "when": 1788385602107,
       "tag": "0017_curved_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788459450538,
+      "tag": "0018_solid_excalibur",
+      "breakpoints": true
     }
   ]
 }

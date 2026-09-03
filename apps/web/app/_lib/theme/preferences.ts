@@ -1,7 +1,7 @@
 import "server-only"
 
-import { db, userPreferences } from "@workspace/db"
-import { eq } from "drizzle-orm"
+import { chromePresets, db, userPreferences } from "@workspace/db"
+import { and, asc, desc, eq } from "drizzle-orm"
 
 import {
   CUSTOM_CHROME_SEED,
@@ -116,4 +116,154 @@ export async function setCustomChrome(
     .insert(userPreferences)
     .values({ userId, ...set })
     .onConflictDoUpdate({ target: userPreferences.userId, set })
+}
+
+/* --------------------------- Saved chrome presets ------------------------- *
+ * The user's own colour pairs for the `custom` theme (`L2-UI-55`). Separate
+ * table rather than more columns on `user_preference`: this is a list, and the
+ * preferences row is deliberately one row per user.
+ * -------------------------------------------------------------------------- */
+
+export type SavedChromePreset = {
+  id: string
+  name: string
+  surface: string
+  accent: string
+}
+
+const presetColumns = {
+  id: chromePresets.id,
+  name: chromePresets.name,
+  surface: chromePresets.surface,
+  accent: chromePresets.accent,
+}
+
+/**
+ * The shipped palettes, alphabetical. Ownerless rows (`type = 'system'`), so
+ * every user sees the same set and nobody can delete one.
+ */
+export async function listSystemPresets(): Promise<SavedChromePreset[]> {
+  return db
+    .select(presetColumns)
+    .from(chromePresets)
+    .where(eq(chromePresets.type, "system"))
+    .orderBy(asc(chromePresets.createdAt))
+}
+
+/** One user's own presets, newest first. Never returns a system row. */
+export async function listChromePresets(
+  userId: string
+): Promise<SavedChromePreset[]> {
+  return db
+    .select(presetColumns)
+    .from(chromePresets)
+    .where(
+      and(eq(chromePresets.type, "user"), eq(chromePresets.userId, userId))
+    )
+    .orderBy(desc(chromePresets.createdAt))
+}
+
+/** How many presets a user already holds — checked against the cap on insert. */
+export async function countChromePresets(userId: string): Promise<number> {
+  const rows = await db
+    .select({ id: chromePresets.id })
+    .from(chromePresets)
+    .where(
+      and(eq(chromePresets.type, "user"), eq(chromePresets.userId, userId))
+    )
+  return rows.length
+}
+
+/**
+ * Insert one preset. Caller validates the name and both colors. Saving under a
+ * name the user already used overwrites that preset's colors rather than
+ * failing the unique index — re-saving under a familiar name means "update
+ * this one", which is also the only way to edit a preset.
+ */
+export async function insertChromePreset(
+  userId: string,
+  name: string,
+  surface: string,
+  accent: string
+): Promise<void> {
+  await db
+    .insert(chromePresets)
+    .values({ type: "user", userId, name, surface, accent })
+    .onConflictDoUpdate({
+      target: [chromePresets.userId, chromePresets.name],
+      set: { surface, accent },
+    })
+}
+
+/**
+ * The user's own preset holding a given name, if any — the row a save under
+ * that name would overwrite. Looked up rather than caught: the caller needs to
+ * tell the user *which* preset is about to change, and the `(userId, name)`
+ * unique index only reports the clash as a driver error.
+ */
+export async function findChromePresetByName(
+  userId: string,
+  name: string
+): Promise<SavedChromePreset | undefined> {
+  const [row] = await db
+    .select(presetColumns)
+    .from(chromePresets)
+    .where(
+      and(
+        eq(chromePresets.type, "user"),
+        eq(chromePresets.userId, userId),
+        eq(chromePresets.name, name)
+      )
+    )
+  return row
+}
+
+/**
+ * Rename and/or re-colour one of the user's presets, addressed by id. Distinct
+ * from `insertChromePreset`, which addresses by *name*: editing the name of a
+ * preset you are looking at cannot be expressed as an upsert on the name, and
+ * updating in place keeps the row's `createdAt` so the shelf does not reshuffle
+ * under the edit.
+ *
+ * Scoped by owner *and* kind, so it can never touch a shipped preset. Returns
+ * false when nothing matched — a deleted preset must not report success.
+ */
+export async function updateChromePresetRow(
+  userId: string,
+  id: string,
+  name: string,
+  surface: string,
+  accent: string
+): Promise<boolean> {
+  const rows = await db
+    .update(chromePresets)
+    .set({ name, surface, accent })
+    .where(
+      and(
+        eq(chromePresets.id, id),
+        eq(chromePresets.type, "user"),
+        eq(chromePresets.userId, userId)
+      )
+    )
+    .returning({ id: chromePresets.id })
+  return rows.length > 0
+}
+
+/** Delete one of the user's own presets. Scoped by `userId`, never by id alone. */
+export async function deleteChromePresetRow(
+  userId: string,
+  id: string
+): Promise<void> {
+  // Scoped by owner *and* kind: a system row has a null `userId`, so the owner
+  // check alone would already miss it, but stating the kind makes "this can
+  // never delete a shipped preset" true by reading rather than by inference.
+  await db
+    .delete(chromePresets)
+    .where(
+      and(
+        eq(chromePresets.id, id),
+        eq(chromePresets.type, "user"),
+        eq(chromePresets.userId, userId)
+      )
+    )
 }

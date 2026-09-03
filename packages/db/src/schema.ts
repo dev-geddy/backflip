@@ -8,7 +8,9 @@ import {
   real,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 
 /** @spec L2-DB-05, L2-DB-06, L2-DB-07, L2-DB-17, L2-DB-18, L2-DB-20, L2-DB-22, L2-ANALYTICS-01 */
 
@@ -544,5 +546,56 @@ export const telemetryStart = pgTable(
     // The dashboard's only query shape: a date window, grouped by day.
     index("telemetry_start_created_idx").on(t.createdAt),
     index("telemetry_start_install_idx").on(t.installIdHash),
+  ]
+)
+
+/**
+ * Chrome colour presets — the palettes offered in the sidebar/header picker.
+ *
+ * **One table, two kinds.** A `system` row is shipped with the platform and has
+ * no owner (`userId` null); a `user` row belongs to one person and is theirs to
+ * delete. They share a table because they are the same thing to everything that
+ * reads them — a named surface/accent pair — and splitting them would mean two
+ * queries, two shapes and two code paths to render one shelf each.
+ *
+ * A preset only ever holds the two colours a user actually chooses; ink,
+ * borders and the gradient are derived at render time by `customChromeVars`, so
+ * a saved pair can never go stale against a change in that derivation.
+ *
+ * @spec L2-DB-37, L2-UI-55
+ */
+export const chromePresets = pgTable(
+  "chrome_preset",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    /** `system` (shipped, ownerless) or `user` (one person's own). */
+    type: text("type").notNull().default("user"),
+    /**
+     * Owner. Null exactly when `type` is `system` — a shipped preset belongs to
+     * the platform, not to whoever happened to be signed in when it was seeded.
+     */
+    userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
+    /** Label, trimmed. Unique within its owner's set, or across the system set. */
+    name: text("name").notNull(),
+    /** `#rrggbb` — the chrome surface. */
+    surface: text("surface").notNull(),
+    /** `#rrggbb` — the hover/active row. */
+    accent: text("accent").notNull(),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Naming a preset twice is a mistake, not a second preset. Postgres treats
+    // NULLs as distinct, so this constrains user rows only — system rows carry
+    // a null `userId` and need their own guard below.
+    uniqueIndex("chrome_preset_user_name_idx").on(t.userId, t.name),
+    // The system set has one namespace, with no owner to scope it.
+    uniqueIndex("chrome_preset_system_name_idx")
+      .on(t.name)
+      .where(sql`${t.type} = 'system'`),
+    // The two query shapes: one user's presets, and the shipped set.
+    index("chrome_preset_user_idx").on(t.userId),
+    index("chrome_preset_type_idx").on(t.type),
   ]
 )

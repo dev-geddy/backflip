@@ -20,7 +20,6 @@ export const BUILD_LOOP_PROMPTS = [
 ]
 
 export const BUILD_LOOP_PRELUDE = "You have Docker and dev tools ready."
-export const BUILD_LOOP_CLOSER = "That's how you start a project now."
 
 /**
  * The transcript on its own, with no section chrome — the admin Overview drops
@@ -60,14 +59,6 @@ export function BuildLoopTranscript({ compact }: { compact?: boolean }) {
           …
         </div>
       </div>
-
-      <p
-        className={
-          compact ? "text-xs font-medium" : "text-sm font-medium sm:text-base"
-        }
-      >
-        {BUILD_LOOP_CLOSER}
-      </p>
     </div>
   )
 }

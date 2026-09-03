@@ -11,7 +11,11 @@ import { requireCapability } from "@/app/_lib/auth/guard"
 import { ROLE_LABELS } from "@/app/_lib/auth/permissions"
 import { isMcpEnabled } from "@/app/_lib/oauth/config"
 import { listGrants } from "@/app/_lib/oauth/tokens"
-import { getChromePreferences } from "@/app/_lib/theme/preferences"
+import {
+  getChromePreferences,
+  listChromePresets,
+  listSystemPresets,
+} from "@/app/_lib/theme/preferences"
 import { PageHeading, SectionLabel } from "../_components/page-heading"
 import { AccountRail } from "./_components/account-rail"
 import { AppearanceSection } from "./_components/appearance-section"
@@ -77,7 +81,11 @@ export default async function AccountPage() {
   const mcpEnabled = await isMcpEnabled()
   const grants = mcpEnabled ? await listGrants(sessionUser.id) : []
 
-  const chrome = await getChromePreferences(sessionUser.id)
+  const [chrome, systemPresets, chromePresets] = await Promise.all([
+    getChromePreferences(sessionUser.id),
+    listSystemPresets(),
+    listChromePresets(sessionUser.id),
+  ])
 
   return (
     // Canvas mirrors ui-samples (bg-muted light / bg-background dark); only
@@ -146,6 +154,8 @@ export default async function AccountPage() {
                 headerThemed={chrome.headerThemed}
                 headerGlass={chrome.headerGlass}
                 custom={chrome.custom}
+                systemPresets={systemPresets}
+                presets={chromePresets}
               />
             </div>
           </div>

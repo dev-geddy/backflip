@@ -37,7 +37,10 @@ const PROMPTS = [
 
 export default function StartBuildingPage() {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div
+      data-surface="public"
+      className="min-h-dvh bg-background text-foreground"
+    >
       <SiteHeader />
       <main>
         <section className="border-b">
