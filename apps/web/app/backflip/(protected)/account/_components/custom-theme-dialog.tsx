@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 
 import { toast } from "sonner"
 
@@ -16,12 +16,15 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { RiAddLine, RiCheckLine, RiDeleteBinLine } from "@remixicon/react"
+import { RiCheckLine, RiDeleteBinLine } from "@remixicon/react"
 
 import {
   MAX_PRESET_NAME,
   MAX_SAVED_PRESETS,
+  normalizePresetName,
+  planPresetSave,
   samePair,
+  type PresetSavePlan,
 } from "@/app/_lib/theme/chrome-presets"
 import {
   customChromeVars,
@@ -30,10 +33,30 @@ import {
 } from "@/app/_lib/theme/chrome-themes"
 import type { SavedChromePreset } from "@/app/_lib/theme/preferences"
 
-import { createChromePreset, deleteChromePreset } from "../_actions"
+import {
+  createChromePreset,
+  deleteChromePreset,
+  updateChromePreset,
+} from "../_actions"
 import { ShellPreview } from "./shell-preview"
 
 type Pair = { surface: string; accent: string }
+
+/**
+ * How close to the cap the shelf has to get before its count is worth saying.
+ * "4 of 24" was read as "there are 24 presets" — a count of things, not of
+ * headroom — and headroom is only ever actionable once it is nearly gone.
+ */
+const CAP_HINT_FROM = 4
+
+/** How long a just-saved chip stays ringed, in ms. Long enough to look at, short enough not to linger. */
+const FLASH_MS = 1600
+
+const ACTION_LABELS = {
+  create: "Save preset",
+  replace: "Replace preset",
+  update: "Update preset",
+} as const
 
 /**
  * The chrome picker, in a dialog: the eight fixed palettes, the colour pairs
@@ -52,7 +75,7 @@ type Pair = { surface: string; accent: string }
  *
  * Every change applies to the live shell immediately and persists in the
  * background (`L2-UI-25`): there is no Save button for the palette itself, only
- * for naming a pair you want to keep.
+ * the one control under the wells that names the pair.
  *
  * @spec L2-UI-55
  */
@@ -81,8 +104,16 @@ export function CustomThemeDialog({
 }) {
   const [presets, setPresets] = useState(saved)
   const [name, setName] = useState("")
-  const [naming, setNaming] = useState(false)
   const [pending, start] = useTransition()
+
+  // The preset the colours were last taken from. It only matters once they no
+  // longer match it exactly — that is precisely the "I nudged Brick" case the
+  // panel turns into an update instead of a silent fork.
+  const [basisId, setBasisId] = useState<string | null>(null)
+  // Set by "Save as a copy": the one way to say "stop editing that preset".
+  const [detached, setDetached] = useState(false)
+  const [flash, setFlash] = useState<string | null>(null)
+  const flashRef = useRef<HTMLDivElement>(null)
 
   // The server revalidates `/backflip/account` after every write, so props are
   // the truth; local state exists only to keep the shelf from flickering
@@ -95,36 +126,88 @@ export function CustomThemeDialog({
     setPresets(saved)
   }
 
-  const full = presets.length >= MAX_SAVED_PRESETS
+  // What the pair on screen *is*. A user preset wins over a shipped one with
+  // the same colours: only one of the two can be edited.
+  const exact = presets.find((preset) => samePair(colors, preset)) ?? null
+  const shipped = exact
+    ? null
+    : (system.find((preset) => samePair(colors, preset)) ?? null)
+  const basis = basisId
+    ? (presets.find((preset) => preset.id === basisId) ?? null)
+    : null
+  const origin = detached || shipped ? null : (exact ?? basis)
 
-  // Saving is only offered for a pair that is not already on a shelf — there
-  // is nothing to keep about colours you can already click.
-  const match =
-    system.find((preset) => samePair(colors, preset)) ??
-    presets.find((preset) => samePair(colors, preset))
+  // The name field follows whatever the panel is editing, so it always states
+  // the preset you are looking at. Keyed on identity, not on the name itself,
+  // so typing a new name into it is never undone.
+  const originKey = origin?.id ?? (shipped ? `system:${shipped.id}` : "")
+  const [lastOriginKey, setLastOriginKey] = useState(originKey)
+  if (originKey !== lastOriginKey) {
+    setLastOriginKey(originKey)
+    setName(origin?.name ?? "")
+  }
 
-  function save() {
-    const trimmed = name.trim()
-    if (!trimmed) return
+  const plan = planPresetSave({ name, colors, origin, presets })
+  const clean = normalizePresetName(name)
+  const remaining = MAX_SAVED_PRESETS - presets.length
+
+  useEffect(() => {
+    if (!flash) return
+    // The shelf can sit below the dialog's fold, so a save has to *show* the
+    // chip it produced rather than only claim it in a toast.
+    flashRef.current?.scrollIntoView({ block: "nearest" })
+    const timer = setTimeout(() => setFlash(null), FLASH_MS)
+    return () => clearTimeout(timer)
+  }, [flash])
+
+  /** Adopt a pair from the shelf. Only a user preset becomes editable. */
+  function choose(preset: SavedChromePreset, own: boolean) {
+    setBasisId(own ? preset.id : null)
+    setDetached(false)
+    onApplyPair(preset)
+  }
+
+  /** Nudge one colour. Keeps the matched preset as the thing being edited. */
+  function pick(part: "surface" | "accent", value: string) {
+    if (exact) setBasisId(exact.id)
+    onPick(part, value)
+  }
+
+  function run() {
+    if (!clean || plan.blocked) return
 
     start(async () => {
-      const res = await createChromePreset(
-        trimmed,
-        colors.surface,
-        colors.accent
-      )
+      const res =
+        plan.action === "update" && origin
+          ? await updateChromePreset(
+              origin.id,
+              clean,
+              colors.surface,
+              colors.accent
+            )
+          : await createChromePreset(clean, colors.surface, colors.accent)
       if (!res?.ok) {
         toast.error(res?.message ?? "Couldn't save that preset.")
         return
       }
-      // Re-saving an existing name updates it in place, so replace by name
-      // rather than appending a second chip with the same label.
-      setPresets((current) => [
-        { id: `pending:${trimmed}`, name: trimmed, ...colors },
-        ...current.filter((p) => p.name !== trimmed),
-      ])
-      setName("")
-      setNaming(false)
+
+      // Replace the touched row *in place* — an update keeps its `createdAt`,
+      // so moving it to the head here would only be undone by the next
+      // revalidation, and the chip would appear to hop.
+      setPresets((current) => {
+        const at = current.findIndex((p) =>
+          plan.action === "update" && origin
+            ? p.id === origin.id
+            : p.name === clean
+        )
+        const row = { name: clean, ...colors }
+        if (at === -1) {
+          return [{ id: `pending:${clean}`, ...row }, ...current]
+        }
+        return current.map((p, i) => (i === at ? { ...p, ...row } : p))
+      })
+      setDetached(false)
+      setFlash(clean)
       toast.success(res.message)
     })
   }
@@ -165,80 +248,30 @@ export function CustomThemeDialog({
                 glass={glass}
               />
             </div>
-            <div className="flex w-full flex-none flex-col gap-2 sm:w-[200px]">
+            <div className="flex w-full flex-none flex-col gap-2 sm:w-[228px]">
               <ColorInput
                 id="custom-surface"
                 label="Sidebar"
                 value={colors.surface}
-                onChange={(v) => onPick("surface", v)}
+                onChange={(v) => pick("surface", v)}
               />
               <ColorInput
                 id="custom-accent"
                 label="Active row"
                 value={colors.accent}
-                onChange={(v) => onPick("accent", v)}
+                onChange={(v) => pick("accent", v)}
               />
 
-              {match ? (
-                <p className="text-[11px] leading-tight text-muted-foreground">
-                  These are {match.name}.
-                </p>
-              ) : naming ? (
-                <div className="flex flex-col gap-2">
-                  <Input
-                    autoFocus
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault()
-                        save()
-                      }
-                      if (event.key === "Escape") setNaming(false)
-                    }}
-                    maxLength={MAX_PRESET_NAME}
-                    placeholder="Name these colours"
-                    aria-label="Preset name"
-                    className="h-9"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8 flex-1"
-                      disabled={pending || !name.trim() || full}
-                      onClick={save}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="h-8"
-                      onClick={() => setNaming(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  {full ? (
-                    <p className="text-[11px] leading-tight text-muted-foreground">
-                      Shelf is full — delete one below.
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 w-full"
-                  onClick={() => setNaming(true)}
-                >
-                  <RiAddLine className="size-4" />
-                  Save preset
-                </Button>
-              )}
+              <SavePanel
+                name={name}
+                onNameChange={setName}
+                plan={plan}
+                origin={origin}
+                shipped={shipped}
+                pending={pending}
+                onRun={run}
+                onDetach={() => setDetached(true)}
+              />
             </div>
           </div>
 
@@ -253,7 +286,7 @@ export function CustomThemeDialog({
                   // matching hexes under some other theme is a coincidence,
                   // not a selection.
                   active={selected === "custom" && samePair(colors, preset)}
-                  onSelect={() => onApplyPair(preset)}
+                  onSelect={() => choose(preset, false)}
                 />
               ))}
             </SwatchGrid>
@@ -261,25 +294,35 @@ export function CustomThemeDialog({
 
           <Section
             title="User presets"
+            // Silent until the cap is within reach: a count that is not yet
+            // actionable only invites reading it as an inventory.
             hint={
-              presets.length > 0
-                ? `${presets.length} of ${MAX_SAVED_PRESETS}`
-                : undefined
+              remaining <= 0
+                ? "No room left"
+                : remaining <= CAP_HINT_FROM
+                  ? `Room for ${remaining} more`
+                  : undefined
             }
           >
             {presets.length === 0 ? (
               <p className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
-                Name the colours above to keep them here.
+                Nothing saved yet. Name a pair of colours above and it lands
+                here.
               </p>
             ) : (
               <SwatchGrid>
                 {presets.map((preset) => (
                   <Swatch
                     key={preset.id}
+                    ref={flash === preset.name ? flashRef : undefined}
                     name={preset.name}
                     pair={preset}
                     active={samePair(colors, preset)}
-                    onSelect={() => onApplyPair(preset)}
+                    editing={
+                      origin?.id === preset.id && !samePair(colors, preset)
+                    }
+                    flashing={flash === preset.name}
+                    onSelect={() => choose(preset, true)}
                     onRemove={() => remove(preset)}
                   />
                 ))}
@@ -296,6 +339,147 @@ export function CustomThemeDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+/**
+ * The one control that turns the colours on screen into a preset — always
+ * present, always the same shape: a name, a button, and a line of consequence
+ * under it. Earlier this slot appeared and vanished with the match state,
+ * which made the column jump and left the "save" affordance feeling
+ * conditional on something the user could not name.
+ *
+ * What it does changes; where it is does not. Whether the button creates,
+ * replaces or updates is decided by `planPresetSave` and **stated on the
+ * button before the click** — the previous flow overwrote a preset of the same
+ * name with no warning at all.
+ */
+function SavePanel({
+  name,
+  onNameChange,
+  plan,
+  origin,
+  shipped,
+  pending,
+  onRun,
+  onDetach,
+}: {
+  name: string
+  onNameChange: (name: string) => void
+  plan: PresetSavePlan
+  origin: SavedChromePreset | null
+  shipped: SavedChromePreset | null
+  pending: boolean
+  onRun: () => void
+  onDetach: () => void
+}) {
+  const settled = plan.blocked === "unchanged"
+  const invalid = plan.blocked === "clash"
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Input
+        value={name}
+        onChange={(event) => onNameChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return
+          event.preventDefault()
+          onRun()
+        }}
+        maxLength={MAX_PRESET_NAME}
+        placeholder={origin ? origin.name : "Name these colours"}
+        aria-label="Preset name"
+        aria-invalid={invalid}
+        className="h-9"
+      />
+
+      <Button
+        type="button"
+        size="sm"
+        variant={settled ? "outline" : "default"}
+        className="h-8 w-full"
+        disabled={pending || plan.blocked !== null}
+        onClick={onRun}
+      >
+        {settled ? (
+          <>
+            <RiCheckLine className="size-4" />
+            Saved
+          </>
+        ) : (
+          ACTION_LABELS[plan.action]
+        )}
+      </Button>
+
+      {/* Fixed height, so no state of this panel is taller than another. */}
+      <p
+        className={cn(
+          "min-h-8 text-[11px] leading-tight",
+          invalid ? "text-destructive" : "text-muted-foreground"
+        )}
+      >
+        <SaveHint
+          plan={plan}
+          origin={origin}
+          shipped={shipped}
+          onDetach={onDetach}
+        />
+      </p>
+    </div>
+  )
+}
+
+/** The consequence of pressing the button, in words, before it is pressed. */
+function SaveHint({
+  plan,
+  origin,
+  shipped,
+  onDetach,
+}: {
+  plan: PresetSavePlan
+  origin: SavedChromePreset | null
+  shipped: SavedChromePreset | null
+  onDetach: () => void
+}) {
+  if (plan.blocked === "clash") {
+    return <>You already have a preset called “{plan.target}”.</>
+  }
+  if (plan.blocked === "unchanged") {
+    return <>These are “{plan.target}”. Edit the name here to rename it.</>
+  }
+  if (plan.blocked === "full") {
+    return (
+      <>
+        You&rsquo;re keeping all {MAX_SAVED_PRESETS}. Delete one below to make
+        room.
+      </>
+    )
+  }
+  if (plan.blocked === "empty") {
+    if (origin) return <>A preset needs a name.</>
+    if (shipped) {
+      return <>These are “{shipped.name}”. Name them to keep a copy.</>
+    }
+    return <>Name these colours to keep them under User presets below.</>
+  }
+  if (plan.action === "replace") {
+    return <>Overwrites the colours of “{plan.target}”.</>
+  }
+  if (plan.action === "update") {
+    return (
+      <>
+        Changes “{plan.target}” in place.{" "}
+        <button
+          type="button"
+          onClick={onDetach}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          Save as a copy
+        </button>{" "}
+        instead.
+      </>
+    )
+  }
+  return <>Adds a new preset under User presets below.</>
 }
 
 function Section({
@@ -334,20 +518,28 @@ function SwatchGrid({ children }: { children: React.ReactNode }) {
  * reads as a miniature rather than as two unrelated squares.
  */
 function Swatch({
+  ref,
   name,
   pair,
   active,
+  editing,
+  flashing,
   onSelect,
   onRemove,
 }: {
+  ref?: React.Ref<HTMLDivElement>
   name: string
   pair: Pair
   active: boolean
+  /** The colours on screen came from this preset but have since moved on. */
+  editing?: boolean
+  /** Just written — rings briefly, so a save points at the chip it produced. */
+  flashing?: boolean
   onSelect: () => void
   onRemove?: () => void
 }) {
   return (
-    <div className="group relative">
+    <div ref={ref} className="group relative">
       <button
         type="button"
         onClick={onSelect}
@@ -356,7 +548,10 @@ function Swatch({
           "flex w-full flex-col gap-1.5 rounded-lg border p-1.5 text-left transition-colors",
           active
             ? "border-primary"
-            : "border-border hover:border-muted-foreground/40"
+            : editing
+              ? "border-dashed border-primary/50"
+              : "border-border hover:border-muted-foreground/40",
+          flashing && "ring-2 ring-primary ring-offset-2 ring-offset-popover"
         )}
       >
         <span

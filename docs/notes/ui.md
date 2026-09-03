@@ -72,10 +72,10 @@ Every other colour in this file is `oklch()` and moves with the neutral ramp. Th
 The hero's readability overlay fades to `--background`, not to the stripe. Changing `--brand-stripe` to something with real chroma makes the texture fight the headline where the two overlap on the left — the overlay only masks it to 34%.
 
 ## Custom palette presets (L2-UI-55)
-- `apps/web/app/_lib/theme/chrome-presets.ts` — constraints only, no catalog: `MAX_SAVED_PRESETS` 24, `MAX_PRESET_NAME` 32, `normalizePresetName`, `samePair`. Client-safe (no `server-only`) — the dialog imports it directly. The presets themselves are rows (`L2-DB-37`).
-- `apps/web/app/_lib/theme/preferences.ts` — the preset data layer: `listSystemPresets` (`type = 'system'`, oldest first so the seed order holds), `listChromePresets` (`type = 'user'` **and** owner), `countChromePresets`, `insertChromePreset` (upsert on `(userId, name)`, always `type: 'user'`), `deleteChromePresetRow` (scoped by owner *and* kind).
-- `account/_actions.ts` — `createChromePreset` / `deleteChromePreset`, session-scoped. The cap is checked *before* the insert but only bites a genuinely new name, so a full shelf can still be edited.
-- `account/_components/custom-theme-dialog.tsx` — the editor. Preview + two colour wells + built-in shelf + saved shelf + name field.
+- `apps/web/app/_lib/theme/chrome-presets.ts` — constraints and the one decision: `MAX_SAVED_PRESETS` 24, `MAX_PRESET_NAME` 32, `normalizePresetName`, `samePair`, and `planPresetSave` → `PresetSavePlan`. Client-safe (no `server-only`) — the dialog imports it directly. The presets themselves are rows (`L2-DB-37`).
+- `apps/web/app/_lib/theme/preferences.ts` — the preset data layer: `listSystemPresets` (`type = 'system'`, oldest first so the seed order holds), `listChromePresets` (`type = 'user'` **and** owner), `countChromePresets`, `findChromePresetByName` (the row a save under that name would overwrite), `insertChromePreset` (upsert on `(userId, name)`, always `type: 'user'`), `updateChromePresetRow` (by id, scoped by owner *and* kind, returns whether a row was hit), `deleteChromePresetRow` (scoped by owner *and* kind).
+- `account/_actions.ts` — `createChromePreset` / `updateChromePreset` / `deleteChromePreset`, session-scoped. The cap is looked up against the name first, so it only bites a genuinely new row; a full shelf is still editable. (It previously checked the count unconditionally, which contradicted its own comment and blocked every edit once the shelf filled.)
+- `account/_components/custom-theme-dialog.tsx` — the editor. Preview + two colour wells + one permanent save panel + both shelves.
 - `account/_components/shell-preview.tsx` — `ShellPreview`, lifted out of `appearance-section.tsx` so the card and the dialog paint the same miniature. Pure move, no behaviour change.
 - `account/_components/appearance-section.tsx` — `GROUP_ORDER` is `["default"]`: only the Default tile and the Custom card render on the page, plus the two header switches. `CustomThemeCard` no longer edits — preview, read-only echo of the two colours, and a button. The dialog is rendered once at section level and its `open` state lives here, so the header's "Browse themes…" and the card's "Customize…" drive the same instance. New `applyCustomPair` commits both colours in one write; `pickCustomColor` is a one-line wrapper over it.
 
@@ -96,22 +96,35 @@ The four seeded user pairs are one family by construction: `Brick` (`#6b2424`/`#
 
 The trade: those pairs are seeded only for accounts that exist when `0018` runs. A later account starts with an empty user shelf — the honest default for a list whose whole meaning is "what you saved", and the alternative (re-seeding on read) would resurrect a preset the user deliberately deleted.
 
-### Why the save button sits under the colour wells### Why the save button sits under the colour wells
-It is the answer to "I like what I just made", so it belongs where the making happened, not at the bottom of a shelf. It only appears when the pair matches nothing on either shelf; a match shows "These are Slate." instead. Clicking reveals the name field in place (Enter saves, Escape cancels).
+### Why the save control is permanent, and says what it will do
+It answers "I like what I just made", so it belongs where the making happened. It used to *appear* only for a pair that matched nothing and be replaced by "These are Slate." otherwise, which made the column jump and made saving feel conditional on a rule nobody could name. Now the slot is fixed — name field, button, one line of consequence — and only its meaning moves.
+
+That meaning is `planPresetSave`, kept pure and outside the component because it is the whole of the feature's ambiguity: new vs. rename vs. re-colour vs. overwrite. It returns the `action` even when `blocked`, so the button's label describes the *situation* rather than its own pressability and does not flicker between identities as you type. The overwrite case is the reason it exists: the upsert on `(userId, name)` used to destroy a preset with no warning at all, and the only place that can be warned about is the button, before the click — hence `Replace preset` over "Overwrites the colours of “Brick”".
+
+Name comparison in the plan is **exact**, mirroring the unique index. Postgres holds "brick" and "Brick" as two rows; a label promising to replace one while the server writes the other would be a lie.
 
 ### Naming: "chrome" stays in the code, never in the UI
 `chrome` is the term of art for a window's frame, and the whole implementation is built on it — `chromeTheme`, `--chrome-header-*`, `data-chrome-theme`, `chrome-themes.ts`. Renaming that would touch a DB column, a CSS variable family and a stamped DOM attribute for no functional gain.
 
 But to someone reading a settings dialog, "Chrome themes" names a browser. So the user-visible string says which surfaces actually change: **Sidebar and header theme**. Keep that split — jargon in the code, plain English on screen.
 
-### Why saving under an existing name updates it
-There is no separate edit affordance, and inventing one (pencil icon → inline rename → separate colour update) is three controls for what a user already expresses by typing a name they recognise. `insertChromePreset` upserts on `(userId, name)`; the unique index makes that the natural behaviour rather than an error to handle.
+### Rename and re-colour, without a third control
+Prefilling the name field with the preset the pair descends from turns the existing furniture into the edit path: edit the text → rename, nudge a well → re-colour, both → both, all landing on `updateChromePreset(id, …)`. Descent is client state — the preset the colours match exactly, or the last one clicked before a well moved — so nothing about editing needs a schema change or a `pencil → inline rename → separate colour update` triplet. `Save as a copy` is the one explicit branch, for "I want to keep both".
+
+`insertChromePreset` still upserts on `(userId, name)`, because typing a name you recognise still means "that one". The difference is that the UI now says so first. Update is addressed by **id** rather than name, which is the only way to express changing the name of the row you are looking at, and it preserves `createdAt` so the shelf does not reshuffle under an edit.
+
+### Why the shelf count is usually silent
+The header used to read `4 of 24` at all times. A real user read that as "there are 24 presets" — it looks like an inventory, and it is not one. Headroom is only actionable once it is nearly gone, so the count now appears within `CAP_HINT_FROM` (4) of the cap and reads `Room for 3 more` / `No room left`. Away from the cap the number says nothing the shelf does not already show.
 
 ### Gotchas
 - The `<input type="color">` wells are **uncontrolled** (`defaultValue`) so dragging the OS colour wheel doesn't fire a write per frame — they commit on `change`. That means applying a preset elsewhere in the dialog wouldn't repaint them, so each well is `key={value}`: a new colour remounts the input.
 - The delete on a user preset is **always visible**, not revealed on hover. `hidden` cannot take keyboard focus, so the earlier `group-hover:flex focus-visible:flex` was unreachable by keyboard and hard to find with a mouse.
 - The saved shelf keeps local state for optimism, reconciled against props **during render** (the `lastSaved` pattern), not in an effect. An effect paints the stale list first and immediately re-renders — and the repo's lint rule flags exactly that.
 - A preset stores only the two colours. Ink, borders, ring and gradient stay derived by `customChromeVars`, so a saved pair cannot go stale against a change in that derivation (`L2-UI-33`).
+- The name field is reconciled against the preset being edited **by identity, not by name** (the `lastOriginKey` pattern, same during-render shape as the shelf's `lastSaved`). Keying it on the name would undo every keystroke of a rename.
+- The just-saved chip rings for 1.6s and is scrolled into view. The shelf can sit below the dialog's fold, so without it a save's only evidence was a toast that pointed nowhere.
+- Optimistic writes replace the touched row **in place** for an update or a replace. An update keeps its `createdAt`, so hoisting it to the head was undone by the next revalidation and the chip visibly hopped. Only a genuinely new preset prepends.
+- There is no naming *mode* any more, so Escape is free to do what Escape does in a dialog: close it. Enter still runs the primary action.
 
 ## Overview page — design 5A (L2-UI-03)
 `/backflip` rebuilt from generic stat-cards/chart/table to the 5A home. **Real data only.**

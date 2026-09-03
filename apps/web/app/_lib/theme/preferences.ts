@@ -195,6 +195,60 @@ export async function insertChromePreset(
     })
 }
 
+/**
+ * The user's own preset holding a given name, if any — the row a save under
+ * that name would overwrite. Looked up rather than caught: the caller needs to
+ * tell the user *which* preset is about to change, and the `(userId, name)`
+ * unique index only reports the clash as a driver error.
+ */
+export async function findChromePresetByName(
+  userId: string,
+  name: string
+): Promise<SavedChromePreset | undefined> {
+  const [row] = await db
+    .select(presetColumns)
+    .from(chromePresets)
+    .where(
+      and(
+        eq(chromePresets.type, "user"),
+        eq(chromePresets.userId, userId),
+        eq(chromePresets.name, name)
+      )
+    )
+  return row
+}
+
+/**
+ * Rename and/or re-colour one of the user's presets, addressed by id. Distinct
+ * from `insertChromePreset`, which addresses by *name*: editing the name of a
+ * preset you are looking at cannot be expressed as an upsert on the name, and
+ * updating in place keeps the row's `createdAt` so the shelf does not reshuffle
+ * under the edit.
+ *
+ * Scoped by owner *and* kind, so it can never touch a shipped preset. Returns
+ * false when nothing matched — a deleted preset must not report success.
+ */
+export async function updateChromePresetRow(
+  userId: string,
+  id: string,
+  name: string,
+  surface: string,
+  accent: string
+): Promise<boolean> {
+  const rows = await db
+    .update(chromePresets)
+    .set({ name, surface, accent })
+    .where(
+      and(
+        eq(chromePresets.id, id),
+        eq(chromePresets.type, "user"),
+        eq(chromePresets.userId, userId)
+      )
+    )
+    .returning({ id: chromePresets.id })
+  return rows.length > 0
+}
+
 /** Delete one of the user's own presets. Scoped by `userId`, never by id alone. */
 export async function deleteChromePresetRow(
   userId: string,

@@ -27,7 +27,9 @@ import {
 import {
   countChromePresets,
   deleteChromePresetRow,
+  findChromePresetByName,
   insertChromePreset,
+  updateChromePresetRow,
   setChromeHeaderGlass,
   setChromeHeaderThemed,
   setChromeTheme,
@@ -365,8 +367,8 @@ export async function saveCustomChrome(
 
 /**
  * Save the current custom pair under a name (`L2-UI-55`). Self-scoped. Saving
- * under an existing name updates that preset — the only way to edit one, and
- * the reading of "save" a user expects when they type a name they already have.
+ * under an existing name replaces that preset's colours; the dialog says so on
+ * the button before the click, so the overwrite is never a surprise.
  */
 export async function createChromePreset(
   name: string,
@@ -384,19 +386,71 @@ export async function createChromePreset(
     return { ok: false, message: "Colors must be hex values like #243043." }
   }
 
-  // Counted before the insert, so an update to an existing name is never
-  // blocked by a full shelf — only a genuinely new preset is.
-  const held = await countChromePresets(session.user.id)
-  if (held >= MAX_SAVED_PRESETS) {
-    return {
-      ok: false,
-      message: `You can keep ${MAX_SAVED_PRESETS} presets — delete one first.`,
+  // The cap counts new *rows*, so it is only consulted when the name is one the
+  // user does not already hold — a full shelf must still be editable.
+  const existing = await findChromePresetByName(session.user.id, clean)
+  if (!existing) {
+    const held = await countChromePresets(session.user.id)
+    if (held >= MAX_SAVED_PRESETS) {
+      return {
+        ok: false,
+        message: `You can keep ${MAX_SAVED_PRESETS} presets — delete one first.`,
+      }
     }
   }
 
   await insertChromePreset(session.user.id, clean, surface, accent)
   revalidatePath("/backflip/account")
-  return { ok: true, message: `Saved "${clean}".` }
+  return {
+    ok: true,
+    message: existing ? `Replaced “${clean}”.` : `Saved “${clean}”.`,
+  }
+}
+
+/**
+ * Rename and/or re-colour one preset in place (`L2-UI-55`). Addressed by id,
+ * not by name, so the preset a user is looking at stays the row they edit even
+ * while they are changing its name. Session-scoped and constrained to
+ * `type = 'user'` by `updateChromePresetRow`, so a shipped preset can be
+ * neither renamed nor recoloured.
+ */
+export async function updateChromePreset(
+  id: string,
+  name: string,
+  surface: string,
+  accent: string
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+  if (!id) return { ok: false, message: "Missing preset id." }
+
+  const clean = normalizePresetName(name)
+  if (!clean) {
+    return { ok: false, message: "Give the preset a short name." }
+  }
+  if (!isHexColor(surface) || !isHexColor(accent)) {
+    return { ok: false, message: "Colors must be hex values like #243043." }
+  }
+
+  const clash = await findChromePresetByName(session.user.id, clean)
+  if (clash && clash.id !== id) {
+    return {
+      ok: false,
+      message: `You already have a preset called “${clean}”.`,
+    }
+  }
+
+  const updated = await updateChromePresetRow(
+    session.user.id,
+    id,
+    clean,
+    surface,
+    accent
+  )
+  if (!updated) return { ok: false, message: "That preset is no longer there." }
+
+  revalidatePath("/backflip/account")
+  return { ok: true, message: `Updated “${clean}”.` }
 }
 
 /** Delete one of the signed-in user's presets. Scoped by session, never by id alone. */
