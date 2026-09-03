@@ -90,7 +90,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   }),
   session: { strategy: "jwt" },
   trustHost: true,
-  pages: { signIn: "/backflip/login" },
+  // `error` points Auth.js at our own page, so `/api/auth/error` redirects
+  // instead of rendering the framework's unstyled card. The route stays an API
+  // route; only the error *destination* moves (`L2-AUTH-46`).
+  pages: { signIn: "/backflip/login", error: "/backflip/access-denied" },
   // Auth.js logs internally-caught errors (e.g. authorize/adapter failures)
   // with a full stack even when the response itself is a normal 200/redirect.
   // Compact that to name + message so dev logs stay readable.

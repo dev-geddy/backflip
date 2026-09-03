@@ -10,7 +10,8 @@
 - `apps/web/app/_lib/auth/permissions.ts` — pure/client-safe RBAC: `Role`, `ROLES`, `ROLE_LABELS`, `Capability`, capability map, `can()` + `canViewUsers`/`canEditUsers`/`canAccessSettings`. Satisfies `L2-AUTH-19`, `L2-AUTH-21`. Imported by server guards AND client UI (nav, edit gating) — keep it free of server-only imports.
 - `apps/web/app/_lib/auth/guard.ts` — `requireCapability(cap)` server guard (`auth()` → redirect). Satisfies `L2-AUTH-20`, `L2-AUTH-22`.
 - `apps/web/app/api/auth/[...nextauth]/route.ts` — `export { GET, POST } = handlers`; `runtime = "nodejs"`. Satisfies `L2-AUTH-03`.
-- `apps/web/proxy.ts` — edge gate via `getToken` with `secureCookie` derived from `AUTH_URL` (behind a TLS-terminating proxy the edge request is plain http — protocol-inferred cookie name would miss `__Secure-authjs.session-token` and redirect-loop the login); `RECOVERY_PATHS` (forgot/reset-password) bypass the gate as public. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
+- `apps/web/app/backflip/(auth)/access-denied/page.tsx` — sign-in error page; Auth.js `pages.error` target (`L2-AUTH-46`).
+- `apps/web/proxy.ts` — edge gate via `getToken` with `secureCookie` derived from `AUTH_URL` (behind a TLS-terminating proxy the edge request is plain http — protocol-inferred cookie name would miss `__Secure-authjs.session-token` and redirect-loop the login); `PUBLIC_PATHS` (login, forgot/reset-password, access-denied) bypass the gate as public. Satisfies `L2-AUTH-01`, `L2-AUTH-08`, `L2-AUTH-12`.
 - `apps/web/app/backflip/(auth)/login/page.tsx` — login page (server; reads `from`, open-redirect guarded). Satisfies `L2-AUTH-04`.
 - `apps/web/app/backflip/(auth)/login/page.tsx` — `auth()` first: a valid session → `redirect("/backflip")` (moved off the edge, which can't check token version). Passes `credentialsEnabled`/`googleEnabled` (from `config.ts`) to the form.
 - `apps/web/app/backflip/(auth)/login/_components/login-form.tsx` — client form (`login-03` block). Renders by mode: both → Google button + separator + credentials form + "Forgot password?" link; Google-only (`!credentialsEnabled`) → Google button alone; credentials-only (`!googleEnabled`) → form alone. Credentials via `signIn("credentials", {redirect:false})`; Google via `signIn("google")`. Satisfies `L2-AUTH-33`.
@@ -49,9 +50,17 @@
   - `resetPassword` — validate token (min-8 + confirm), set `passwordHash` + bump `tokenVersion`, `sendPasswordChangedEmail`. Satisfies `L2-AUTH-28`, `L2-AUTH-36`.
 - `(auth)/forgot-password/page.tsx` + form — public request page.
 - `(auth)/reset-password/page.tsx` + form — public set-new-password page (token from query).
-- `proxy.ts` — `RECOVERY_PATHS` (`/backflip/forgot-password`, `/backflip/reset-password`) bypass the auth gate (public). Satisfies `L2-AUTH-01`.
+- `proxy.ts` — `PUBLIC_PATHS` (`/backflip/login`, `/backflip/forgot-password`, `/backflip/reset-password`, `/backflip/access-denied`) bypass the auth gate (public). Satisfies `L2-AUTH-01`.
 - `login/_components/login-form.tsx` — "Forgot password?" link next to the password field.
 - `apps/web/app/_lib/auth/tokens.ts` — `createUserToken({userId,type,newEmail?})` (invalidates prior same-type tokens, stores `hashToken`, TTL 60m) + `consumeUserToken({rawToken,type,userId?})` (hash-lookup, checks type/expiry/consumed and — when `userId` given — ownership BEFORE marking consumed; a wrong owner → null, not consumed) + `countRecentTokens({userId,type,withinMinutes})` and `RATE_LIMIT` (3 / 15 min) for per-account throttling. Satisfies `L2-AUTH-29`, `L2-AUTH-37`.
+
+## Sign-in errors (`(auth)`, public) — `L2-AUTH-46`
+- `pages.error = "/backflip/access-denied"` in `_lib/auth/index.ts`. Before this, `pages` set only `signIn`, so Auth.js fell back to rendering its own unstyled card straight out of `/api/auth/error` — an API route serving HTML. With `error` set it answers `302` to our route instead; verified locally: `GET /api/auth/error?error=AccessDenied` → `302 → /backflip/access-denied?error=AccessDenied`.
+- **Must be in `PUBLIC_PATHS`.** The visitor this page exists for has no session, so the proxy would otherwise redirect them to login and swallow the reason. Easy to miss — the page renders fine while you are signed in.
+- **One error page, many codes.** Auth.js takes a single `pages.error`, so this route owns every auth error, not just `AccessDenied`. Copy is a `Record<string, {title, description}>` with a `FALLBACK`: `AccessDenied` / `Verification` / `Configuration`, and anything unknown or absent falls through. Consequence of picking a route named for one code — the URL reads slightly oddly for a `Configuration` error, which is admin-facing and rare.
+- `AccessDenied` is the only code an ordinary visitor reaches: the `signIn` callback returns false for a Google account whose email is not pre-registered (`L2-AUTH-41`).
+- Copy aims at the remedy, not the visitor — "This account isn't set up to sign in here. Ask an administrator to add it." It leaks nothing the redirect did not already: reaching this page at all tells whoever controls that Google account that the address is not registered. Inherent to the pre-registration gate; the wording neither adds nor removes it.
+- Layout mirrors the other `(auth)` pages (centred `bg-muted` shell, brand link, `Card`) so it is recognisably the same surface. Brand link goes to `/` here rather than `/backflip/login`, since the two in-card actions already cover login.
 
 ## Implementation notes
 - **Credentials → JWT**: Credentials provider forces `jwt` session strategy; adapter still used to persist Google accounts.
