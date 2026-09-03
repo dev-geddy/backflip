@@ -197,7 +197,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.id) {
         const current = await db.query.users.findFirst({
           where: eq(users.id, token.id),
-          columns: { role: true, tokenVersion: true },
+          columns: { role: true, tokenVersion: true, image: true },
         })
         if (
           !current ||
@@ -206,6 +206,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.invalid = true
         } else {
           token.role = current.role
+          // Track the stored avatar the same way the role is tracked. Stamping
+          // it only at sign-in (`L2-AUTH-45`) left every session minted before
+          // its first Google sync with no picture, so the sidebar fell back to
+          // initials while the account page — which reads `users.image` —
+          // showed the real one. Same query, one more column.
+          token.picture = current.image
         }
       }
       return token
