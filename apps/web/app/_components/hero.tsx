@@ -8,17 +8,34 @@ import {
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 
-// Server Component. Backdrop is a pure CSS stripe texture — no image assets.
+/**
+ * Homepage hero. Server Component; backdrop is a pure CSS stripe texture, no
+ * image assets.
+ *
+ * The headline is four short lines that ramp into the brand: two in the
+ * foreground ink, then `--brand-soft`, then `--brand`. The escalation is the
+ * point — the copy goes from what you do (star, clone) to what the product
+ * does (prompt, upgrade), and the colour arrives exactly where the product
+ * takes over.
+ *
+ * Every brand colour here comes from `--brand*`, which only exists under
+ * `[data-surface="public"]` (`L2-UI-56`). Nothing in this file touches a token
+ * the admin renders.
+ *
+ * @spec L2-UI-56
+ */
 export function Hero() {
   return (
     <section
       aria-label="Introduction"
       className="relative overflow-hidden border-b"
     >
-      {/* Angled stripe texture — the hero backdrop (no photo). */}
+      {/* Angled stripe texture — the hero backdrop (no photo). The thread is
+          the brand tint rather than the neutral `--muted` it used to be, which
+          is what ties the backdrop to the headline without competing with it. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-card [background-image:repeating-linear-gradient(135deg,var(--muted)_0_2px,transparent_2px_22px)]"
+        className="absolute inset-0 bg-card [background-image:repeating-linear-gradient(135deg,var(--brand-stripe)_0_2px,transparent_2px_22px)]"
       />
       {/* Readability overlay — fades to the theme background where the copy sits. */}
       <div
@@ -30,15 +47,16 @@ export function Hero() {
         <div className="max-w-2xl">
           <Badge variant="outline" className="gap-1.5 rounded-full">
             <RiSparkling2Line
-              className="size-3.5 text-primary"
+              className="size-3.5 text-[var(--brand)]"
               aria-hidden="true"
             />
             Full-stack foundation
           </Badge>
           <h1 className="mt-5 text-[clamp(2.5rem,6.4vw,4.25rem)] leading-[1.02] font-bold tracking-tight">
-            Your idea, built by AI.
-            <br />
-            Owned by you.
+            <span className="block">Star it.</span>
+            <span className="block">Clone it.</span>
+            <span className="block text-[var(--brand-soft)]">Prompt.</span>
+            <span className="block text-[var(--brand)]">Upgrade it.</span>
           </h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
             A pro-grade foundation with proper development standards built in,
@@ -46,7 +64,11 @@ export function Hero() {
             You own everything it makes. No coding knowledge required.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" render={<a href="/getting-started" />}>
+            <Button
+              size="lg"
+              className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand)]/90"
+              render={<a href="/getting-started" />}
+            >
               Getting started
               <RiArrowRightLine className="size-4" aria-hidden="true" />
             </Button>

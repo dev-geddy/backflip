@@ -20,7 +20,10 @@ export const metadata: Metadata = {
 // the theme toggle inside <SiteHeader />.
 export default function HomePage() {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div
+      data-surface="public"
+      className="min-h-dvh bg-background text-foreground"
+    >
       <SiteHeader />
       <main>
         <Hero />

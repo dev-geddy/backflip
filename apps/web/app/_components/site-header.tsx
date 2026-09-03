@@ -37,7 +37,14 @@ export function SiteHeader() {
             Getting started
           </Button>
           <ThemeToggle />
-          <Button size="sm" render={<a href="/backflip" />}>
+          {/* Brand-filled, per the hero design. `--brand` only resolves under
+              `[data-surface="public"]` (`L2-UI-56`), so the admin's own header
+              button is untouched. */}
+          <Button
+            size="sm"
+            className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand)]/90"
+            render={<a href="/backflip" />}
+          >
             Admin
           </Button>
         </div>

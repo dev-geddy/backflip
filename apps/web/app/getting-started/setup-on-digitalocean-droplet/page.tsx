@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 // interactive but purely local: the operator's values never leave the browser.
 export default function SetupOnDigitalOceanDropletPage() {
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div
+      data-surface="public"
+      className="min-h-dvh bg-background text-foreground"
+    >
       <SiteHeader />
       <main>
         <GuideHero
