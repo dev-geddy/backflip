@@ -25,8 +25,10 @@ import {
   samePair,
 } from "@/app/_lib/theme/chrome-presets"
 import {
+  CHROME_THEMES,
   customChromeVars,
   type ChromeTheme,
+  type ChromeThemeId,
 } from "@/app/_lib/theme/chrome-themes"
 import type { SavedChromePreset } from "@/app/_lib/theme/preferences"
 
@@ -35,39 +37,56 @@ import { ShellPreview } from "./shell-preview"
 
 type Pair = { surface: string; accent: string }
 
+/** The fixed palettes, split the way the dialog shelves them. */
+const FIXED = {
+  dark: CHROME_THEMES.filter((t) => t.group === "dark"),
+  light: CHROME_THEMES.filter((t) => t.group === "light"),
+}
+
 /**
- * The custom-palette editor, in a dialog. Holds everything about rolling your
- * own chrome: the live preview, the two colour inputs, the pairs Backflip
- * ships, and the pairs you saved.
+ * The chrome picker, in a dialog: the eight fixed palettes, the colour pairs
+ * Backflip ships for the custom theme, the pairs you saved, and the two colour
+ * inputs behind them.
  *
- * It lives in a dialog rather than on the page because the picker is a
- * *browsing* task — comparing a dozen swatches against a preview — while the
- * page around it is a list of settings. Inline, the preset shelf would double
- * the height of the Appearance section for something most people open once.
+ * It lives in a dialog rather than on the page because this is a *browsing*
+ * task — comparing twenty-odd swatches against a preview — while the page
+ * around it is a list of settings. Inline, the fixed palettes alone pushed the
+ * rest of the account below the fold.
+ *
+ * Fixed palettes stay real themes here, not colour pairs: each keeps its id and
+ * its authored stylesheet block (`L2-UI-26`), including gradient stops that
+ * cannot be derived from two hex values (`L2-UI-47`). Only the custom theme is
+ * expressed as a pair.
  *
  * Every change applies to the live shell immediately and persists in the
- * background, exactly like the theme tiles behind it (`L2-UI-25`): the dialog
- * has no Save button for the colours themselves, only for naming a pair you
- * want to keep.
+ * background (`L2-UI-25`): there is no Save button for the palette itself, only
+ * for naming a pair you want to keep.
  *
  * @spec L2-UI-55
  */
 export function CustomThemeDialog({
+  open,
+  onOpenChange,
+  selected,
   colors,
   saved,
   headerThemed,
   glass,
   onPick,
   onApplyPair,
+  onSelectTheme,
 }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  selected: ChromeThemeId
   colors: Pair
   saved: SavedChromePreset[]
   headerThemed: boolean
   glass: boolean
   onPick: (part: "surface" | "accent", value: string) => void
   onApplyPair: (pair: Pair) => void
+  onSelectTheme: (id: ChromeThemeId) => void
 }) {
-  const [open, setOpen] = useState(false)
   const [presets, setPresets] = useState(saved)
   const [name, setName] = useState("")
   const [pending, start] = useTransition()
@@ -122,23 +141,13 @@ export function CustomThemeDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => setOpen(true)}
-      >
-        Customize…
-      </Button>
-
-      <DialogContent className="sm:max-w-[560px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[760px]">
         <DialogHeader>
-          <DialogTitle>Custom colours</DialogTitle>
+          <DialogTitle>Chrome themes</DialogTitle>
           <DialogDescription>
-            Pick a surface and an active-row colour, or start from a preset.
-            Text and borders are derived from your picks, so they stay readable.
+            Pick a fixed palette, or roll your own two colours. Text and borders
+            are always derived, so nothing you pick can be unreadable.
           </DialogDescription>
         </DialogHeader>
 
@@ -151,7 +160,7 @@ export function CustomThemeDialog({
                 glass={glass}
               />
             </div>
-            <div className="flex w-full flex-none flex-col gap-2 sm:w-[168px]">
+            <div className="flex w-full flex-none flex-col gap-2 sm:w-[200px]">
               <ColorInput
                 id="custom-surface"
                 label="Sidebar"
@@ -167,7 +176,41 @@ export function CustomThemeDialog({
             </div>
           </div>
 
-          <Section title="Presets">
+          <Section title="Dark" hint="Stays dark in either mode">
+            <SwatchGrid>
+              {FIXED.dark.map((theme) => (
+                <Swatch
+                  key={theme.id}
+                  name={theme.label}
+                  pair={{
+                    surface: theme.swatch.surface,
+                    accent: theme.swatch.accent,
+                  }}
+                  active={selected === theme.id}
+                  onSelect={() => onSelectTheme(theme.id)}
+                />
+              ))}
+            </SwatchGrid>
+          </Section>
+
+          <Section title="Light" hint="Stays light in either mode">
+            <SwatchGrid>
+              {FIXED.light.map((theme) => (
+                <Swatch
+                  key={theme.id}
+                  name={theme.label}
+                  pair={{
+                    surface: theme.swatch.surface,
+                    accent: theme.swatch.accent,
+                  }}
+                  active={selected === theme.id}
+                  onSelect={() => onSelectTheme(theme.id)}
+                />
+              ))}
+            </SwatchGrid>
+          </Section>
+
+          <Section title="Custom presets">
             <SwatchGrid>
               {BUILT_IN_CHROME_PRESETS.map((preset) => (
                 <Swatch
@@ -246,7 +289,7 @@ export function CustomThemeDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" onClick={() => setOpen(false)}>
+          <Button type="button" onClick={() => onOpenChange(false)}>
             Done
           </Button>
         </DialogFooter>

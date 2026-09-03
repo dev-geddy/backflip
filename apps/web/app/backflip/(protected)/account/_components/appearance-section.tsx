@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 
 import { toast } from "sonner"
 
+import { Button } from "@workspace/ui/components/button"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
 import { RiCheckLine } from "@remixicon/react"
@@ -31,7 +32,12 @@ const GROUP_LABELS: Record<ChromeTheme["group"], string> = {
   light: "Light",
 }
 
-const GROUP_ORDER: ChromeTheme["group"][] = ["default", "dark", "light"]
+/**
+ * Only the default group renders on the page. The eight fixed palettes moved
+ * into the dialog (`L2-UI-55`) — they are a browsing task, and eight preview
+ * tiles pushed the rest of the account settings below the fold.
+ */
+const GROUP_ORDER: ChromeTheme["group"][] = ["default"]
 
 /** Paint the live shell immediately, before the server round-trip lands. */
 function applyToShell(attribute: string, value: string) {
@@ -68,6 +74,7 @@ export function AppearanceSection({
   const [tintHeader, setTintHeader] = useState(headerThemed)
   const [glass, setGlass] = useState(headerGlass)
   const [colors, setColors] = useState(custom)
+  const [editorOpen, setEditorOpen] = useState(false)
   const [pending, start] = useTransition()
 
   /**
@@ -180,12 +187,33 @@ export function AppearanceSection({
           neutral. Handy when you run several Backflip platforms and want to
           tell them apart at a glance.
         </p>
-        {pending ? (
-          <span className="flex-none text-xs text-muted-foreground">
-            Saving…
-          </span>
-        ) : null}
+        <div className="flex flex-none items-center gap-3">
+          {pending ? (
+            <span className="text-xs text-muted-foreground">Saving…</span>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setEditorOpen(true)}
+          >
+            Browse themes…
+          </Button>
+        </div>
       </div>
+
+      <CustomThemeDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        selected={selected}
+        colors={colors}
+        saved={presets}
+        headerThemed={tintHeader}
+        glass={glass}
+        onPick={pickCustomColor}
+        onApplyPair={applyCustomPair}
+        onSelectTheme={choose}
+      />
 
       {GROUP_ORDER.map((group) => {
         const themes = CHROME_THEMES.filter((t) => t.group === group)
@@ -210,13 +238,11 @@ export function AppearanceSection({
               {group === "default" ? (
                 <CustomThemeCard
                   colors={colors}
-                  presets={presets}
                   active={selected === "custom"}
                   headerThemed={tintHeader}
                   glass={glass}
                   onSelect={() => choose("custom")}
-                  onPick={pickCustomColor}
-                  onApplyPair={applyCustomPair}
+                  onCustomize={() => setEditorOpen(true)}
                 />
               ) : null}
             </div>
@@ -343,22 +369,18 @@ function ThemeTile({
  */
 function CustomThemeCard({
   colors,
-  presets,
   active,
   headerThemed,
   glass,
   onSelect,
-  onPick,
-  onApplyPair,
+  onCustomize,
 }: {
   colors: { surface: string; accent: string }
-  presets: SavedChromePreset[]
   active: boolean
   headerThemed: boolean
   glass: boolean
   onSelect: () => void
-  onPick: (part: "surface" | "accent", value: string) => void
-  onApplyPair: (pair: { surface: string; accent: string }) => void
+  onCustomize: () => void
 }) {
   const vars = customChromeVars(colors.surface, colors.accent)
   const preview: ChromeTheme = {
@@ -403,14 +425,15 @@ function CustomThemeCard({
             <Pair label="Sidebar" color={colors.surface} />
             <Pair label="Active row" color={colors.accent} />
           </div>
-          <CustomThemeDialog
-            colors={colors}
-            saved={presets}
-            headerThemed={headerThemed}
-            glass={glass}
-            onPick={onPick}
-            onApplyPair={onApplyPair}
-          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={onCustomize}
+          >
+            Customize…
+          </Button>
         </div>
       </div>
 

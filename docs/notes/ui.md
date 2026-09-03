@@ -53,10 +53,12 @@ Sidebar + header + shell now match the Flat Admin design layout (a later pass su
 - `account/_actions.ts` — `createChromePreset` / `deleteChromePreset`, session-scoped. The cap is checked *before* the insert but only bites a genuinely new name, so a full shelf can still be edited.
 - `account/_components/custom-theme-dialog.tsx` — the editor. Preview + two colour wells + built-in shelf + saved shelf + name field.
 - `account/_components/shell-preview.tsx` — `ShellPreview`, lifted out of `appearance-section.tsx` so the card and the dialog paint the same miniature. Pure move, no behaviour change.
-- `account/_components/appearance-section.tsx` — `CustomThemeCard` no longer edits: it shows the preview, a read-only echo of the two colours, and the "Customize…" button. New `applyCustomPair` commits both colours in one write; `pickCustomColor` is now a one-line wrapper over it.
+- `account/_components/appearance-section.tsx` — `GROUP_ORDER` is `["default"]`: only the Default tile and the Custom card render on the page, plus the two header switches. `CustomThemeCard` no longer edits — preview, read-only echo of the two colours, and a button. The dialog is rendered once at section level and its `open` state lives here, so the header's "Browse themes…" and the card's "Customize…" drive the same instance. New `applyCustomPair` commits both colours in one write; `pickCustomColor` is a one-line wrapper over it.
 
 ### Why a dialog
-The picker is a *browsing* task — a dozen swatches compared against a preview — sitting in a page that is otherwise a list of settings. Inline, the two shelves plus the save field roughly doubled the Appearance section's height for something most people open once and never again.
+The picker is a *browsing* task — twenty-odd swatches compared against a preview — sitting in a page that is otherwise a list of settings. Inline, the eight fixed palettes rendered as preview tiles pushed password, email and connections below the fold, and the preset shelves would have doubled it again.
+
+The fixed palettes were **moved**, not converted. Flattening them into hex pairs would have thrown away the authored oklch blocks and, with them, the literal gradient stops a `color-mix()` cannot reproduce under the production minifier (`L2-UI-47`). In the dialog they are still `data-chrome-theme` ids; only their *presentation* dropped from a preview tile to a swatch.
 
 ### Why saving under an existing name updates it
 There is no separate edit affordance, and inventing one (pencil icon → inline rename → separate colour update) is three controls for what a user already expresses by typing a name they recognise. `insertChromePreset` upserts on `(userId, name)`; the unique index makes that the natural behaviour rather than an error to handle.
