@@ -457,7 +457,7 @@
 
    @spec L2-UI-44 */
 .chrome-gradient,
-[data-chrome-glass="on"] [data-slot="site-header"]::after,
+[data-chrome-glass="on"][data-chrome-header="themed"] [data-slot="site-header"]::after,
 [data-chrome-theme] [data-slot="sidebar-inner"],
 [data-chrome-theme] [data-slot="sidebar"][data-mobile="true"],
 [data-chrome-theme][data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
@@ -484,7 +484,7 @@
 
    @spec L2-UI-44 */
 [data-chrome-theme] [data-slot="sidebar-inner"],
-[data-chrome-glass="on"] [data-slot="site-header"]::after,
+[data-chrome-glass="on"][data-chrome-header="themed"] [data-slot="site-header"]::after,
 [data-chrome-theme][data-chrome-header="themed"]:not([data-chrome-glass="on"]) [data-slot="site-header"] {
     background-attachment: fixed;
 }
@@ -595,8 +595,14 @@
    backdrop-filter result along with its paint, so masking the blur layer would
    punch raw unblurred page through the holes.
 
+   Gated on `data-chrome-header="themed"` as well as on the glass: the ramp
+   exists to line the header up with the sidebar beside it, and an untinted
+   header has no seam to match. Without the gate it painted the sidebar's
+   gradient into a header the user had just asked to leave alone — a coloured
+   wash bleeding in from the left of an otherwise stock strip.
+
    @spec L2-UI-45 */
-[data-chrome-glass="on"] [data-slot="site-header"]::after {
+[data-chrome-glass="on"][data-chrome-header="themed"] [data-slot="site-header"]::after {
     content: "";
     position: absolute;
     inset: 0;
