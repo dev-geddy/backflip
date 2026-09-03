@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/dev-geddy/backflip/compare/v1.12.0...v1.13.0) (2026-09-03)
+
+
+### Features
+
+* **web:** breadcrumb tab titles and account sign-in method row ([#41](https://github.com/dev-geddy/backflip/issues/41)) ([5c05fb0](https://github.com/dev-geddy/backflip/commit/5c05fb08bbb968befffdcfeacb05bf8e89721109))
+
 # [1.12.0](https://github.com/dev-geddy/backflip/compare/v1.11.0...v1.12.0) (2026-09-03)
 
 
