@@ -27,6 +27,26 @@ export const MAX_STARTS_PER_INSTALL_PER_DAY = 20
 export const MAX_BODY_BYTES = 1024
 
 /**
+ * How long individual `telemetry_start` rows are kept.
+ *
+ * Only the event rows expire; `telemetry_install` keeps its all-time
+ * `startCount` forever, so pruning costs history in the charts, never the
+ * knowledge that an install exists. A year plus a margin means a
+ * year-over-year comparison is always available, and the table cannot grow
+ * without bound on a long-lived deployment.
+ */
+export const START_RETENTION_DAYS = 400
+
+/**
+ * Minimum gap between two prune sweeps in one process. The sweep is triggered
+ * opportunistically by ingest rather than by a scheduler: this is a
+ * self-hosted starter, and a retention policy that depends on someone
+ * installing a cron job is a retention policy that never runs. A deployment
+ * with no traffic never prunes, which is correct — it is also not growing.
+ */
+export const PRUNE_MIN_INTERVAL_MS = 24 * 60 * 60_000
+
+/**
  * Ingest secret. Absent → the endpoint stores nothing. Read lazily (not at
  * module scope) so tests can vary it and so a missing value never breaks the
  * build.
@@ -67,4 +87,21 @@ export function telemetryHash(
 /** UTC calendar day (`YYYY-MM-DD`) — the unit both day rules are counted in. */
 export function utcDay(at: Date): string {
   return at.toISOString().slice(0, 10)
+}
+
+/**
+ * Oldest `createdAt` a `telemetry_start` row may have and still survive a
+ * retention sweep at `now`.
+ *
+ * Lives here rather than beside the sweep itself so it stays free of
+ * `server-only` and can be unit-tested — the date arithmetic is the part worth
+ * freezing, the delete around it is not.
+ */
+export function retentionCutoff(
+  now: Date,
+  days: number = START_RETENTION_DAYS
+): Date {
+  const cutoff = new Date(now)
+  cutoff.setUTCDate(cutoff.getUTCDate() - days)
+  return cutoff
 }

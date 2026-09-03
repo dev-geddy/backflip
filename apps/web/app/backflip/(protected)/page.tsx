@@ -14,8 +14,12 @@ import { AppVersion } from "@/app/_components/app-version"
 import { BuildLoopTranscript } from "@/app/_components/build-loop"
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { canAccessSettings, canViewUsers } from "@/app/_lib/auth/permissions"
-import { getTelemetrySummary } from "@/app/_lib/telemetry/queries"
+import {
+  getTelemetryInstalls,
+  getTelemetrySummary,
+} from "@/app/_lib/telemetry/queries"
 import { TelemetryCards } from "./_components/telemetry-cards"
+import { TelemetryInstalls } from "./_components/telemetry-installs"
 import { SectionLabel } from "./_components/page-heading"
 
 const DATE_FMT = new Intl.DateTimeFormat("en-US", {
@@ -89,6 +93,7 @@ export default async function BackflipOverviewPage() {
   const telemetry = canViewTelemetry
     ? await getTelemetrySummary().catch(() => null)
     : null
+  const installs = telemetry ? await getTelemetryInstalls().catch(() => []) : []
 
   const recent = userRows.slice(0, 4)
   const firstName = sessionUser.name?.split(" ")[0] || "there"
@@ -181,6 +186,7 @@ export default async function BackflipOverviewPage() {
                 </div>
               </div>
               <TelemetryCards summary={telemetry} />
+              <TelemetryInstalls installs={installs} />
             </div>
           ) : null}
 

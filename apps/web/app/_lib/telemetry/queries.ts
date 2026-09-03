@@ -1,7 +1,7 @@
 import "server-only"
 
 import { db, telemetryInstall, telemetryStart } from "@workspace/db"
-import { and, count, countDistinct, eq, gte, lt, sql } from "drizzle-orm"
+import { and, count, countDistinct, desc, eq, gte, lt, sql } from "drizzle-orm"
 
 import { WINDOW_DAYS, utcDay } from "./config"
 
@@ -139,4 +139,50 @@ export async function getTelemetrySummary(
     returningInstalls: returning[0]?.value ?? 0,
     hasData: (everRow?.value ?? 0) > 0,
   }
+}
+
+/** One row of the install manager under the Adoption cards. */
+export type TelemetryInstallRow = {
+  id: string
+  /** First 8 chars of the stored hash — enough to tell two rows apart. */
+  shortHash: string
+  firstSeenAt: Date
+  lastSeenAt: Date
+  startCount: number
+  activeDays: number
+  appVersion: string | null
+  platform: string | null
+  ignored: boolean
+}
+
+/**
+ * Installs for the admin list, most recently seen first. Includes ignored rows
+ * — the list is where they are managed, so hiding them would make the toggle
+ * one-way.
+ *
+ * @spec L2-TELEMETRY-33
+ */
+export async function getTelemetryInstalls(
+  limit = 50
+): Promise<TelemetryInstallRow[]> {
+  const rows = await db
+    .select({
+      id: telemetryInstall.id,
+      installIdHash: telemetryInstall.installIdHash,
+      firstSeenAt: telemetryInstall.firstSeenAt,
+      lastSeenAt: telemetryInstall.lastSeenAt,
+      startCount: telemetryInstall.startCount,
+      activeDays: telemetryInstall.activeDays,
+      appVersion: telemetryInstall.appVersion,
+      platform: telemetryInstall.platform,
+      ignored: telemetryInstall.ignored,
+    })
+    .from(telemetryInstall)
+    .orderBy(desc(telemetryInstall.lastSeenAt))
+    .limit(limit)
+
+  return rows.map(({ installIdHash, ...row }) => ({
+    ...row,
+    shortHash: installIdHash.slice(0, 8),
+  }))
 }

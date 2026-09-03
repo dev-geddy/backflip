@@ -11,13 +11,16 @@
 - `apps/web/app/_lib/telemetry/payload.ts` — strict zod schema + `plausibleVersion`. Satisfies `L2-TELEMETRY-06`.
 - `apps/web/app/_lib/telemetry/limits.ts` — the three budgets. Satisfies `L2-TELEMETRY-05`.
 - `apps/web/app/_lib/telemetry/record.ts` — the only writer. Satisfies `L2-TELEMETRY-07`, `L2-TELEMETRY-17`, `L2-TELEMETRY-21`.
-- `apps/web/app/_lib/telemetry/queries.ts` — the only reader. Satisfies `L2-TELEMETRY-08`, `L2-TELEMETRY-20`.
+- `apps/web/app/_lib/telemetry/queries.ts` — the only reader: `getTelemetrySummary` (cards) + `getTelemetryInstalls` (manager). Satisfies `L2-TELEMETRY-08`, `L2-TELEMETRY-20`, `L2-TELEMETRY-33`.
 - `apps/web/app/api/public/telemetry/start/route.ts` — ingest. Satisfies `L2-TELEMETRY-09`, `L2-TELEMETRY-22/23/24`.
+- `apps/web/app/_lib/telemetry/retention.ts` — the sweep + its in-process 24h throttle; the cutoff maths lives in `config.ts` so it stays testable. Satisfies `L2-TELEMETRY-31`, `L2-TELEMETRY-32`.
+- `apps/web/app/backflip/(protected)/_actions.ts` — `setTelemetryInstallIgnored`, `settings`-gated, revalidates `/backflip`. Satisfies `L2-TELEMETRY-34`.
 - `apps/web/app/backflip/(protected)/_components/telemetry-cards.tsx` — the two cards. Satisfies `L2-TELEMETRY-12`.
+- `apps/web/app/backflip/(protected)/_components/telemetry-installs.tsx` — the install manager drawer. Satisfies `L2-TELEMETRY-35`.
 - `apps/web/app/backflip/(protected)/page.tsx` — gates on `canAccessSettings`, `.catch(() => null)` around the read. Satisfies `L2-TELEMETRY-19`, `L2-TELEMETRY-25`.
 - `apps/web/app/_lib/client-ip.ts` — `clientIp`, moved up from `_lib/oauth/limits.ts` (which re-exports it) when a second surface needed it. Shared by `L2-MCP-30` and `L2-TELEMETRY-05`.
 - `devops/nginx/backflip-http.conf` / `backflip.conf` — `backflip_telemetry` zone (5r/m) + the `location = /api/public/telemetry/start` block with `client_max_body_size 2k`. Satisfies `L2-DEVOPS-27`.
-- `apps/web/app/_lib/telemetry/{config,payload}.test.ts` — unit suites. Satisfies `L2-TELEMETRY-30`.
+- `apps/web/app/_lib/telemetry/{config,payload,retention-cutoff}.test.ts` — unit suites. Satisfies `L2-TELEMETRY-30`.
 - `.env.example`, `README.md` (§ Anonymous usage telemetry) — the disclosure and both opt-outs.
 
 ## Why budgets are spent by effect, not per request
@@ -44,6 +47,20 @@ An earlier design counted only installs seen on ≥2 distinct days, so a one-sho
 - `.backflip/` is gitignored. A clone is therefore a new install, which is the intent — two people sharing one checkout are not two installs, and a fork is not the parent.
 - Local verification without touching the running dev server: start a second dev server on a spare port with `TELEMETRY_HASH_SALT` and `NEXT_DIST_DIR` set, post to it, then read both tables directly.
 
+## Retention without a scheduler
+The sweep hangs off ingest rather than a cron entry, because this is a starter someone else deploys: a retention policy that depends on the operator installing a cron job is a policy that never runs. An accepted write triggers `maybePruneOldStarts` fire-and-forget, throttled to once per 24h per process.
+
+Consequences worth knowing:
+- A deployment with no traffic never prunes. Correct — it is also not growing.
+- The throttle is in memory, so a deploy forgets it and the next report sweeps again. Harmless: the delete is indexed on `createdAt` and normally matches nothing.
+- Sweeps are not awaited and failures are invisible by design. If retention ever needs to be *provable* rather than best-effort, that is the point to move it to a real job.
+
+## Install manager
+- Collapsed by default: the figures are the point of the section, the drawer is maintenance behind them.
+- Ignored rows stay listed (dimmed) rather than disappearing — hiding them would make the switch one-way, and `ignored` is a judgement about data, so it has to be revisable.
+- The switch is optimistic with a revert-and-toast on failure. A `revalidatePath` round-trip per toggle reads as a broken control on a slow connection.
+- Only the first 8 characters of `installIdHash` are rendered. Enough to tell two rows apart, and there is nothing to gain from showing more of a value that is already one-way.
+- List is capped at 50 rows and scrolls at `max-h-[420px]`; a drawer that pushes the rest of the Overview off-screen is worse than one that scrolls.
+
 ## TODO / next
-- No admin UI for `ignored` yet — flip it with SQL. Worth a toggle once there is enough data to need pruning.
-- No retention policy on `telemetry_start`. Rows are small, but a `createdAt` cutoff job is the obvious follow-up.
+- The manager has no filter or paging. Fine at 50 installs; revisit if the list ever gets long enough to need searching.
