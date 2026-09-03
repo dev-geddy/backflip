@@ -27,6 +27,10 @@ const PUBLIC_PATHS = new Set([
   LOGIN_PATH,
   "/backflip/forgot-password",
   "/backflip/reset-password",
+  // Where Auth.js sends a rejected sign-in (`L2-AUTH-46`). Gating it would
+  // bounce the one visitor it exists for — they have no session by
+  // definition — straight back to login, with no reason given.
+  "/backflip/access-denied",
 ])
 
 export async function proxy(request: NextRequest) {
