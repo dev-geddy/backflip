@@ -69,7 +69,7 @@ It is the answer to "I like what I just made", so it belongs where the making ha
 ### Naming: "chrome" stays in the code, never in the UI
 `chrome` is the term of art for a window's frame, and the whole implementation is built on it — `chromeTheme`, `--chrome-header-*`, `data-chrome-theme`, `chrome-themes.ts`. Renaming that would touch a DB column, a CSS variable family and a stamped DOM attribute for no functional gain.
 
-But to someone reading a settings dialog, "Chrome themes" names a browser. So the user-visible string says which surfaces actually change: **Sidebar & header**. Keep that split — jargon in the code, plain English on screen.
+But to someone reading a settings dialog, "Chrome themes" names a browser. So the user-visible string says which surfaces actually change: **Sidebar and header theme**. Keep that split — jargon in the code, plain English on screen.
 
 ### Why saving under an existing name updates it
 There is no separate edit affordance, and inventing one (pencil icon → inline rename → separate colour update) is three controls for what a user already expresses by typing a name they recognise. `insertChromePreset` upserts on `(userId, name)`; the unique index makes that the natural behaviour rather than an error to handle.
