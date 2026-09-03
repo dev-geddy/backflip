@@ -1,7 +1,7 @@
 import "server-only"
 
-import { db, userPreferences } from "@workspace/db"
-import { eq } from "drizzle-orm"
+import { chromePresets, db, userPreferences } from "@workspace/db"
+import { and, desc, eq } from "drizzle-orm"
 
 import {
   CUSTOM_CHROME_SEED,
@@ -116,4 +116,73 @@ export async function setCustomChrome(
     .insert(userPreferences)
     .values({ userId, ...set })
     .onConflictDoUpdate({ target: userPreferences.userId, set })
+}
+
+/* --------------------------- Saved chrome presets ------------------------- *
+ * The user's own colour pairs for the `custom` theme (`L2-UI-55`). Separate
+ * table rather than more columns on `user_preference`: this is a list, and the
+ * preferences row is deliberately one row per user.
+ * -------------------------------------------------------------------------- */
+
+export type SavedChromePreset = {
+  id: string
+  name: string
+  surface: string
+  accent: string
+}
+
+/** One user's saved presets, newest first. */
+export async function listChromePresets(
+  userId: string
+): Promise<SavedChromePreset[]> {
+  return db
+    .select({
+      id: chromePresets.id,
+      name: chromePresets.name,
+      surface: chromePresets.surface,
+      accent: chromePresets.accent,
+    })
+    .from(chromePresets)
+    .where(eq(chromePresets.userId, userId))
+    .orderBy(desc(chromePresets.createdAt))
+}
+
+/** How many presets a user already holds — checked against the cap on insert. */
+export async function countChromePresets(userId: string): Promise<number> {
+  const rows = await db
+    .select({ id: chromePresets.id })
+    .from(chromePresets)
+    .where(eq(chromePresets.userId, userId))
+  return rows.length
+}
+
+/**
+ * Insert one preset. Caller validates the name and both colors. Saving under a
+ * name the user already used overwrites that preset's colors rather than
+ * failing the unique index — re-saving under a familiar name means "update
+ * this one", which is also the only way to edit a preset.
+ */
+export async function insertChromePreset(
+  userId: string,
+  name: string,
+  surface: string,
+  accent: string
+): Promise<void> {
+  await db
+    .insert(chromePresets)
+    .values({ userId, name, surface, accent })
+    .onConflictDoUpdate({
+      target: [chromePresets.userId, chromePresets.name],
+      set: { surface, accent },
+    })
+}
+
+/** Delete one of the user's own presets. Scoped by `userId`, never by id alone. */
+export async function deleteChromePresetRow(
+  userId: string,
+  id: string
+): Promise<void> {
+  await db
+    .delete(chromePresets)
+    .where(and(eq(chromePresets.id, id), eq(chromePresets.userId, userId)))
 }

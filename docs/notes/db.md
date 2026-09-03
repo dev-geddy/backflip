@@ -45,3 +45,9 @@
 - `telemetry_install` + `telemetry_start`, drizzle-kit generated, no seed. Owned by the `telemetry` domain (`L2-TELEMETRY-01`, `L2-TELEMETRY-02`); `L2-DB-34`/`L2-DB-35` are the db-side counterparts.
 - Both key on `installIdHash`, never a raw install id, and `telemetry_start.ipHash` is an HMAC of the source IP (`L2-DB-36`). The salt is `TELEMETRY_HASH_SALT`, deliberately not `ENCRYPTION_KEY`: these values are only ever compared, never decrypted, so they want a keyed digest rather than reversible encryption.
 - No fk between the two tables. `telemetry_start` rows are written by an unauthenticated endpoint and the join is on the hash; a fk would turn a race between two concurrent first-reports into a write error for something that is allowed to be lossy.
+
+## Chrome presets table (0018)
+- `chrome_preset`, drizzle-kit generated, no seed. Owned by the `ui` domain (`L2-UI-55`); `L2-DB-37` is the db-side counterpart.
+- Its own table rather than more columns on `user_preference`: this is a *list*, and that row is deliberately one-per-user (pk-as-fk, `L2-DB-33`).
+- Unique `(userId, name)` is load-bearing, not hygiene — it is the `onConflictDoUpdate` target that makes "save under a name you already used" mean "update that preset".
+- `on delete cascade` from `user`: deleting an account takes its presets with it, same as its preferences row.

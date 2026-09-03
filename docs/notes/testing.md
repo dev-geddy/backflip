@@ -12,6 +12,7 @@
 - `apps/web/e2e/screenshots.spec.ts` — screenshot step (`L2-TEST-09`): public homepage + admin home/integrations/users/account/docs (owner login) → `.screenshots/*.png`, all 1200×720. The docs case shoots twice: landing (index summary) and a cascade state (`L1-ARCH-05` → `L2-UI-01`), which doubles as the smoke test that the explorer's filtering wires up (`L2-UI-20`). Own Playwright project; default `test:e2e` runs `--project=chromium` which ignores it.
   - The committed docs asset `docs/assets/admin-integrations.png` is **1200×600**, not the project's 1200×720 — it predates this spec. Refreshing it: capture with a throwaway spec that calls `page.setViewportSize({ width: 1200, height: 600 })`, hide the Next dev indicator (`nextjs-portal{display:none}` — it is a local artifact and the previous asset had it baked in), then re-encode with sharp `png({ palette: true })`; flat UI quantises losslessly to the eye and the file drops ~60%.
 - `apps/web/e2e/tsconfig.json` — Playwright TS loader can't resolve `extends` from `@workspace/typescript-config`; passed via `--tsconfig` in the `test:e2e` script.
+- `apps/web/app/_lib/theme/chrome-presets.test.ts` — the built-in colour pairs (valid hex, unique ids/names, surface ≠ accent) plus `normalizePresetName` and `samePair`. The hex assertion matters: `customChromeVars` falls back to the seed palette for anything malformed, so a typo would render as "that preset does nothing" rather than as an error.
 - Unit suites colocated in `app/_lib/auth/*.test.ts` — detail in `/docs/notes/auth.md` § Unit tests.
 
 ## Run

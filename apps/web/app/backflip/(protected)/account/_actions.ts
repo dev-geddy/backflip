@@ -21,6 +21,13 @@ import {
 } from "@/app/_lib/email/send"
 import { isHexColor, resolveChromeTheme } from "@/app/_lib/theme/chrome-themes"
 import {
+  MAX_SAVED_PRESETS,
+  normalizePresetName,
+} from "@/app/_lib/theme/chrome-presets"
+import {
+  countChromePresets,
+  deleteChromePresetRow,
+  insertChromePreset,
   setChromeHeaderGlass,
   setChromeHeaderThemed,
   setChromeTheme,
@@ -31,7 +38,7 @@ import {
  * Self-service account actions (`/backflip/account`). All self-scoped to the
  * signed-in user; never a client-supplied id.
  *
- * @spec L2-AUTH-27, L2-AUTH-30, L2-AUTH-36, L2-AUTH-37
+ * @spec L2-AUTH-27, L2-AUTH-30, L2-AUTH-36, L2-AUTH-37, L2-UI-55
  */
 
 export type SaveState = { ok: boolean; message: string } | null
@@ -354,4 +361,51 @@ export async function saveCustomChrome(
   await setCustomChrome(session.user.id, surface, accent)
   revalidatePath("/backflip", "layout")
   return { ok: true, message: "Custom colors saved." }
+}
+
+/**
+ * Save the current custom pair under a name (`L2-UI-55`). Self-scoped. Saving
+ * under an existing name updates that preset — the only way to edit one, and
+ * the reading of "save" a user expects when they type a name they already have.
+ */
+export async function createChromePreset(
+  name: string,
+  surface: string,
+  accent: string
+): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+
+  const clean = normalizePresetName(name)
+  if (!clean) {
+    return { ok: false, message: "Give the preset a short name." }
+  }
+  if (!isHexColor(surface) || !isHexColor(accent)) {
+    return { ok: false, message: "Colors must be hex values like #243043." }
+  }
+
+  // Counted before the insert, so an update to an existing name is never
+  // blocked by a full shelf — only a genuinely new preset is.
+  const held = await countChromePresets(session.user.id)
+  if (held >= MAX_SAVED_PRESETS) {
+    return {
+      ok: false,
+      message: `You can keep ${MAX_SAVED_PRESETS} presets — delete one first.`,
+    }
+  }
+
+  await insertChromePreset(session.user.id, clean, surface, accent)
+  revalidatePath("/backflip/account")
+  return { ok: true, message: `Saved "${clean}".` }
+}
+
+/** Delete one of the signed-in user's presets. Scoped by session, never by id alone. */
+export async function deleteChromePreset(id: string): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user) return { ok: false, message: "Unauthorized" }
+  if (!id) return { ok: false, message: "Missing preset id." }
+
+  await deleteChromePresetRow(session.user.id, id)
+  revalidatePath("/backflip/account")
+  return { ok: true, message: "Preset removed." }
 }

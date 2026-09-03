@@ -12,16 +12,18 @@ import {
   CHROME_THEMES,
   CUSTOM_CHROME_HEADER_VARS,
   customChromeVars,
-  gradientVars,
   type ChromeTheme,
   type ChromeThemeId,
 } from "@/app/_lib/theme/chrome-themes"
+import type { SavedChromePreset } from "@/app/_lib/theme/preferences"
 import {
   saveChromeHeaderGlass,
   saveChromeHeaderThemed,
   saveChromeTheme,
   saveCustomChrome,
 } from "../_actions"
+import { CustomThemeDialog } from "./custom-theme-dialog"
+import { ShellPreview } from "./shell-preview"
 
 const GROUP_LABELS: Record<ChromeTheme["group"], string> = {
   default: "Default",
@@ -54,11 +56,13 @@ export function AppearanceSection({
   headerThemed,
   headerGlass,
   custom,
+  presets,
 }: {
   theme: ChromeThemeId
   headerThemed: boolean
   headerGlass: boolean
   custom: { surface: string; accent: string }
+  presets: SavedChromePreset[]
 }) {
   const [selected, setSelected] = useState<ChromeThemeId>(theme)
   const [tintHeader, setTintHeader] = useState(headerThemed)
@@ -90,8 +94,12 @@ export function AppearanceSection({
     }
   }
 
-  function pickCustomColor(part: "surface" | "accent", value: string) {
-    const next = { ...colors, [part]: value }
+  /**
+   * Commit a whole palette: both colours at once, plus the switch to `custom`
+   * if some named theme was active. One write, so applying a preset cannot
+   * leave the surface saved and the accent not.
+   */
+  function applyCustomPair(next: { surface: string; accent: string }) {
     setColors(next)
     applyCustomToShell(next, tintHeader)
     if (selected !== "custom") {
@@ -109,6 +117,10 @@ export function AppearanceSection({
       const failed = [colorRes, themeRes].find((r) => r && !r.ok)
       if (failed) toast.error(failed.message)
     })
+  }
+
+  function pickCustomColor(part: "surface" | "accent", value: string) {
+    applyCustomPair({ ...colors, [part]: value })
   }
 
   function choose(next: ChromeThemeId) {
@@ -198,11 +210,13 @@ export function AppearanceSection({
               {group === "default" ? (
                 <CustomThemeCard
                   colors={colors}
+                  presets={presets}
                   active={selected === "custom"}
                   headerThemed={tintHeader}
                   glass={glass}
                   onSelect={() => choose("custom")}
                   onPick={pickCustomColor}
+                  onApplyPair={applyCustomPair}
                 />
               ) : null}
             </div>
@@ -318,178 +332,33 @@ function ThemeTile({
 }
 
 /**
- * Miniature of the real shell — themed sidebar with an active nav row, themed
- * header strip, neutral content.
- *
- * Every tile paints from inline colors, `default` included. It cannot use
- * `bg-sidebar`: this picker renders *inside* the themed shell, so `--sidebar`
- * here is whatever theme is currently active — the Default tile would show a
- * dark sidebar while a dark theme is selected. `--stock-*` are captured at the
- * root, out of reach of the theme blocks, and still follow light/dark.
- */
-function ShellPreview({
-  theme,
-  headerThemed,
-  glass,
-}: {
-  theme: ChromeTheme
-  headerThemed: boolean
-  glass: boolean
-}) {
-  const stock = theme.group === "default"
-  const paint = stock
-    ? {
-        surface: "var(--stock-sidebar)",
-        foreground: "var(--stock-sidebar-foreground)",
-        accent: "var(--stock-sidebar-accent)",
-        edge: "var(--stock-sidebar-border)",
-        header: "var(--stock-background)",
-        headerInk: "var(--stock-foreground)",
-      }
-    : {
-        surface: theme.swatch.surface,
-        foreground: theme.swatch.foreground,
-        accent: theme.swatch.accent,
-        edge: theme.swatch.accent,
-        // Mirrors the live opt-out: with the header untinted the tile shows
-        // the stock strip, so the preview never promises more than you get.
-        header: headerThemed ? theme.swatch.surface : "var(--stock-background)",
-        headerInk: headerThemed
-          ? theme.swatch.foreground
-          : "var(--stock-foreground)",
-      }
-
-  const ink = (opacity: number) => ({
-    backgroundColor: paint.foreground,
-    opacity,
-  })
-  const headerInk = (opacity: number) => ({
-    backgroundColor: paint.headerInk,
-    opacity,
-  })
-
-  // The tile mirrors the live chrome's continuation trick (`L2-UI-44`) in
-  // miniature: the gradient is painted once on the whole shell box, and the
-  // sidebar column and header strip go transparent to let their own slice of
-  // it through. Painting each separately would restart the ramp at the seam.
-  const gradient = !stock
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex h-[104px] overflow-hidden rounded-lg border",
-        gradient ? "chrome-gradient" : undefined
-      )}
-      style={{
-        borderColor: paint.edge,
-        ...(gradient
-          ? {
-              backgroundColor: paint.surface,
-              ...gradientVars(theme.swatch),
-            }
-          : null),
-      }}
-    >
-      {/* Sidebar */}
-      <span
-        className="flex w-[34%] flex-col gap-1.5 p-2"
-        style={gradient ? undefined : { backgroundColor: paint.surface }}
-      >
-        {/* Brand row */}
-        <span className="flex items-center gap-1 pb-1">
-          <span className="size-2.5 flex-none rounded-[3px]" style={ink(0.9)} />
-          <span className="h-1.5 flex-1 rounded-full" style={ink(0.7)} />
-        </span>
-
-        {/* Active nav row — the accent surface, as in the real sidebar */}
-        <span
-          className="flex items-center gap-1 rounded-[3px] px-1 py-1"
-          style={{ backgroundColor: paint.accent }}
-        >
-          <span className="size-1.5 flex-none rounded-[1px]" style={ink(0.9)} />
-          <span className="h-1 flex-1 rounded-full" style={ink(0.9)} />
-        </span>
-
-        {/* Idle nav rows */}
-        {[0.45, 0.45, 0.3].map((opacity, i) => (
-          <span key={i} className="flex items-center gap-1 px-1">
-            <span
-              className="size-1.5 flex-none rounded-[1px]"
-              style={ink(opacity)}
-            />
-            <span
-              className={cn("h-1 rounded-full", i === 2 ? "w-1/2" : "flex-1")}
-              style={ink(opacity)}
-            />
-          </span>
-        ))}
-      </span>
-
-      {/* Content column: themed header strip over neutral page content */}
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span
-          className="flex h-[22px] flex-none items-center gap-1 px-2"
-          style={{
-            // Glass thins the strip so the surface behind shows through, the
-            // one part of `L2-UI-45` a static miniature can honestly show.
-            backgroundColor:
-              gradient && headerThemed && !glass
-                ? "transparent"
-                : glass
-                  ? `color-mix(in oklab, ${paint.header} 72%, transparent)`
-                  : paint.header,
-          }}
-        >
-          <span className="h-1 w-6 rounded-full" style={headerInk(0.5)} />
-          <span className="flex-1" />
-          <span className="size-1.5 rounded-full" style={headerInk(0.4)} />
-          <span className="size-1.5 rounded-full" style={headerInk(0.4)} />
-        </span>
-
-        {/* Page content is never tinted by a theme — the stock canvas shows
-            that, in every tile. */}
-        <span
-          className="flex flex-1 flex-col gap-1.5 p-2"
-          style={{ backgroundColor: "var(--stock-background)" }}
-        >
-          <span
-            className="h-1.5 w-2/3 rounded-full"
-            style={{ backgroundColor: "var(--stock-foreground)", opacity: 0.2 }}
-          />
-          <span
-            className="flex-1 rounded-[3px] border"
-            style={{ borderColor: "var(--stock-sidebar-border)" }}
-          />
-        </span>
-      </span>
-    </span>
-  )
-}
-
-/**
- * Custom theme — the one card that is also an editor. Spans the two grid
+ * Custom theme — the one card that is also an entry point. Spans the two grid
  * columns the Default tile leaves free, so the first row reads as "stock, or
  * roll your own".
  *
- * Only the surface and accent are chosen; ink, border and ring are derived
- * from them (`customChromeVars`), which is what keeps any pick readable. The
- * inputs commit on `change`, not `input` — dragging through a colour wheel
- * would otherwise fire a write per frame.
+ * The card shows the live palette and nothing else; picking colours, browsing
+ * presets and saving your own all happen in `CustomThemeDialog`. Inline, that
+ * shelf would double the height of this section for something most people open
+ * once (`L2-UI-55`).
  */
 function CustomThemeCard({
   colors,
+  presets,
   active,
   headerThemed,
   glass,
   onSelect,
   onPick,
+  onApplyPair,
 }: {
   colors: { surface: string; accent: string }
+  presets: SavedChromePreset[]
   active: boolean
   headerThemed: boolean
   glass: boolean
   onSelect: () => void
   onPick: (part: "surface" | "accent", value: string) => void
+  onApplyPair: (pair: { surface: string; accent: string }) => void
 }) {
   const vars = customChromeVars(colors.surface, colors.accent)
   const preview: ChromeTheme = {
@@ -529,22 +398,19 @@ function CustomThemeCard({
           />
         </button>
 
-        <div className="flex w-[150px] flex-none flex-col gap-2">
-          <ColorInput
-            id="custom-surface"
-            label="Sidebar"
-            value={colors.surface}
-            onChange={(v) => onPick("surface", v)}
+        <div className="flex w-[150px] flex-none flex-col justify-between gap-2">
+          <div className="flex flex-col gap-1.5">
+            <Pair label="Sidebar" color={colors.surface} />
+            <Pair label="Active row" color={colors.accent} />
+          </div>
+          <CustomThemeDialog
+            colors={colors}
+            saved={presets}
+            headerThemed={headerThemed}
+            glass={glass}
+            onPick={onPick}
+            onApplyPair={onApplyPair}
           />
-          <ColorInput
-            id="custom-accent"
-            label="Active row"
-            value={colors.accent}
-            onChange={(v) => onPick("accent", v)}
-          />
-          <p className="text-[11px] leading-tight text-muted-foreground">
-            Text and borders are derived, so they stay readable.
-          </p>
         </div>
       </div>
 
@@ -573,33 +439,18 @@ function CustomThemeCard({
   )
 }
 
-function ColorInput({
-  id,
-  label,
-  value,
-  onChange,
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (value: string) => void
-}) {
+/** Read-only echo of one chosen colour — the card states, the dialog edits. */
+function Pair({ label, color }: { label: string; color: string }) {
   return (
-    <label
-      htmlFor={id}
-      className="flex items-center gap-2 rounded-md border px-2 py-1.5"
-    >
-      <input
-        id={id}
-        type="color"
-        defaultValue={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="size-5 flex-none cursor-pointer rounded border-0 bg-transparent p-0"
+    <span className="flex items-center gap-2 rounded-md border px-2 py-1.5">
+      <span
+        className="size-5 flex-none rounded border"
+        style={{ backgroundColor: color }}
       />
       <span className="min-w-0 flex-1 truncate text-xs">{label}</span>
       <span className="font-mono text-[10px] text-muted-foreground uppercase">
-        {value.replace("#", "")}
+        {color.replace("#", "")}
       </span>
-    </label>
+    </span>
   )
 }

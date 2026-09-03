@@ -46,6 +46,7 @@ Shared data layer: `packages/db` (`@workspace/db`) — Drizzle schema, client, m
 ## Invariants
 - `L2-DB-09` — One schema source: `packages/db/src/schema.ts`. Apps import types/tables from `@workspace/db`, never redeclare.
 - `L2-DB-36` — Telemetry identifiers are stored only as salted HMACs: neither the client-generated install id nor the source IP is ever written in the clear. Same one-way principle as `L2-DB-10`/`L2-DB-21`, different key material (`TELEMETRY_HASH_SALT`, not `ENCRYPTION_KEY` — these are compared, never read back).
+- `L2-DB-37` — `chrome_preset` table (many rows per user): `id`, `userId` (fk → `user`, cascade), `name`, `surface` + `accent` (`#rrggbb`), `createdAt`. Unique `(userId, name)` — the upsert target, so re-saving a name updates that preset; index on `userId`. Migration `0018` creates it. Owned by the `ui` domain (`L2-UI-55`).
 - `L2-DB-10` — Passwords stored only as bcrypt hashes (`passwordHash`). Never plaintext.
 - `L2-DB-21` — One-time tokens stored only as `hashToken` output (`tokenHash`), never the raw token. Raw exists only in the emailed link. Validity requires un-consumed + un-expired.
 - `L2-DB-11` — Migrations are forward-only committed artifacts; schema change → `db:generate` + commit the SQL.

@@ -8,6 +8,7 @@ import {
   real,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
 
 /** @spec L2-DB-05, L2-DB-06, L2-DB-07, L2-DB-17, L2-DB-18, L2-DB-20, L2-DB-22, L2-ANALYTICS-01 */
@@ -544,5 +545,45 @@ export const telemetryStart = pgTable(
     // The dashboard's only query shape: a date window, grouped by day.
     index("telemetry_start_created_idx").on(t.createdAt),
     index("telemetry_start_install_idx").on(t.installIdHash),
+  ]
+)
+
+/**
+ * Saved custom-chrome palettes — one row per preset a user saved from the
+ * appearance picker. Presets are **per user**, like every other row in
+ * `user_preference`: they follow the person across browsers and machines, and
+ * one operator's experiment never lands in someone else's picker.
+ *
+ * A preset only ever holds the two colors a user actually chooses; ink,
+ * borders and the gradient are derived at render time by `customChromeVars`,
+ * so a saved pair can never go stale against a change in that derivation.
+ *
+ * `name` is unique per user, not globally — two people may both keep a
+ * "Midnight".
+ *
+ * @spec L2-DB-37, L2-UI-55
+ */
+export const chromePresets = pgTable(
+  "chrome_preset",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Operator-chosen label, trimmed. Unique within the user's own set. */
+    name: text("name").notNull(),
+    /** `#rrggbb` — the chrome surface. */
+    surface: text("surface").notNull(),
+    /** `#rrggbb` — the hover/active row. */
+    accent: text("accent").notNull(),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Naming a preset twice is a mistake, not a second preset.
+    uniqueIndex("chrome_preset_user_name_idx").on(t.userId, t.name),
+    // The only query shape: one user's presets, newest first.
+    index("chrome_preset_user_idx").on(t.userId),
   ]
 )
