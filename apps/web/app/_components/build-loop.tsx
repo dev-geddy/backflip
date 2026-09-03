@@ -20,7 +20,6 @@ export const BUILD_LOOP_PROMPTS = [
 ]
 
 export const BUILD_LOOP_PRELUDE = "You have Docker and dev tools ready."
-export const BUILD_LOOP_CLOSER = "That's how you start a project now."
 
 /**
  * The transcript on its own, with no section chrome — the admin Overview drops
@@ -60,15 +59,6 @@ export function BuildLoopTranscript({ compact }: { compact?: boolean }) {
           …
         </div>
       </div>
-
-      {/* Admin only. On the homepage the four prompts land harder without a
-          sentence explaining them — the sections around it already carry the
-          pitch, so the closer was restating a claim the page had made twice.
-          In the Overview card it stays: there it is the only line giving the
-          transcript a point. */}
-      {compact ? (
-        <p className="text-xs font-medium">{BUILD_LOOP_CLOSER}</p>
-      ) : null}
     </div>
   )
 }
