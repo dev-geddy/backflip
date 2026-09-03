@@ -12,6 +12,7 @@ import {
 } from "@/app/_lib/telemetry/limits"
 import { parseStartReport } from "@/app/_lib/telemetry/payload"
 import { recordStart } from "@/app/_lib/telemetry/record"
+import { maybePruneOldStarts } from "@/app/_lib/telemetry/retention"
 
 // Uses pg (db) — Node runtime. `force-dynamic` keeps it out of the build-time
 // prerender pass; nothing here is cacheable anyway.
@@ -43,13 +44,16 @@ function accepted(): NextResponse {
  *  6. Every stored row is attributable to an install that can be marked
  *     `ignored` later, so inflated data can be removed after the fact.
  *
+ * An accepted write also opportunistically triggers the retention sweep, which
+ * is the only thing that keeps `telemetry_start` bounded.
+ *
  * Every non-throttled path answers `204` with no body. Rejections are silent on
  * purpose: a prober learns nothing about which rule it tripped, and an honest
  * client has nothing to do with the answer either way. `429` is the single
  * exception, because a rate limit is the one condition worth telling a
  * well-behaved client about.
  *
- * @spec L2-TELEMETRY-09
+ * @spec L2-TELEMETRY-09, L2-TELEMETRY-32
  */
 export async function POST(request: Request) {
   // A deployment with no ingest salt is not collecting telemetry. Answer
@@ -104,8 +108,13 @@ export async function POST(request: Request) {
     // Budget is spent by effect, not by request: only a report that actually
     // created an install row costs new-install budget.
     if (outcome === "created") newInstallLimiter.hit(ip)
-    if (outcome === "created" || outcome === "bumped")
+    if (outcome === "created" || outcome === "bumped") {
       ingestDailyLimiter.hit(ip)
+      // Retention rides along with real traffic (`L2-TELEMETRY-32`). Not
+      // awaited: the response owes the client nothing, and a failed sweep must
+      // never cost a start report.
+      void maybePruneOldStarts().catch(() => {})
+    }
   } catch {
     // A telemetry write must never surface as an error to a dev server that is
     // only trying to start. Swallow and answer as usual.
