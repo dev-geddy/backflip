@@ -50,6 +50,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ROLE_LABELS, ROLES, type Role } from "@/app/_lib/auth/permissions"
+import { GoogleMark } from "../../_components/google-mark"
 import { deleteUser, updateUser } from "../_actions"
 import type { DetailMode } from "./members-view"
 import type { Member } from "./types"
@@ -62,18 +63,6 @@ const ROLE_DESC: Record<Role, string> = {
 
 function initials(value: string) {
   return value.slice(0, 2).toUpperCase()
-}
-
-/** Small Google "G" mark (design 1a sign-in badge). */
-function GoogleMark() {
-  return (
-    <span
-      title="Signs in with Google"
-      className="inline-flex size-[18px] flex-none items-center justify-center rounded-full border bg-background text-[10px] font-bold text-[#4285f4]"
-    >
-      G
-    </span>
-  )
 }
 
 export function MemberDetail({

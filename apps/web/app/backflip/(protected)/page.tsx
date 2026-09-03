@@ -21,6 +21,10 @@ import {
 import { TelemetryCards } from "./_components/telemetry-cards"
 import { TelemetryInstalls } from "./_components/telemetry-installs"
 import { SectionLabel } from "./_components/page-heading"
+import type { Metadata } from "next"
+import { titleFor } from "../_lib/crumbs"
+
+export const metadata: Metadata = { title: titleFor("/backflip") }
 
 const DATE_FMT = new Intl.DateTimeFormat("en-US", {
   weekday: "long",

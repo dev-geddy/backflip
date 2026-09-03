@@ -12,14 +12,16 @@ import { Input } from "@workspace/ui/components/input"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { requestEmailChange } from "../_actions"
+import { VerifiedTick } from "./verified-tick"
 
 /**
  * Email section. Row + inline-expand change flow presented as a 2-step stepper:
  * (1) Details — confirm current password (step-up) + enter the new address;
  * (2) Verify — we email a confirmation LINK to the new address (the swap is
  * deferred until that link is opened on `/account/verify-email`). No 6-digit
- * codes — the backend is link-based. The "Verified" pill reflects the real
- * `emailVerified` state.
+ * codes — the backend is link-based. A confirmed address shows a green tick
+ * (`VerifiedTick`) rather than a pill; only the unverified state still spells
+ * itself out, since a missing mark cannot say "pending" on its own.
  */
 export function AccountEmailSection({
   email,
@@ -41,12 +43,9 @@ export function AccountEmailSection({
           Email address
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate font-mono text-sm">{email}</span>
+          <span className="truncate text-sm">{email}</span>
           {emailVerified ? (
-            <span className="inline-flex flex-none items-center gap-1.5 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Verified
-            </span>
+            <VerifiedTick />
           ) : (
             <span className="flex-none rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               Unverified

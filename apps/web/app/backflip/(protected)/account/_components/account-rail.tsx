@@ -2,6 +2,7 @@ import { Badge } from "@workspace/ui/components/badge"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { SectionLabel } from "../../_components/page-heading"
+import { VerifiedTick } from "./verified-tick"
 
 /**
  * Account security rail (design 4a) — real data only: email verification state
@@ -27,10 +28,7 @@ export function AccountRail({
           <div className="flex items-center justify-between border-b pb-3">
             <span className="text-sm text-muted-foreground">Email</span>
             {emailVerified ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
-                Verified
-              </span>
+              <VerifiedTick />
             ) : (
               <span className="text-xs font-medium text-muted-foreground">
                 Unverified

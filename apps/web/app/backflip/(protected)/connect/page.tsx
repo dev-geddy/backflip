@@ -14,6 +14,10 @@ import { grantableScopes } from "@/app/_lib/oauth/scopes"
 import type { OAuthFailure } from "@/app/_lib/oauth/types"
 import { PageHeading } from "../_components/page-heading"
 import { ConsentForm } from "./_components/consent-form"
+import type { Metadata } from "next"
+import { titleFor } from "../../_lib/crumbs"
+
+export const metadata: Metadata = { title: titleFor("/backflip/connect") }
 
 /** Friendlier headline per RFC 6749 error code; falls back to a generic one. */
 const ERROR_TITLES: Partial<Record<OAuthFailure["error"], string>> = {

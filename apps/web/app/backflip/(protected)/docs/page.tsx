@@ -1,10 +1,12 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 
+import { titleFor } from "../../_lib/crumbs"
+
 import { getDocsIndex } from "./_lib/docs-index"
 import { DocsExplorer } from "./_components/docs-explorer"
 
-export const metadata: Metadata = { title: "Docs" }
+export const metadata: Metadata = { title: titleFor("/backflip/docs") }
 
 /**
  * Admin docs explorer — the repo's three-level doc system (L1 constitution,

@@ -33,6 +33,10 @@ import { type SlackAppRow } from "./_components/slack-apps"
 import { type SlackWebhookRow } from "./_components/slack-webhooks"
 import { type SpeechConfig } from "./_components/speech-integration"
 import { keyPreview, urlPreview } from "./_lib/mask"
+import type { Metadata } from "next"
+import { titleFor } from "../../_lib/crumbs"
+
+export const metadata: Metadata = { title: titleFor("/backflip/settings") }
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 

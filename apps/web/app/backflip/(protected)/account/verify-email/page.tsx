@@ -2,6 +2,12 @@ import { Card } from "@workspace/ui/components/card"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
 import { VerifyEmailConfirm } from "./_components/verify-email-confirm"
+import type { Metadata } from "next"
+import { titleFor } from "../../../_lib/crumbs"
+
+export const metadata: Metadata = {
+  title: titleFor("/backflip/account/verify-email"),
+}
 
 /**
  * /backflip/account/verify-email — target of the email-change verification link.
