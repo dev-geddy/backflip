@@ -5,7 +5,8 @@
  * breadcrumb, and each page turns it into the browser title via `titleFor()`.
  * Keeping both off the same source is the point — a tab reading "Settings ›
  * My account" while the header reads something else is the kind of drift
- * nobody notices until it is everywhere.
+ * nobody notices until it is everywhere. Composed titles read
+ * "B · Settings › My account": dot joins the brand, chevrons walk the path.
  *
  * Order matters: the first match wins, so a deeper route has to be listed
  * before the prefix it sits under (`/account/verify-email` before
@@ -15,11 +16,19 @@
  */
 
 /**
- * Title separator — U+203A, a single right-pointing angle quote. Narrower than
- * "»" and unlike "/" it does not read as part of a URL, which is the whole
- * reason the tab is being retitled.
+ * Path separator — U+203A, a single right-pointing angle quote. Narrower than
+ * "»", and unlike "/" it does not read as part of a URL, which is the whole
+ * reason the tab is being retitled. Reserved for hops **within** the trail.
  */
 export const CRUMB_SEPARATOR = " › "
+
+/**
+ * Brand separator — U+00B7, a middle dot. Deliberately not the chevron: the
+ * brand is not a step in the path, so joining it with one would imply
+ * "Backflip" is an ancestor of "Settings". A dot reads as a label boundary,
+ * the chevron as descent.
+ */
+export const BRAND_SEPARATOR = " · "
 
 /** Brand prefix for the tab. Short on purpose: a browser tab truncates fast,
  *  and the trail's leaf is what the reader actually needs to see. */
