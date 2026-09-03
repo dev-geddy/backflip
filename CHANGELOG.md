@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/dev-geddy/backflip/compare/v1.13.0...v1.14.0) (2026-09-03)
+
+
+### Features
+
+* **auth:** render sign-in errors on a styled page ([#42](https://github.com/dev-geddy/backflip/issues/42)) ([61b6168](https://github.com/dev-geddy/backflip/commit/61b6168b0582d1f3c73112a75cc3d592da7ac8c1))
+
 # [1.13.0](https://github.com/dev-geddy/backflip/compare/v1.12.0...v1.13.0) (2026-09-03)
 
 
