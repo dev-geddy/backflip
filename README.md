@@ -130,3 +130,9 @@ To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
 
 ## License
 [MIT](./LICENSE) © dev-geddy
+
+<!-- README view pixel. Counts image fetches of this README, served by the live
+     deployment (see the GitHub integration in the admin console). GitHub proxies
+     and caches README images through Camo, so the figure undercounts and cannot
+     identify a reader: no IP, user agent or referrer is stored. -->
+![](https://backflip.dev-geddy.com/api/public/github/pixel?repo=dev-geddy/backflip)
