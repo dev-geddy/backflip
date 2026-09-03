@@ -68,7 +68,9 @@ The shipped set and a person's saved set are the same thing to everything that r
 
 It also puts the seed under migration control, which is how `Brick` can ship *into a user's own shelf* (deletable, renameable) while the eight palettes ship ownerless. That distinction is not expressible when the catalog is a constant.
 
-The trade: `Brick` is seeded only for accounts that exist when `0018` runs. A later account starts with an empty user shelf — the honest default for a list whose whole meaning is "what you saved", and the alternative (re-seeding on read) would resurrect a preset the user deliberately deleted.
+The four seeded user pairs are one family by construction: `Brick` (`#6b2424`/`#933939`) converted to OKLCH is L 0.368 / C 0.102 for the surface and L 0.470 / C 0.122 for the accent, and `Indigo`, `Moss` and `Amethyst` hold both figures while moving only the hue. Matching intensity by eye across hues does not work — a green at a red's lightness reads far brighter — so it is done in a perceptual space and converted back.
+
+The trade: those pairs are seeded only for accounts that exist when `0018` runs. A later account starts with an empty user shelf — the honest default for a list whose whole meaning is "what you saved", and the alternative (re-seeding on read) would resurrect a preset the user deliberately deleted.
 
 ### Why the save button sits under the colour wells### Why the save button sits under the colour wells
 It is the answer to "I like what I just made", so it belongs where the making happened, not at the bottom of a shelf. It only appears when the pair matches nothing on either shelf; a match shows "These are Slate." instead. Clicking reveals the name field in place (Enter saves, Escape cancels).

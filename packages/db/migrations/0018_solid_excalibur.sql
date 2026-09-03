@@ -26,12 +26,22 @@ INSERT INTO "chrome_preset" ("id", "type", "userId", "name", "surface", "accent"
   (gen_random_uuid()::text, 'system', NULL, 'Sage', '#e7f5ea', '#c9dfcf'),
   (gen_random_uuid()::text, 'system', NULL, 'Rose Gold', '#ffedec', '#edd2d0')
 ON CONFLICT DO NOTHING;--> statement-breakpoint
--- Brick is the one shipped pair that lands in a *user's* shelf rather than the
--- system set, so it can be renamed or deleted like any pair someone saved. It
--- is seeded for the accounts that exist at migration time; an account created
+-- Four pairs that land in a *user's* shelf rather than the system set, so each
+-- can be renamed or deleted like any pair someone saved. `Brick` is the seed
+-- of the family; the other three are its own OKLCH lightness and chroma at
+-- three other hues, so the set reads as one intensity rather than four
+-- unrelated colours.
+--
+-- Seeded for the accounts that exist at migration time; an account created
 -- later starts with an empty shelf, which is the honest default for a list
 -- whose whole meaning is "what you saved".
 INSERT INTO "chrome_preset" ("id", "type", "userId", "name", "surface", "accent")
-SELECT gen_random_uuid()::text, 'user', "id", 'Brick', '#6b2424', '#933939'
-FROM "user"
+SELECT gen_random_uuid()::text, 'user', u."id", p."name", p."surface", p."accent"
+FROM "user" u
+CROSS JOIN (VALUES
+  ('Brick', '#6b2424', '#933939'),
+  ('Indigo', '#233c74', '#37579f'),
+  ('Moss', '#114c19', '#236c2b'),
+  ('Amethyst', '#562a60', '#784185')
+) AS p("name", "surface", "accent")
 ON CONFLICT DO NOTHING;
