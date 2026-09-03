@@ -55,6 +55,16 @@ export const BUILT_IN_CHROME_PRESETS: ChromePreset[] = [
     surface: "#2a2622",
     accent: "#3a352f",
   },
+  // The one pair that carries real chroma. Deliberate: a deep red is the
+  // clearest "this is production, be careful" signal a chrome can give, and
+  // that is worth more than the low-saturation rule the other pairs keep to.
+  {
+    id: "brick",
+    name: "Brick",
+    tone: "dark",
+    surface: "#6b2424",
+    accent: "#933939",
+  },
   {
     id: "linen",
     name: "Linen",
