@@ -66,6 +66,11 @@ The blocks stay in `globals.css` and the ids stay in `CHROME_THEMES`. They are n
 ### Why the save button sits under the colour wells
 It is the answer to "I like what I just made", so it belongs where the making happened, not at the bottom of a shelf. It only appears when the pair matches nothing on either shelf; a match shows "These are Slate." instead. Clicking reveals the name field in place (Enter saves, Escape cancels).
 
+### Naming: "chrome" stays in the code, never in the UI
+`chrome` is the term of art for a window's frame, and the whole implementation is built on it — `chromeTheme`, `--chrome-header-*`, `data-chrome-theme`, `chrome-themes.ts`. Renaming that would touch a DB column, a CSS variable family and a stamped DOM attribute for no functional gain.
+
+But to someone reading a settings dialog, "Chrome themes" names a browser. So the user-visible string says which surfaces actually change: **Sidebar & header**. Keep that split — jargon in the code, plain English on screen.
+
 ### Why saving under an existing name updates it
 There is no separate edit affordance, and inventing one (pencil icon → inline rename → separate colour update) is three controls for what a user already expresses by typing a name they recognise. `insertChromePreset` upserts on `(userId, name)`; the unique index makes that the natural behaviour rather than an error to handle.
 

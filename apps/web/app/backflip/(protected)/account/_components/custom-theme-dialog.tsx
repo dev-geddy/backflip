@@ -143,10 +143,14 @@ export function CustomThemeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[760px]">
         <DialogHeader>
-          <DialogTitle>Chrome themes</DialogTitle>
+          {/* "Sidebar & header", not "Chrome themes": chrome is the term of
+              art for a window's frame, but to anyone reading a settings dialog
+              it names a browser. The title says which two surfaces change. */}
+          <DialogTitle>Sidebar &amp; header</DialogTitle>
           <DialogDescription>
-            Pick a fixed palette, or roll your own two colours. Text and borders
-            are always derived, so nothing you pick can be unreadable.
+            Colours for this admin&rsquo;s sidebar and header. Pick a preset or
+            roll your own two colours — text and borders are always derived, so
+            nothing you pick can be unreadable.
           </DialogDescription>
         </DialogHeader>
 
