@@ -3,16 +3,17 @@
 import { useActionState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import {
   Field,
   FieldDescription,
   FieldLabel,
 } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { saveClickupConfig, testClickupConnection } from "../_actions"
+import { CredentialField } from "./credential-field"
 import { IntegrationTestButton } from "./integration-test-button"
 
 /** View model for the ClickUp pane — never carries the token itself. */
@@ -81,31 +82,17 @@ export function ClickupIntegration({
         </div>
 
         <div className="flex max-w-xl flex-col gap-4">
-          <Field>
-            <FieldLabel htmlFor="clickup-token">Personal API token</FieldLabel>
-            {/* type="text" + CSS masking, NOT type="password": a password input
-                makes Chrome treat the form as a login form and prefill saved
-                admin credentials into it. */}
-            <Input
-              id="clickup-token"
-              name="apiToken"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              data-1p-ignore
-              data-lpignore="true"
-              className="[-webkit-text-security:disc]"
-              placeholder={
-                clickup.tokenPreview
-                  ? `${clickup.tokenPreview} — leave blank to keep`
-                  : "pk_…"
-              }
-            />
-            <FieldDescription>
-              ClickUp → Settings → Apps → Generate. A workspace-scoped OAuth app
-              is not wired up yet.
-            </FieldDescription>
-          </Field>
+          <CredentialField
+            id="clickup-token"
+            name="apiToken"
+            label="Personal API token"
+            preview={clickup.tokenPreview}
+            placeholder="pk_…"
+            target="clickup"
+            serviceName="ClickUp"
+            removalNote="task and workspace calls stop working"
+            description="ClickUp → Settings → Apps → Generate. A workspace-scoped OAuth app is not wired up yet."
+          />
 
           <Field>
             <FieldLabel htmlFor="clickup-team">

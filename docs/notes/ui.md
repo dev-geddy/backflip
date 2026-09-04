@@ -167,17 +167,17 @@ The header used to read `4 of 24` at all times. A real user read that as "there 
 - Gotcha, cost ~10 min: `yarn typecheck` failed on a stale typed-routes validator after adding the layout. `next-env.d.ts` (gitignored, regenerated) was still importing `./.next-e2e/dev/types/routes.d.ts` from the last Playwright run, so the fresh `.next` route union collided with the stale e2e one. A normal `next build` rewrites it. Not a tsconfig problem — `exclude` does not help, since the file is reached by import, not by the glob.
 
 ## Integrations page — design 2a master-detail (L2-UI-03; ai + email domains UI)
-`/backflip/settings` (owner-only) ported to a master-detail of the two **real** integrations. **Real-data-only**, actions/encryption unchanged; keys stay masked (no Reveal).
+`/backflip/settings` (owner-only) ported to a master-detail of the two **real** integrations. **Real-data-only**, actions/encryption unchanged; keys stay masked (no Reveal). Stored keys are no longer editable fields anywhere on the page: one shared `credential-field.tsx` renders a masked read-only row with **Replace** and a confirmed **Remove** (`L2-AI-23`), and removing a key switches that integration off while keeping its non-secret settings.
 
 ![Integrations — AI providers pane](../assets/admin-integrations.png)
 
 - Screenshot: `docs/assets/admin-integrations.png` (1200×600, unconfigured state, e2e fixture owner; AI providers pane with the full integrations list — AI, Email, Google Analytics, Speech, MCP Connectors, ClickUp, Slack, n8n). Also embedded in the repo `README.md`. Regenerate with a throwaway spec in `apps/web/e2e/` at a 1200×600 viewport, then re-encode with sharp `png({ palette: true })` — recipe in `/docs/notes/testing.md`.
 - `settings/page.tsx` — same `aiConfig`/`emailConfig` fetch + `ProviderConfig[]`/`EmailConfig` shapes; renders `IntegrationsView`.
 - `_components/integrations-view.tsx` (client shell) — 3-col: list (2 rows: "AI providers · N connected", "Email · Resend", status dots) + detail + `xl:` rail; `mobileDetail` stack < lg. List column `bg-background` (header canvas), detail `bg-card`, rail `bg-muted/50` over the shell's `bg-card`.
-- `ai-integration.tsx` — provider tabs (Anthropic/OpenAI/Google, status dot) + `ProviderPane` (`key`ed per provider): design-2a header (logo tile · `PACKAGE` mono badge · connected status · **Enabled** toggle) over credentials (masked key) + Default-model select + "Set as default" toggle + Save (`saveAiConfig`), then Available-models list. Models list is static (`MODELS`) pending L2-AI live-models approval.
+- `ai-integration.tsx` — provider tabs (Anthropic/OpenAI/Google, status dot) + `ProviderPane` (`key`ed per provider): design-2a header (logo tile · `PACKAGE` mono badge · connected status · **Enabled** toggle) over credentials (masked key) + Default-model select + "Set as default" toggle + Save (`saveAiConfig`), then Available-models list. The credentials row is the shared `CredentialField` (`L2-AI-23`) and the models list is live-only (`L2-AI-24`): provider ids, or a dashed empty box saying why there are none.
 - `email-integration.tsx` — design 2a Resend pane: header (Re tile · `resend` mono chip · Connected status · Enabled toggle) over inlined credentials form (masked key, Default from address, From name, Reply-to) → `saveEmailConfig`. Sending-domain/Reveal/Disconnect omitted (no backend). `email-config-form.tsx` slimmed to just the `EmailConfig` type.
 - `integrations-rail.tsx` — About service + docs link + "keys encrypted at rest" note.
-- `ai-config-form.tsx` — plain module (no client): exports `ProviderConfig`, `LABEL`, `PACKAGE`, `MODELS`. `ProviderForm`/`AiConfigForm` removed (form inlined as `ProviderPane`).
+- `ai-config-form.tsx` — plain module (no client): exports `ProviderConfig`, `LABEL`, `PACKAGE` (`MODELS` deleted — `L2-AI-24`). `ProviderForm`/`AiConfigForm` removed (form inlined as `ProviderPane`).
 - Removed: `ai-section.tsx`, `email-section.tsx` (view/edit-toggle wrappers superseded).
 - Omitted (no backend): Reveal key, Analytics/PostHog, usage metrics, sending-domain verification, org-id/base-url.
 

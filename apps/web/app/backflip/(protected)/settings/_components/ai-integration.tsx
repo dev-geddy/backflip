@@ -3,18 +3,22 @@
 import { useActionState, useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@workspace/ui/components/field"
 import { NativeSelect } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
-import { RiFlaskLine } from "@remixicon/react"
+import { RiFlaskLine, RiRefreshLine } from "@remixicon/react"
 
 import { saveAiConfig } from "../_actions"
 import { useProviderModels } from "../_hooks/use-provider-models"
 import { SectionLabel } from "../../_components/page-heading"
 import { LABEL, PACKAGE, type ProviderConfig } from "./ai-config-form"
 import { AiTestDialog } from "./ai-test-dialog"
+import { CredentialField } from "./credential-field"
 
 function GreenBadge({ children }: { children: React.ReactNode }) {
   return (
@@ -106,7 +110,8 @@ export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
 
 function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
   const [state, action, pending] = useActionState(saveAiConfig, null)
-  const { models, live, loading } = useProviderModels(cfg)
+  const { models, live, liveCount, loading, error, reload } =
+    useProviderModels(cfg)
   const hasKey = Boolean(cfg.keyPreview)
   const letter = cfg.provider.charAt(0).toUpperCase()
 
@@ -154,27 +159,16 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
 
         {/* Credentials + model */}
         <div className="flex max-w-md flex-col gap-4">
-          <Field>
-            <FieldLabel htmlFor={`key-${cfg.provider}`}>API key</FieldLabel>
-            {/* type="text" + CSS masking, NOT type="password": a password input
-                makes Chrome treat the form as a login form and prefill saved
-                admin credentials into it. */}
-            <Input
-              id={`key-${cfg.provider}`}
-              name="apiKey"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              data-1p-ignore
-              data-lpignore="true"
-              className="[-webkit-text-security:disc]"
-              placeholder={
-                cfg.keyPreview
-                  ? `${cfg.keyPreview} — leave blank to keep`
-                  : "Paste API key"
-              }
-            />
-          </Field>
+          <CredentialField
+            id={`key-${cfg.provider}`}
+            name="apiKey"
+            label="API key"
+            preview={cfg.keyPreview}
+            placeholder="Paste API key"
+            target={`ai:${cfg.provider}`}
+            serviceName={LABEL[cfg.provider]}
+            removalNote="it stops serving models and loses its default flag"
+          />
 
           <Field>
             <FieldLabel htmlFor={`model-${cfg.provider}`}>
@@ -184,14 +178,16 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
               id={`model-${cfg.provider}`}
               name="model"
               defaultValue={cfg.model}
-              disabled={loading || !hasKey}
+              disabled={loading || !hasKey || models.length === 0}
             >
               <option value="">
                 {!hasKey
                   ? "Save an API key to load models…"
                   : loading
                     ? "Loading models…"
-                    : "Select a model…"}
+                    : models.length === 0
+                      ? "No models to choose from"
+                      : "Select a model…"}
               </option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -199,6 +195,17 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
                 </option>
               ))}
             </NativeSelect>
+            {/* Every id in the list comes from the provider (plus the one
+                already saved). Nothing is suggested from a built-in list. */}
+            {!hasKey ? (
+              <FieldDescription>
+                The provider lists its own models once a key is saved.
+              </FieldDescription>
+            ) : error ? (
+              <FieldDescription className="text-destructive">
+                {error}
+              </FieldDescription>
+            ) : null}
           </Field>
 
           <label className="flex items-center gap-3">
@@ -217,38 +224,67 @@ function ProviderPane({ cfg }: { cfg: ProviderConfig }) {
         </div>
       </form>
 
-      {/* Available models — only once a key is saved; no key means the only
-          list we could show is the stale hardcoded fallback. */}
+      {/* Available models — the provider's own list, or a plain statement of
+          why there isn't one. Never a built-in catalog dressed up as live. */}
       {hasKey ? (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <SectionLabel>Available models</SectionLabel>
             <span className="text-[11px] text-muted-foreground">
               {loading
                 ? "fetching from provider…"
                 : live
-                  ? "live from provider API"
-                  : "suggestions — provider API unreachable"}
+                  ? `live from the ${LABEL[cfg.provider]} API · ${liveCount} ${
+                      liveCount === 1 ? "model" : "models"
+                    }`
+                  : "provider list unavailable"}
             </span>
-          </div>
-          <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
-            {models.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center justify-between gap-3 px-3 py-2.5"
+            {!loading ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-muted-foreground"
+                onClick={reload}
               >
-                <div className="min-w-0">
-                  <span className="font-mono text-xs">{m.id}</span>
-                  {m.label !== m.id ? (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {m.label}
-                    </span>
-                  ) : null}
-                </div>
-                {m.id === cfg.model ? <GreenBadge>Default</GreenBadge> : null}
-              </div>
-            ))}
+                <RiRefreshLine className="size-3.5" />
+                Refresh
+              </Button>
+            ) : null}
           </div>
+          {loading ? (
+            <div className="rounded-lg border px-3 py-6 text-center text-xs text-muted-foreground">
+              Asking the provider…
+            </div>
+          ) : live ? (
+            <div className="max-h-72 divide-y overflow-y-auto rounded-lg border">
+              {models.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <span className="font-mono text-xs">{m.id}</span>
+                    {m.label !== m.id ? (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {m.label}
+                      </span>
+                    ) : null}
+                  </div>
+                  {m.id === cfg.model ? <GreenBadge>Default</GreenBadge> : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed px-3 py-6 text-center">
+              {/* The reason itself is already on the field above; this says
+                  why the space is empty rather than filled with guesses. */}
+              <p className="mx-auto max-w-sm text-xs text-muted-foreground">
+                Only the provider can say which models this key may use, so
+                nothing is listed until it answers.
+              </p>
+            </div>
+          )}
         </div>
       ) : null}
     </div>

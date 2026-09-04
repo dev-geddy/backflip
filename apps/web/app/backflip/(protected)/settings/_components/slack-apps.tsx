@@ -42,6 +42,7 @@ import {
 import { RiAddLine, RiDeleteBinLine, RiPencilLine } from "@remixicon/react"
 
 import { deleteSlackApp, saveSlackApp, testSlackApp } from "../_actions"
+import { CredentialField } from "./credential-field"
 import { IntegrationTestButton } from "./integration-test-button"
 
 /** One Slack app row — the bot token is only ever a masked preview here. */
@@ -247,7 +248,7 @@ function AppDialog({
           </DialogTitle>
           <DialogDescription>
             {app
-              ? "Leave a secret field blank to keep the stored value."
+              ? "Stored secrets stay hidden — Replace swaps the bot token; a blank signing secret keeps the stored one."
               : "Paste the bot token from your Slack app’s OAuth & Permissions page."}
           </DialogDescription>
         </DialogHeader>
@@ -267,25 +268,15 @@ function AppDialog({
             />
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="slack-app-token">Bot token</FieldLabel>
-            <Input
-              id="slack-app-token"
-              name="botToken"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              data-1p-ignore
-              data-lpignore="true"
-              className="font-mono [-webkit-text-security:disc]"
-              required={!app}
-              placeholder={
-                app?.tokenPreview
-                  ? `${app.tokenPreview} — leave blank to keep`
-                  : "xoxb-…"
-              }
-            />
-          </Field>
+          <CredentialField
+            id="slack-app-token"
+            name="botToken"
+            label="Bot token"
+            preview={app?.tokenPreview ?? null}
+            placeholder="xoxb-…"
+            required={!app}
+            serviceName="Slack"
+          />
 
           <Field>
             <FieldLabel htmlFor="slack-app-signing">
