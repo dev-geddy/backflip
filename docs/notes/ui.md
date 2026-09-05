@@ -94,6 +94,13 @@ It also puts the seed under migration control, which is how `Brick` can ship *in
 
 The four seeded user pairs are one family by construction: `Brick` (`#6b2424`/`#933939`) converted to OKLCH is L 0.368 / C 0.102 for the surface and L 0.470 / C 0.122 for the accent, and `Indigo`, `Moss` and `Amethyst` hold both figures while moving only the hue. Matching intensity by eye across hues does not work — a green at a red's lightness reads far brighter — so it is done in a perceptual space and converted back.
 
+### Adding a shipped palette
+A new system palette is a **migration, not code** (`0019` → `Teal`, `#0c2a31` / `#333b4a`). Nothing in `chrome-themes.ts` or `globals.css` changes: a preset is a colour pair applied to `custom`, and `customChromeVars` derives the rest.
+
+Do **not** add a `[data-chrome-theme]` block for it. `chrome-themes.test.ts` asserts every block has a catalog entry, so a block with no `CHROME_THEMES` id fails — and the id would be unreachable from the picker anyway (`GROUP_ORDER` is `["default"]`).
+
+Teal is the first pair authored as a pair rather than converted from an `oklch()` block. Its accent is a slate-blue (hue ≈263) on a blue-green surface (hue ≈216): the two hues differ on purpose, which is exactly why a preset stores both colours instead of deriving the hover row from the surface.
+
 The trade: those pairs are seeded only for accounts that exist when `0018` runs. A later account starts with an empty user shelf — the honest default for a list whose whole meaning is "what you saved", and the alternative (re-seeding on read) would resurrect a preset the user deliberately deleted.
 
 ### Why the save control is permanent, and says what it will do
