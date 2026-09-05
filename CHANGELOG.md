@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/dev-geddy/backflip/compare/v1.17.0...v1.18.0) (2026-09-05)
+
+
+### Features
+
+* **ui:** add teal to the shipped chrome presets ([#46](https://github.com/dev-geddy/backflip/issues/46)) ([2c6ebf4](https://github.com/dev-geddy/backflip/commit/2c6ebf411af0417694056c8a073ff66edc6bfaad))
+
 # [1.17.0](https://github.com/dev-geddy/backflip/compare/v1.16.0...v1.17.0) (2026-09-05)
 
 
