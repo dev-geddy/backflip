@@ -4,13 +4,13 @@ import { useActionState, useEffect, useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
 import { NativeSelect } from "@workspace/ui/components/native-select"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { listSpeechModels, saveSpeechConfig } from "../_actions"
 import { SectionLabel } from "../../_components/page-heading"
+import { CredentialField } from "./credential-field"
 
 export type SpeechConfig = {
   sttModel: string
@@ -164,27 +164,16 @@ export function SpeechIntegration({
 
         {/* Credentials + models */}
         <div className="flex max-w-md flex-col gap-4">
-          <Field>
-            <FieldLabel htmlFor="deepgram-key">API key</FieldLabel>
-            {/* type="text" + CSS masking, NOT type="password": a password input
-                makes Chrome treat the form as a login form and prefill saved
-                admin credentials into it. */}
-            <Input
-              id="deepgram-key"
-              name="apiKey"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              data-1p-ignore
-              data-lpignore="true"
-              className="[-webkit-text-security:disc]"
-              placeholder={
-                speech.keyPreview
-                  ? `${speech.keyPreview} — leave blank to keep`
-                  : "Paste API key"
-              }
-            />
-          </Field>
+          <CredentialField
+            id="deepgram-key"
+            name="apiKey"
+            label="API key"
+            preview={speech.keyPreview}
+            placeholder="Paste API key"
+            target="speech"
+            serviceName="Deepgram"
+            removalNote="speech-to-text and text-to-speech stop working"
+          />
 
           <ModelSelect
             id="deepgram-stt-model"

@@ -21,7 +21,7 @@
 
 ## Edit semantics
 - Dialogs are keyed (`key={editing?.id ?? "create"}`) so `useActionState` resets between rows — otherwise a stale error message from one row would follow you to the next.
-- Blank secret field on update = keep stored (`L2-SLACK-07`); the placeholder shows the masked preview and says "leave blank to keep".
+- Blank secret field on update = keep stored (`L2-SLACK-07`). The bot token and webhook URL no longer expose an editable input at all once stored: both render the shared `CredentialField` (`L2-AI-23`, `L2-SLACK-16`) — masked row + Replace, no Remove (deleting the row is the removal). The signing secret still uses the blank-keeps placeholder, having only a stored/not-stored flag to show.
 - Unique-constraint violations on `name` / `label` are caught and returned as a message (`L2-SLACK-10`) — the insert/update is wrapped in try/catch rather than pre-checked, so two concurrent saves can't slip through a check-then-write gap.
 
 ## State

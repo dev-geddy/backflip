@@ -25,6 +25,7 @@ Email sending configuration (Resend provider config under `/backflip/settings`, 
 ## Invariants
 - `L2-EMAIL-06` — Full API key never sent to the client. UI may show a masked preview (first 3 + last 4 chars around a fixed dot run; keys ≤8 chars fully masked) decrypted server-side. Stored encrypted (`L2-DB-16`), never plaintext.
 - `L2-EMAIL-07` — Blank API-key field on save keeps the existing key (no overwrite).
+- `L2-EMAIL-17` — The Resend key uses the shared credential block (`L2-AI-23`): stored → read-only masked row with Replace and a confirmed Remove; removing it nulls `apiKeyEnc` and sets `enabled = false`, so the app stops trying to send. From-address, from-name and reply-to are kept — they are settings, not secrets. `L2-EMAIL-07` stays true as the server-side rule; the UI no longer leans on it.
 - `L2-EMAIL-13` — Sending is optional infrastructure: when Resend is not usable (disabled, no key, or no `fromEmail`) the send layer returns `not_configured` — it never throws and never blocks the caller. Callers (e.g. `POST /api/backflip/users`) treat this as a non-fatal info state and still succeed.
 
 ## Errors

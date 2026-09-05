@@ -33,6 +33,7 @@ import {
 import { firstError } from "@/app/_lib/validation"
 
 import { fetchClickupIdentity } from "./_lib/clickup"
+import { aiProviderOf, isCredentialTarget } from "./_lib/credentials"
 import { fetchDeepgramModels, type SpeechModel } from "./_lib/deepgram-models"
 import { fetchN8nStatus, normalizeN8nBaseUrl } from "./_lib/n8n"
 import { fetchProviderModels, type ProviderModel } from "./_lib/provider-models"
@@ -911,4 +912,71 @@ export async function testN8nConnection(): Promise<SaveState> {
       message: "Could not reach n8n — check the URL and API key.",
     }
   }
+}
+
+/* -------------------------- Removing a credential ------------------------- *
+ * A stored key is otherwise immortal: every save action only ever *sets*
+ * `apiKeyEnc`, so the old "blank field keeps the key" rule left no way to take
+ * a credential back out of the platform (`L2-AI-08`, `L2-EMAIL-07`).
+ * -------------------------------------------------------------------------- */
+
+/**
+ * Clear one integration's stored credential and switch that integration off.
+ *
+ * Disabling is part of the removal, not a courtesy: an integration marked
+ * enabled with no key is a configuration that cannot work, and every call site
+ * would have to special-case it. For an AI provider the default flag goes with
+ * it, since a keyless provider must not stay the one the app routes to.
+ *
+ * The row itself survives — model choice, from-address, instance URL and the
+ * rest are settings, not secrets, and a re-connect should not retype them.
+ *
+ * @spec L2-AI-23, L2-EMAIL-17, L2-SPEECH-12, L2-CLICKUP-13, L2-N8N-13
+ */
+export async function clearIntegrationKey(target: string): Promise<SaveState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+  if (!isCredentialTarget(target)) {
+    return { ok: false, message: "Unknown credential" }
+  }
+
+  const now = new Date()
+  const provider = aiProviderOf(target)
+
+  if (provider) {
+    await db
+      .update(aiConfig)
+      .set({
+        apiKeyEnc: null,
+        enabled: false,
+        isDefault: false,
+        updatedAt: now,
+      })
+      .where(eq(aiConfig.provider, provider as Provider))
+  } else if (target === "email") {
+    await db
+      .update(emailConfig)
+      .set({ apiKeyEnc: null, enabled: false, updatedAt: now })
+      .where(eq(emailConfig.provider, "resend"))
+  } else if (target === "speech") {
+    await db
+      .update(speechConfig)
+      .set({ apiKeyEnc: null, enabled: false, updatedAt: now })
+      .where(eq(speechConfig.provider, "deepgram"))
+  } else if (target === "clickup") {
+    await db
+      .update(clickupConfig)
+      .set({ apiTokenEnc: null, enabled: false, updatedAt: now })
+      .where(eq(clickupConfig.kind, "clickup"))
+  } else if (target === "n8n") {
+    await db
+      .update(n8nConfig)
+      .set({ apiKeyEnc: null, enabled: false, updatedAt: now })
+      .where(eq(n8nConfig.kind, "n8n"))
+  }
+
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Key removed." }
 }

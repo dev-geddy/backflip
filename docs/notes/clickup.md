@@ -7,7 +7,7 @@
 - `packages/db/migrations/0012_lethal_sandman.sql` — creates `clickup_config` (alongside `slack_app`, `slack_webhook`, `n8n_config`). Satisfies `L2-DB-08`.
 - `apps/web/app/backflip/(protected)/settings/_lib/clickup.ts` — `fetchClickupIdentity(token)`: parallel `GET /api/v2/user` + `GET /api/v2/team`; a failing `/team` degrades to `teams: []` rather than failing the probe. `server-only`. Satisfies `L2-CLICKUP-03`.
 - `settings/_actions.ts` — `saveClickupConfig` (upsert on `kind`, encrypt token when non-blank) + `testClickupConnection` (decrypt → probe → generic error copy). Satisfies `L2-CLICKUP-02`, `L2-CLICKUP-03`, `L2-CLICKUP-06`, `L2-CLICKUP-09/10`.
-- `settings/_components/clickup-integration.tsx` — detail pane; `useActionState(saveClickupConfig)`; fields API token (CSS-masked text input), default workspace id, Enabled switch; Test button disabled until a token is stored. Satisfies `L2-CLICKUP-04`.
+- `settings/_components/clickup-integration.tsx` — detail pane; `useActionState(saveClickupConfig)`; fields API token (CSS-masked text input), default workspace id, Enabled switch; Test button disabled until a token is stored. Satisfies `L2-CLICKUP-04`. The token row is the shared `CredentialField` (`L2-AI-23`, `L2-CLICKUP-13`) — removal nulls `apiTokenEnc`, not `apiKeyEnc`.
 - `settings/_components/integration-test-button.tsx` — shared "Test connection" button (`useTransition` + sonner toast). Reused by n8n and both Slack lists.
 - `settings/page.tsx` — reads the row, maps to `ClickupConfig` view model (`tokenPreview` only, never the token).
 - `settings/_components/integrations-view.tsx` / `integrations-rail.tsx` — list row (tile `Cu`) + About copy.

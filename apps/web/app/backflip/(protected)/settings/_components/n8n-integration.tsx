@@ -3,16 +3,17 @@
 import { useActionState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import {
   Field,
   FieldDescription,
   FieldLabel,
 } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
 import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { saveN8nConfig, testN8nConnection } from "../_actions"
+import { CredentialField } from "./credential-field"
 import { IntegrationTestButton } from "./integration-test-button"
 
 /** View model for the n8n pane — never carries the key itself. */
@@ -99,30 +100,22 @@ export function N8nIntegration({
             </FieldDescription>
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="n8n-key">Public API key</FieldLabel>
-            {/* type="text" + CSS masking, NOT type="password" — see the Resend
-                pane for why. */}
-            <Input
-              id="n8n-key"
-              name="apiKey"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              data-1p-ignore
-              data-lpignore="true"
-              className="[-webkit-text-security:disc]"
-              placeholder={
-                n8n.keyPreview
-                  ? `${n8n.keyPreview} — leave blank to keep`
-                  : "n8n_api_…"
-              }
-            />
-            <FieldDescription>
-              n8n → Settings → n8n API → Create an API key. Sent as{" "}
-              <span className="font-mono">X-N8N-API-KEY</span>.
-            </FieldDescription>
-          </Field>
+          <CredentialField
+            id="n8n-key"
+            name="apiKey"
+            label="Public API key"
+            preview={n8n.keyPreview}
+            placeholder="n8n_api_…"
+            target="n8n"
+            serviceName="n8n"
+            removalNote="workflow calls stop working"
+            description={
+              <>
+                n8n → Settings → n8n API → Create an API key. Sent as{" "}
+                <span className="font-mono">X-N8N-API-KEY</span>.
+              </>
+            }
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

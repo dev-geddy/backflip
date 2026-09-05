@@ -28,6 +28,7 @@ Explicitly **not** owned: message-sending call sites in app code (none exist yet
 
 ## Invariants
 - `L2-SLACK-07` — Blank secret field on update keeps the stored value (bot token, signing secret, webhook URL). Create requires the secret.
+- `L2-SLACK-16` — The bot token and the webhook URL render through the shared credential block (`L2-AI-23`): stored → a masked read-only row with **Replace**, so an edit of the label or channel cannot overwrite the secret by a stray keystroke. No `Remove` on these two — the credential goes when the row is deleted (`L2-SLACK-05`, `L2-SLACK-06`), which already confirms. The signing secret keeps its plain blank-keeps input: it has no masked preview to show, only a stored/not-stored flag.
 - `L2-SLACK-09` — Bot tokens, signing secrets and webhook URLs are encrypted at rest and never sent to the client. Rows carry masked previews only: tokens via `maskKey`, webhook URLs via `urlPreview` (host + masked path tail — enough to tell two webhooks apart, never enough to post).
 - `L2-SLACK-10` — `slack_app.name` and `slack_webhook.label` are unique; a clashing save is refused with a message, not a 500.
 - `L2-SLACK-11` — A webhook URL must be `https://hooks.slack.com/services/…`. No other host is storable — the value is used as a POST target.

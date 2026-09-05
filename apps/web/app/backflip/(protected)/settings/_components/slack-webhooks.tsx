@@ -46,6 +46,7 @@ import {
   saveSlackWebhook,
   testSlackWebhook,
 } from "../_actions"
+import { CredentialField } from "./credential-field"
 import { IntegrationTestButton } from "./integration-test-button"
 
 /** One incoming webhook — the URL is a credential, so only a preview here. */
@@ -277,29 +278,16 @@ function WebhookDialog({
             />
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="slack-hook-url">Webhook URL</FieldLabel>
-            <Input
-              id="slack-hook-url"
-              name="url"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              data-1p-ignore
-              data-lpignore="true"
-              className="font-mono [-webkit-text-security:disc]"
-              required={!webhook}
-              placeholder={
-                webhook?.urlPreview
-                  ? `${webhook.urlPreview} — leave blank to keep`
-                  : "https://hooks.slack.com/services/…"
-              }
-            />
-            <FieldDescription>
-              Anyone holding this URL can post to the channel, so it is
-              encrypted at rest and never shown again in full.
-            </FieldDescription>
-          </Field>
+          <CredentialField
+            id="slack-hook-url"
+            name="url"
+            label="Webhook URL"
+            preview={webhook?.urlPreview ?? null}
+            placeholder="https://hooks.slack.com/services/…"
+            required={!webhook}
+            serviceName="Slack"
+            description="Anyone holding this URL can post to the channel, so it is encrypted at rest and never shown again in full."
+          />
 
           <Field>
             <FieldLabel htmlFor="slack-hook-channel">

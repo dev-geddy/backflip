@@ -21,6 +21,7 @@ Explicitly **not** owned: actual transcription/synthesis call sites (none exist 
 
 ## Invariants
 - `L2-SPEECH-05` — Key encrypted at rest, never sent to the client — masked preview only (`L2-AI-06` masking util reused).
+- `L2-SPEECH-12` — The Deepgram key uses the shared credential block (`L2-AI-23`): stored → read-only masked row with Replace and a confirmed Remove; removing it nulls `apiKeyEnc` and sets `enabled = false`. The stored STT/TTS model names are kept.
 - `L2-SPEECH-06` — No hardcoded model list anywhere. No key → model selects disabled + no catalog rendered; key saved → catalog fetched live from Deepgram. Saved model stays selectable even if absent from the live list.
 - `L2-SPEECH-07` — Model selects submit Deepgram **canonical** names (`canonical_name`) — the values transcribe/speak calls accept.
 

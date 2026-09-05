@@ -7,7 +7,7 @@
 - `packages/db/migrations/0012_lethal_sandman.sql` — creates `n8n_config`. Satisfies `L2-DB-08`.
 - `apps/web/app/backflip/(protected)/settings/_lib/n8n.ts` — `normalizeN8nBaseUrl(input)` (origin + sub-path, trailing slash stripped, http(s) only) + `fetchN8nStatus(baseUrl, apiKey)` (`GET /api/v1/workflows?limit=1`, `X-N8N-API-KEY`). `server-only`. Satisfies `L2-N8N-02`, `L2-N8N-03`.
 - `settings/_actions.ts` — `saveN8nConfig` (normalize → upsert on `kind` → encrypt key when non-blank) + `testN8nConnection`. Satisfies `L2-N8N-02`, `L2-N8N-03`, `L2-N8N-07`, `L2-N8N-09/10`.
-- `settings/_components/n8n-integration.tsx` — detail pane; instance URL, API key (CSS-masked text input), Enabled switch, Test button (disabled until both URL and key are stored). Satisfies `L2-N8N-04`.
+- `settings/_components/n8n-integration.tsx` — detail pane; instance URL, API key (CSS-masked text input), Enabled switch, Test button (disabled until both URL and key are stored). Satisfies `L2-N8N-04`. The key row is the shared `CredentialField` (`L2-AI-23`): stored → masked read-only row, Replace, confirmed Remove (`L2-N8N-13`).
 - `settings/page.tsx` — reads the row, maps to `N8nConfig` view model (`keyPreview` only, never the key).
 - `settings/_components/integrations-view.tsx` / `integrations-rail.tsx` — list row (tile `n8`) + About copy.
 
