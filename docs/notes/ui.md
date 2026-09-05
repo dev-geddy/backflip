@@ -400,6 +400,12 @@ Hook: `src/hooks/use-mobile.ts` (sidebar).
 ## Deviations
 - `spinner.tsx` — registry shipped `React.ComponentProps<"svg">`; retyped to `ComponentProps<typeof RiLoaderLine>` (remixicon `children: undefined` clash). Local edit; re-check on `shadcn add` overwrite.
 
+## Admin content cap — `L2-UI-61`
+- `(protected)/layout.tsx` declares `--content-width: 1440px` beside the sidebar/header variables and applies it to a `mx-auto w-full max-w-(--content-width)` wrapper **inside** the `bg-muted/40` canvas. Canvas full-bleed, content capped: the muted ground still reaches both edges instead of ending at the content's edge.
+- Pages own no width. Padded pages (Overview, Account) and full-bleed master-detail pages (Integrations, Members) both inherit the cap from the shell, so there is one place to change it.
+- **px, not rem.** `90rem` looked like the idiomatic value and rendered 1530px: `globals.css` sets `html { font-size: 17px }` (see Base scale below). Measured, not eyeballed — the e2e guard asserts 1440 exactly.
+- The header is deliberately *not* capped: breadcrumb stays hard left, search/theme cluster hard right, matching the sidebar's own full-height edge. Chosen over aligning the header row with the content.
+
 ## Base scale
 - `globals.css` sets `html { font-size: 17px }` (up from 16). base-mira ships compact; this scales all rem sizes (text, control heights, padding, gaps) ~6% for a slightly larger, roomier feel. Tune this single value to rescale the whole UI.
 
