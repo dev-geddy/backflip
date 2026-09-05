@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/dev-geddy/backflip/compare/v1.16.0...v1.17.0) (2026-09-05)
+
+
+### Features
+
+* **ui:** cap admin content at 1440px ([#45](https://github.com/dev-geddy/backflip/issues/45)) ([ab66487](https://github.com/dev-geddy/backflip/commit/ab66487b2e5f4fb36d0bcf771865a36eec186a82))
+
 # [1.16.0](https://github.com/dev-geddy/backflip/compare/v1.15.0...v1.16.0) (2026-09-05)
 
 
