@@ -26,7 +26,10 @@ import type { SessionUser } from "./_components/types"
  * the glass filter chain can be picked per tone × mode; `default` carries none
  * because it follows the mode.
  *
- * @spec L2-UI-25
+ * Page content is capped at `--content-width` (1440px) and centred inside the
+ * full-bleed canvas (`L2-UI-61`).
+ *
+ * @spec L2-UI-25, L2-UI-61
  */
 export default async function ProtectedLayout({
   children,
@@ -66,6 +69,9 @@ export default async function ProtectedLayout({
           "--sidebar-width": "15.5rem",
           "--sidebar-width-icon": "3.5rem",
           "--header-height": "3rem",
+          // px, not rem: the base scale is 17px (`globals.css`), so a rem
+          // value would drift off 1440 the moment that knob moves.
+          "--content-width": "1440px",
           ...customVars,
         } as CSSProperties
       }
@@ -73,10 +79,15 @@ export default async function ProtectedLayout({
       <AppSidebar user={user} />
       <SidebarInset>
         <SiteHeader />
-        {/* No outer padding: master-detail pages go full-bleed edge-to-edge;
-            padded pages (dashboard/account) add their own padding. */}
+        {/* The canvas stays full-bleed so the muted ground still reaches both
+            edges; only the content inside it is capped and centred. The header
+            deliberately keeps its own full width (`L2-UI-61`). */}
         <div className="flex min-h-0 flex-1 flex-col bg-muted/40">
-          {children}
+          {/* No outer padding: master-detail pages go full-bleed to the cap;
+              padded pages (dashboard/account) add their own padding. */}
+          <div className="mx-auto flex min-h-0 w-full max-w-(--content-width) flex-1 flex-col">
+            {children}
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
