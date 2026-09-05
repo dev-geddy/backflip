@@ -14,6 +14,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { RiFlaskLine, RiRefreshLine } from "@remixicon/react"
 
 import { saveAiConfig } from "../_actions"
+import { integrationQuery, type AiProviderId } from "../_lib/deep-link"
 import { useProviderModels } from "../_hooks/use-provider-models"
 import { SectionLabel } from "../../_components/page-heading"
 import { LABEL, PACKAGE, type ProviderConfig } from "./ai-config-form"
@@ -34,10 +35,16 @@ function GreenBadge({ children }: { children: React.ReactNode }) {
  * status · Enabled toggle) over the credentials/model form + available models.
  * Keys stay masked (no Reveal). Save via reused `saveAiConfig`.
  */
-export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
-  const [active, setActive] = useState<ProviderConfig["provider"]>(
-    providers[0]?.provider ?? "anthropic"
-  )
+export function AiIntegration({
+  providers,
+  initialProvider,
+}: {
+  providers: ProviderConfig[]
+  /** Which tab the query string asked for (`L2-UI-59`). */
+  initialProvider: AiProviderId
+}) {
+  const [active, setActive] =
+    useState<ProviderConfig["provider"]>(initialProvider)
   const [testOpen, setTestOpen] = useState(false)
   const cfg = providers.find((p) => p.provider === active) ?? providers[0]
   const canTest = providers.some((p) => p.enabled && p.keyPreview)
@@ -88,7 +95,14 @@ export function AiIntegration({ providers }: { providers: ProviderConfig[] }) {
             <button
               key={p.provider}
               type="button"
-              onClick={() => setActive(p.provider)}
+              onClick={() => {
+                setActive(p.provider)
+                window.history.replaceState(
+                  null,
+                  "",
+                  integrationQuery("ai", p.provider)
+                )
+              }}
               className={cn(
                 "-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
                 on

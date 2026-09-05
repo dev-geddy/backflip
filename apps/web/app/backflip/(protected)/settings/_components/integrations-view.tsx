@@ -5,6 +5,11 @@ import { useState } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 import { RiArrowLeftLine } from "@remixicon/react"
 
+import {
+  integrationQuery,
+  type AiProviderId,
+  type IntegrationId,
+} from "../_lib/deep-link"
 import { AiIntegration } from "./ai-integration"
 import type { ProviderConfig } from "./ai-config-form"
 import {
@@ -26,15 +31,8 @@ import type { SlackAppRow } from "./slack-apps"
 import type { SlackWebhookRow } from "./slack-webhooks"
 import { SpeechIntegration, type SpeechConfig } from "./speech-integration"
 
-type Selection =
-  | "ai"
-  | "email"
-  | "analytics"
-  | "speech"
-  | "connectors"
-  | "clickup"
-  | "slack"
-  | "n8n"
+/** The pane ids live in `_lib/deep-link.ts` — they are also the URL values. */
+type Selection = IntegrationId
 
 /** One row in the integrations master list. */
 function ListRow({
@@ -97,6 +95,8 @@ export function IntegrationsView({
   slackApps,
   slackWebhooks,
   n8n,
+  initialSelection,
+  initialProvider,
 }: {
   ai: ProviderConfig[]
   email: EmailConfig
@@ -110,8 +110,11 @@ export function IntegrationsView({
   slackApps: SlackAppRow[]
   slackWebhooks: SlackWebhookRow[]
   n8n: N8nConfig
+  /** Pane to open, resolved from the query string server-side (`L2-UI-59`). */
+  initialSelection: Selection
+  initialProvider: AiProviderId
 }) {
-  const [selection, setSelection] = useState<Selection>("ai")
+  const [selection, setSelection] = useState<Selection>(initialSelection)
   const [mobileDetail, setMobileDetail] = useState(false)
 
   const aiConnected = ai.filter((c) => c.keyPreview).length
@@ -126,6 +129,12 @@ export function IntegrationsView({
   function select(s: Selection) {
     setSelection(s)
     setMobileDetail(true)
+    // `replaceState`, not a router navigation: the pane is already rendered
+    // client-side, and a `router.replace` would re-run the whole server
+    // component (every config read) to change one attribute. Replace rather
+    // than push so browsing the list does not bury the page the operator
+    // arrived from under eight history entries.
+    window.history.replaceState(null, "", integrationQuery(s))
   }
 
   return (
@@ -270,7 +279,7 @@ export function IntegrationsView({
           Integrations
         </button>
         {selection === "ai" ? (
-          <AiIntegration providers={ai} />
+          <AiIntegration providers={ai} initialProvider={initialProvider} />
         ) : selection === "email" ? (
           <EmailIntegration email={email} connected={emailConnected} />
         ) : selection === "analytics" ? (

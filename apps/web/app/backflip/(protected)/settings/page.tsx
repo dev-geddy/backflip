@@ -27,6 +27,7 @@ import {
   type ConnectorSettingsData,
 } from "./_components/connectors-integration"
 import { type EmailConfig } from "./_components/email-config-form"
+import { resolveAiProvider, resolveIntegration } from "./_lib/deep-link"
 import { IntegrationsView } from "./_components/integrations-view"
 import { type N8nConfig } from "./_components/n8n-integration"
 import { type SlackAppRow } from "./_components/slack-apps"
@@ -53,12 +54,24 @@ const CONNECTOR_DATE_FMT = new Intl.DateTimeFormat("en-US", {
  * freshly created OAuth client, the raw secret exactly once — `L2-MCP-50`).
  * The GA measurement id is public, so it round-trips in the clear.
  *
+ * Which pane opens comes from the query string (`L2-UI-59`), resolved here so
+ * a link to one integration renders it on the first paint rather than showing
+ * the AI pane for a frame.
+ *
  * @spec L2-AI-01, L2-EMAIL-01, L2-ANALYTICS-05, L2-SPEECH-01, L2-MCP-25,
  *       L2-MCP-37, L2-MCP-47, L2-CLICKUP-01, L2-SLACK-01, L2-SLACK-02,
- *       L2-N8N-01
+ *       L2-N8N-01, L2-UI-59
  */
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   await requireCapability("settings")
+
+  const query = await searchParams
+  const selection = resolveIntegration(query.integration)
+  const provider = resolveAiProvider(query.provider)
 
   const rows = await db.select().from(aiConfig)
   const byProvider = new Map(rows.map((r) => [r.provider, r]))
@@ -204,6 +217,8 @@ export default async function SettingsPage() {
       slackApps={slackAppList}
       slackWebhooks={slackWebhookList}
       n8n={n8n}
+      initialSelection={selection}
+      initialProvider={provider}
     />
   )
 }
