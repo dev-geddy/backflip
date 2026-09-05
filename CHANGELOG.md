@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/dev-geddy/backflip/compare/v1.15.0...v1.16.0) (2026-09-05)
+
+
+### Features
+
+* **ui:** make stored integration keys read-only and removable ([#44](https://github.com/dev-geddy/backflip/issues/44)) ([a9fbf6b](https://github.com/dev-geddy/backflip/commit/a9fbf6b2daaac749ac5a77af8a3685792ee1734d))
+
 # [1.15.0](https://github.com/dev-geddy/backflip/compare/v1.14.0...v1.15.0) (2026-09-03)
 
 
