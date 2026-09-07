@@ -149,11 +149,29 @@ export async function validateAuthorizationRequest(
   }
 
   const rawScope = params.get("scope")
-  const scopes = rawScope === null ? [...MCP_SCOPES] : parseScopes(rawScope)
-  if (scopes.length === 0) {
+  const requested = rawScope === null ? [...MCP_SCOPES] : parseScopes(rawScope)
+  if (requested.length === 0) {
     return reject({
       error: "invalid_scope",
       description: "No supported scope was requested.",
+    })
+  }
+
+  // The client's own registered scopes are a ceiling (`L2-MCP-66`). An empty
+  // column means "no ceiling recorded" rather than "nothing allowed": the
+  // schema defaults it to `[]`, and reading that as a total block would brick
+  // any row not written by `createManualClient`/`registerClient`.
+  const ceiling = client.scopes.length
+    ? parseScopes(client.scopes.join(" "))
+    : [...MCP_SCOPES]
+  const scopes = requested.filter((scope) => ceiling.includes(scope))
+  const withheldByClient = requested.filter((scope) => !ceiling.includes(scope))
+  if (scopes.length === 0) {
+    return reject({
+      error: "invalid_scope",
+      description:
+        "This client is not registered for any of the requested scopes. " +
+        "Widen its allowed capabilities in the admin, then reconnect.",
     })
   }
 
@@ -177,6 +195,7 @@ export async function validateAuthorizationRequest(
     clientName: client.clientName,
     redirectUri,
     scopes,
+    withheldByClient,
     state,
     codeChallenge,
     codeChallengeMethod: "S256",

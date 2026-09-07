@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -17,12 +19,20 @@ export function ConsentForm({
   email,
   allowedScopes,
   deniedScopes,
+  withheldByClient,
+  canManageSettings,
   rawParams,
 }: {
   clientName: string
   email: string
   allowedScopes: McpScope[]
   deniedScopes: McpScope[]
+  /** Scopes the client asked for that its own registration ceiling does not
+   *  allow — a limit on the app, not on this account (`L2-MCP-66`). */
+  withheldByClient: McpScope[]
+  /** Whether the signed-in viewer can reach `/backflip/settings` to widen the
+   *  client's own scope ceiling. */
+  canManageSettings: boolean
   rawParams: Record<string, string>
 }) {
   const canAllow = allowedScopes.length > 0
@@ -72,6 +82,50 @@ export function ConsentForm({
           ))}
         </div>
       </div>
+
+      {/*
+       * Scopes the client asked for that its own registration ceiling does
+       * not allow (`L2-MCP-66`). Deliberately separate from `deniedScopes`
+       * above: a denied scope is a limit on *this account's role* and a
+       * reconnect never fixes it either, but a withheld one is a limit on
+       * *this app's registration* — a different cause, with a different fix
+       * (widen the client under Settings, not change who is signing in).
+       * Quieter styling than the amber role-denial notice below on purpose —
+       * this isn't a problem with the request in front of the user, just
+       * context for why the list above is shorter than the app may have
+       * asked for.
+       */}
+      {withheldByClient.length > 0 ? (
+        <div className="flex flex-col gap-1 rounded-lg border border-dashed bg-muted/30 p-3 text-xs">
+          <div className="font-semibold tracking-wide text-muted-foreground uppercase">
+            Not offered by this app
+          </div>
+          <p className="text-muted-foreground">
+            {clientName} also asked for the access below, but it isn’t
+            registered to request it — that’s a limit on the app, not on your
+            account, so approving below won’t include it either way.
+          </p>
+          <ul className="mt-1 flex flex-col gap-0.5">
+            {withheldByClient.map((scope) => (
+              <li key={scope} className="text-foreground/80">
+                {SCOPE_LABELS[scope].title}
+              </li>
+            ))}
+          </ul>
+          {canManageSettings ? (
+            <p className="mt-1 text-muted-foreground">
+              To let it request this,{" "}
+              <Link
+                href="/backflip/settings"
+                className="font-medium text-primary hover:underline"
+              >
+                widen the client’s allowed capabilities
+              </Link>{" "}
+              in Settings.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {!canAllow ? (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">

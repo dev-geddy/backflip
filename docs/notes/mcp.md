@@ -13,6 +13,12 @@ Everything below exists on disk — the domain landed across migrations `0009`�
 - `apps/web/app/api/mcp/route.ts` — the MCP endpoint. `POST` = JSON-RPC over Streamable HTTP; `GET`/`DELETE` answered by the SDK handler. Stateless: a fresh `McpServer` per request (no MCP session id) — simplest match for Next's request-scoped model. `runtime="nodejs"` (needs `pg`). Satisfies `L2-MCP-01`.
 - `apps/web/app/_lib/mcp/server.ts` — `buildMcpServer(ctx: McpAuthContext)` factory. Registers only the tools in the scopes ∩ capability intersection (`L2-MCP-02`, `L2-MCP-20`) — an unauthorized tool is never registered, so it can't appear in `tools/list` or be called.
 - `apps/web/app/_lib/mcp/tools/*.ts` — one file per tool: `whoami` (`L2-MCP-04`), `list_users` (`L2-MCP-05`), `get_user` (`L2-MCP-06`), `get_platform_status` (`L2-MCP-07`), `get_dashboard_summary` (`L2-MCP-08`). Each declares `{readOnlyHint:true, destructiveHint:false, openWorldHint:false}` (`L2-MCP-09`).
+- `apps/web/app/backflip/(protected)/settings/mcp-capabilities/page.tsx` — the owner-facing capabilities page, rendered from `TOOL_DEFS` + `SCOPE_LABELS` (`L2-MCP-64`), plus a **Your connections** section reconciling the maximum surface against what the signed-in owner's grants can actually see (`L2-MCP-65`). Tool rows the owner's connections cannot reach are marked, never hidden — hiding is what made the original confusion possible.
+- `apps/web/app/_lib/oauth/grant-health.ts` — `grantHealth` (`L2-MCP-65`), re-exporting the ceiling helpers. Pure, so `grant-health.test.ts` pins the diagnosis without a token or a database.
+- `apps/web/app/_lib/oauth/scope-gaps.ts` — `clientCeilingHealth` / `unreachableForRole` / `gaps` (`L2-MCP-65`, `L2-MCP-66`). Split out of `grant-health.ts` because it must be importable from a `"use client"` component: `grant-health` reaches `TOOL_DEFS`, which reaches the db client, and the settings client table pulled `pg` into the browser bundle until the split.
+- `apps/web/app/backflip/(protected)/settings/_components/connector-setup-steps.tsx` — the five-step guided setup, steps 1–2 driven by real state (`L2-MCP-67`).
+- `apps/web/app/backflip/(protected)/settings/_components/connector-clients.tsx` — client rows now show their capability ceiling; a client registered before newer scopes gets an amber "Registered before newer capabilities existed" block and a one-click **Allow all capabilities** (`updateConnectorClientScopes` → `updateClientScopes`, `L2-MCP-66`). The create dialog picks the ceiling up front.
+- `apps/web/app/backflip/(protected)/account/_components/connections-section.tsx` — per-grant "sees N of M tools" plus the stale flag and the tools a reconnect unlocks (`L2-MCP-65`).
 - `apps/web/app/_lib/oauth/types.ts` — Shared types: `MCP_SCOPES` (`L2-MCP-18`), `McpAuthContext` (`L2-MCP-19`), `OAuthGrant`, `AuthorizationRequest`, `OAuthErrorCode`/`OAuthFailure`, `IssuedTokens`. Pure, no runtime deps — safe from routes, libs, tools, tests. `@spec L2-MCP-18, L2-MCP-19`.
 - `apps/web/app/_lib/oauth/config.ts` — `isMcpEnabled()` (async: DB flag ∧ not force-disabled, short-TTL cached), `isMcpForcedOff()`, issuer/resource URL derivation from `AUTH_URL`, token/code TTL constants (`L2-MCP-24`, `L2-MCP-25`, `L2-MCP-54`).
 - `apps/web/app/_lib/oauth/connector-config.ts` — the `connector_config` row: enabled flag, `dcrMode`, redirect-host allowlist; `isHostAllowed`/`isValidHostEntry`/`isLoopbackHost` primitives (`L2-MCP-47`, `L2-MCP-48`, `L2-MCP-49`).
@@ -101,6 +107,16 @@ Scopes ARE capabilities (`L2-MCP-18`) — there's no separate connector permissi
 6. Tag the tool module `@spec L2-MCP-<NN>` — but a *new* tool is a new interface, which is an **L2 change**: propose the `mcp.md` diff (new `L2-MCP-*` iface ID) and get it approved before the ID exists to tag against (per `docs-sync`, halt-on-L2-change).
 7. Update this file's tool list + the scope/tool table above.
 
+## Why a healthy-looking connector shows too few tools
+Two independent ceilings sit between "the server has a tool" and "your client can call it", and **both are silent**:
+
+1. **The grant's scopes are frozen at consent.** `oauth_token.scopes` is written when the user approves and never grows. Add a scope to `MCP_SCOPES` and every existing grant keeps the old set, so the new tools are not registered for it (`L2-MCP-20`) and simply are not in `tools/list`. The client cannot tell that apart from "this server has no such tools" — which is exactly what a Claude client will confidently report. **Fix: disconnect and reconnect.**
+2. **The client's own `scopes` column is a ceiling** (`L2-MCP-66`). A client registered before the scope existed can never be granted it, so reconnecting alone changes nothing — this is the one failure a reconnect does not fix. **Fix: widen the client in Integrations → Clients → Allow all capabilities, then reconnect.**
+
+Diagnose both from the admin rather than by asking the connected client: `/backflip/settings/mcp-capabilities` shows, per connection, how many of the tools it can see and what a reconnect would unlock; the client list flags a limited ceiling. `whoami` also returns the granted scopes, which is the fastest check from the client side.
+
+The ordering matters when both apply: widen the client **first**, then reconnect. Reconnecting against an un-widened client just re-mints the same narrow grant.
+
 ## Gotchas
 - **A disabled connector looks like the feature doesn't exist, not like an auth error** — every route including the well-known documents 404s (`L2-MCP-37`). Check the MCP Connectors toggle (and that `MCP_ENABLED` isn't set to `false`) before debugging OAuth. Remember the ~30s settings cache.
 - **Stateless MCP server**: a fresh `McpServer` is built per request, no session id (`L2-MCP-01`) — don't reach for server-side conversation state across calls.
@@ -111,9 +127,13 @@ Scopes ARE capabilities (`L2-MCP-18`) — there's no separate connector permissi
 - **In-process rate limiters don't survive multi-instance** deployment (`L2-MCP-30`) — same caveat as the login throttle (`L2-AUTH-40`); a horizontally scaled deployment needs a shared store.
 - **Local testing needs a public https tunnel** for the Claude client, and `AUTH_URL` must match the tunnel's origin *before* the app starts, or the resource-audience check rejects every token (`L2-MCP-33`).
 - **Adding a tool or scope is an L2 change**, not a drop-in code change — see "Adding a new tool" above.
+- **The capabilities page lists the maximum surface AND your own connections.** The tool table is what could ever be granted; the "Your connections" cards are what the signed-in owner's grants actually see (`L2-MCP-65`). It is per-user — it does not show other members' connections.
+- **An empty `oauth_client.scopes` means no ceiling, not no access** (`L2-MCP-66`). The column defaults to `[]` in the schema, so treating empty as a block would brick any row not written by the two registration paths.
+- **Narrowing a client's ceiling does not revoke anything.** Tokens already issued keep the scopes they were minted with until they expire or are revoked; the ceiling only binds the next authorization.
+- **Never import `grant-health.ts` from a `"use client"` module.** It reaches `TOOL_DEFS` → `tools/users.ts` → `@workspace/db` → `pg`, and the build fails with a module-not-found trace through `pg/lib/utils.js`. Import `scope-gaps.ts` instead; it holds exactly the helpers a client component needs.
 
 ## State
-Implemented end to end. On disk: the three tables + migration `0009_curious_rumiko_fujikawa.sql` (applied locally), the full `_lib/oauth/*` module set, the six `/api/oauth/*` route handlers, the `.well-known` rewrites in `next.config.ts`, `/api/mcp` + `_lib/mcp/*` with five read-only tools, `/backflip/connect`, the account connections section, and the nginx/Caddy edge config.
+Implemented end to end. On disk: the three tables + migration `0009_curious_rumiko_fujikawa.sql` (applied locally), the full `_lib/oauth/*` module set, the six `/api/oauth/*` route handlers, the `.well-known` rewrites in `next.config.ts`, `/api/mcp` + `_lib/mcp/*` with five read-only tools, `/backflip/connect`, the account connections section, the `/backflip/settings/mcp-capabilities` page (`L2-MCP-64`), the grant/ceiling reconciliation (`L2-MCP-65`, `L2-MCP-66`) and the guided setup walkthrough (`L2-MCP-67`), and the nginx/Caddy edge config.
 
 The L2 contract (`docs/contracts/mcp.md`) and the `db`/`auth`/`devops`/`infra` additions are **approved**, and the three L1 lines (governed domain `mcp`, `L1-STACK-12`, `L1-CON-06`) are in the constitution.
 

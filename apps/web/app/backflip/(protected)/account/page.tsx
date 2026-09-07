@@ -160,7 +160,12 @@ export default async function AccountPage() {
             </div>
           </div>
 
-          {mcpEnabled ? <ConnectionsSection grants={grants} /> : null}
+          {mcpEnabled ? (
+            <ConnectionsSection
+              grants={grants}
+              role={sessionUser.role ?? "teammate"}
+            />
+          ) : null}
         </div>
       </div>
 

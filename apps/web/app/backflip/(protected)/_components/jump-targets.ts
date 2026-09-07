@@ -34,6 +34,11 @@ export const JUMP_GROUPS: {
         keywords:
           "settings ai providers email resend keys clickup slack webhooks n8n connectors",
       },
+      {
+        label: "MCP capabilities",
+        href: "/backflip/settings/mcp-capabilities",
+        keywords: "mcp connector claude tools capabilities oauth",
+      },
     ],
   },
   {

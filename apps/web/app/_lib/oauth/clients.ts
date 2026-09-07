@@ -29,7 +29,7 @@ import {
  * authorize time against the live list.
  *
  * @spec L2-MCP-12, L2-MCP-21, L2-MCP-31, L2-MCP-49, L2-MCP-50, L2-MCP-51,
- *       L2-MCP-52
+ *       L2-MCP-52, L2-MCP-66
  */
 
 export type OAuthClientRecord = typeof oauthClients.$inferSelect
@@ -217,6 +217,8 @@ export async function createManualClient(input: {
   redirectUris: string[]
   allowLoopbackPorts?: boolean
   createdByUserId: string
+  /** The client's scope ceiling (`L2-MCP-66`). Omitted → everything on offer. */
+  scopes?: McpScope[]
 }): Promise<{ client: OAuthClientRecord; clientSecret: string | null }> {
   const clientName = input.clientName?.trim() ?? ""
   if (!clientName) throw new Error("A client name is required.")
@@ -270,7 +272,9 @@ export async function createManualClient(input: {
       allowLoopbackPorts,
       redirectUris,
       grantTypes: [...SUPPORTED_GRANT_TYPES],
-      scopes: [...MCP_SCOPES],
+      // An owner picking a ceiling by hand is a deliberate act, so the
+      // default here stays the full set.
+      scopes: input.scopes?.length ? [...input.scopes] : [...MCP_SCOPES],
       tokenEndpointAuthMethod: clientSecretHash ? "client_secret_post" : "none",
     })
     .returning()
@@ -296,6 +300,32 @@ export async function listClients(): Promise<OAuthClientRecord[]> {
  */
 export function isConfidentialClient(client: OAuthClientRecord): boolean {
   return client.clientSecretHash !== null
+}
+
+/**
+ * Widen or narrow a client's scope ceiling (`L2-MCP-66`).
+ *
+ * This exists because the ceiling is a snapshot: a client registered before a
+ * scope existed carries the older `MCP_SCOPES` set, and no amount of
+ * reconnecting will get its users the newer capabilities — the one failure a
+ * reconnect cannot fix. Narrowing does not touch tokens already issued; those
+ * keep the scopes they were minted with until they are revoked or expire.
+ */
+export async function updateClientScopes(
+  clientDbId: string,
+  scopes: McpScope[]
+): Promise<void> {
+  if (!clientDbId) return
+  // Canonical order, deduped — a scope array is compared by value in several
+  // places (`L2-MCP-38`), so order must not depend on how the form serialized.
+  const next = MCP_SCOPES.filter((scope) => scopes.includes(scope))
+  if (next.length === 0) {
+    throw new Error("A client needs at least one capability.")
+  }
+  await db
+    .update(oauthClients)
+    .set({ scopes: next })
+    .where(eq(oauthClients.id, clientDbId))
 }
 
 /**

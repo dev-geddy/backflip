@@ -16,7 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar"
-import { RiDashboardLine, RiLinksLine } from "@remixicon/react"
+import { RiDashboardLine, RiLinksLine, RiPlugLine } from "@remixicon/react"
 
 import { BrandIcon } from "@/app/_components/brand-icon"
 import { can, type Capability } from "@/app/_lib/auth/permissions"
@@ -52,6 +52,12 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
         title: "Integrations",
         url: "/backflip/settings",
         icon: RiLinksLine,
+        capability: "settings",
+      },
+      {
+        title: "MCP capabilities",
+        url: "/backflip/settings/mcp-capabilities",
+        icon: RiPlugLine,
         capability: "settings",
       },
     ],

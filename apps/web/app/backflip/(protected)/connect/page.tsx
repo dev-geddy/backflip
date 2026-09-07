@@ -8,6 +8,7 @@ import {
 import { Card } from "@workspace/ui/components/card"
 
 import { requireCapability } from "@/app/_lib/auth/guard"
+import { canAccessSettings } from "@/app/_lib/auth/permissions"
 import { validateAuthorizationRequest } from "@/app/_lib/oauth/authorize"
 import { isMcpEnabled } from "@/app/_lib/oauth/config"
 import { grantableScopes } from "@/app/_lib/oauth/scopes"
@@ -89,6 +90,8 @@ export default async function ConnectPage({
           email={sessionUser.email ?? ""}
           allowedScopes={allowedScopes}
           deniedScopes={deniedScopes}
+          withheldByClient={request.withheldByClient}
+          canManageSettings={canAccessSettings(sessionUser.role)}
           rawParams={rawParams}
         />
       </Card>

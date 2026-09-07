@@ -19,6 +19,8 @@ import {
   isMcpForcedOff,
   mcpResourceUrl,
 } from "@/app/_lib/oauth/config"
+import { parseScopes } from "@/app/_lib/oauth/scopes"
+import { MCP_SCOPES } from "@/app/_lib/oauth/types"
 import { type ProviderConfig } from "./_components/ai-config-form"
 import { type AnalyticsConfig } from "./_components/analytics-integration"
 import { type ClickupConfig } from "./_components/clickup-integration"
@@ -59,8 +61,8 @@ const CONNECTOR_DATE_FMT = new Intl.DateTimeFormat("en-US", {
  * the AI pane for a frame.
  *
  * @spec L2-AI-01, L2-EMAIL-01, L2-ANALYTICS-05, L2-SPEECH-01, L2-MCP-25,
- *       L2-MCP-37, L2-MCP-47, L2-CLICKUP-01, L2-SLACK-01, L2-SLACK-02,
- *       L2-N8N-01, L2-UI-59
+ *       L2-MCP-37, L2-MCP-47, L2-MCP-66, L2-MCP-67, L2-CLICKUP-01, L2-SLACK-01,
+ *       L2-SLACK-02, L2-N8N-01, L2-UI-59
  */
 export default async function SettingsPage({
   searchParams,
@@ -123,10 +125,13 @@ export default async function SettingsPage({
   // The connector tab always renders — it explains itself when off, and the
   // enable switch (`ConnectorEnable`) is how an owner turns it on in the
   // first place. Settings are read unconditionally (cheap: a single row,
-  // created with defaults on first use); the management sections' data
-  // (clients) is only fetched once the connector is actually reachable —
-  // `enabled` resolved through `isMcpEnabled()`, which folds in the
-  // `MCP_ENABLED=false` kill switch (`L2-MCP-25`, `L2-MCP-37`).
+  // created with defaults on first use). Clients are read unconditionally
+  // too — the setup walkthrough's "create a client" step needs an accurate
+  // count even while the connector is off (e.g. disabled after clients were
+  // already created), and the Clients management section itself still only
+  // renders once the connector is actually reachable — `enabled` resolved
+  // through `isMcpEnabled()`, which folds in the `MCP_ENABLED=false` kill
+  // switch (`L2-MCP-25`, `L2-MCP-37`).
   const [connectorsEnabled, connectorSettingsRow] = await Promise.all([
     isMcpEnabled(),
     getConnectorSettings(),
@@ -188,20 +193,25 @@ export default async function SettingsPage({
       : null,
   }))
 
-  let connectorClients: ConnectorClientRow[] = []
-  if (connectorsEnabled) {
-    const clientRows = await listClients()
-    connectorClients = clientRows.map((c) => ({
-      id: c.id,
-      clientId: c.clientId,
-      clientName: c.clientName,
-      origin: c.origin,
-      redirectUris: c.redirectUris,
-      allowLoopbackPorts: c.allowLoopbackPorts,
-      createdAt: CONNECTOR_DATE_FMT.format(c.createdAt),
-      lastUsedAt: c.lastUsedAt ? CONNECTOR_DATE_FMT.format(c.lastUsedAt) : null,
-    }))
-  }
+  const clientRows = await listClients()
+  // Never carry `clientSecretHash` past this point — `listClients()` returns
+  // every column, but `ConnectorClientRow` (the shape handed to client
+  // components) has no field for it.
+  const connectorClients: ConnectorClientRow[] = clientRows.map((c) => ({
+    id: c.id,
+    clientId: c.clientId,
+    clientName: c.clientName,
+    origin: c.origin,
+    redirectUris: c.redirectUris,
+    allowLoopbackPorts: c.allowLoopbackPorts,
+    // The stored ceiling (`L2-MCP-66`); an empty column means "no ceiling
+    // ever recorded" rather than "nothing allowed" — same fallback
+    // `validateAuthorizationRequest` uses, so the admin and the enforcement
+    // never disagree about what a client is allowed.
+    scopes: c.scopes.length ? parseScopes(c.scopes.join(" ")) : [...MCP_SCOPES],
+    createdAt: CONNECTOR_DATE_FMT.format(c.createdAt),
+    lastUsedAt: c.lastUsedAt ? CONNECTOR_DATE_FMT.format(c.lastUsedAt) : null,
+  }))
 
   return (
     <IntegrationsView

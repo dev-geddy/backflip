@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { validateAuthorizationRequest } from "./authorize"
 import type { OAuthClientRecord } from "./clients"
+import { MCP_SCOPES } from "./types"
 
 /**
  * Authorization request validation. The load-bearing assertion is the fatal /
@@ -63,7 +64,7 @@ function client(overrides: Partial<OAuthClientRecord> = {}): OAuthClientRecord {
     allowLoopbackPorts: false,
     redirectUris: [REGISTERED],
     grantTypes: ["authorization_code", "refresh_token"],
-    scopes: ["account", "dashboard", "users.view", "settings"],
+    scopes: [...MCP_SCOPES],
     tokenEndpointAuthMethod: "none",
     createdAt: new Date(),
     lastUsedAt: null,
@@ -229,11 +230,50 @@ describe("validateAuthorizationRequest — success", () => {
       clientName: "Claude",
       redirectUri: REGISTERED,
       scopes: ["account", "users.view"],
+      withheldByClient: [],
       state: "xyz",
       codeChallenge: CHALLENGE,
       codeChallengeMethod: "S256",
       resource: null,
     })
+  })
+
+  it("caps the grant at the client's own registered scopes", async () => {
+    // The exact shape of the bug this feature exists for: a client registered
+    // before a scope existed cannot be granted it, however often its user
+    // reconnects (`L2-MCP-66`). The request still succeeds on what remains —
+    // it just says what it withheld.
+    h.state.client = client({ scopes: ["account", "dashboard", "users.view"] })
+    const result = await validateAuthorizationRequest(
+      params({ scope: "account settings" })
+    )
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.request.scopes).toEqual(["account"])
+    expect(result.request.withheldByClient).toEqual(["settings"])
+  })
+
+  it("rejects when the ceiling leaves nothing, naming the fix", async () => {
+    h.state.client = client({ scopes: ["account"] })
+    const result = await validateAuthorizationRequest(
+      params({ scope: "settings" })
+    )
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.failure.error).toBe("invalid_scope")
+    expect(result.failure.description).toContain("Widen its allowed")
+  })
+
+  it("treats an empty scope column as no ceiling, not as a block", async () => {
+    // The schema defaults `scopes` to `[]`; reading that as "nothing allowed"
+    // would brick any row not written by the two registration paths.
+    h.state.client = client({ scopes: [] })
+    const result = await validateAuthorizationRequest(
+      params({ scope: "settings" })
+    )
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.request.scopes).toEqual(["settings"])
   })
 
   it("drops unknown scopes instead of failing the request", async () => {

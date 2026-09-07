@@ -8,11 +8,14 @@ import {
   AlertTitle,
 } from "@workspace/ui/components/alert"
 
+import type { McpScope } from "@/app/_lib/oauth/types"
+
 import { ConnectorClients } from "./connector-clients"
 import { ConnectorCopyField } from "./connector-copy-field"
 import { ConnectorEnable } from "./connector-enable"
 import { ConnectorRedirectHosts } from "./connector-redirect-hosts"
 import { ConnectorRegistrationMode } from "./connector-registration-mode"
+import { ConnectorSetupSteps } from "./connector-setup-steps"
 
 export type DcrMode = "off" | "allowlist" | "open"
 
@@ -33,6 +36,14 @@ export type ConnectorClientRow = {
   origin: string
   redirectUris: string[]
   allowLoopbackPorts: boolean
+  /**
+   * The client's scope ceiling (`L2-MCP-66`) — already normalized so an empty
+   * stored column (no ceiling ever recorded) reads as "everything on offer",
+   * matching `validateAuthorizationRequest`'s own fallback. Never carries
+   * `clientSecretHash` — that column exists on the row this is built from but
+   * must never reach a client component.
+   */
+  scopes: McpScope[]
   /** Preformatted (server-formatted to avoid locale hydration skew). */
   createdAt: string
   lastUsedAt: string | null
@@ -72,6 +83,13 @@ export function ConnectorsIntegration({
           MCP connector.
         </p>
       </div>
+
+      <ConnectorSetupSteps
+        enabled={enabled}
+        forcedOff={settings?.forcedOff ?? false}
+        clientCount={clients.length}
+        mcpUrl={mcpUrl}
+      />
 
       {settings ? (
         <ConnectorEnable

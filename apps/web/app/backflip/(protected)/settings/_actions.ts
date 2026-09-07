@@ -24,12 +24,14 @@ import {
   createManualClient,
   deleteClient,
   isValidRedirectUri,
+  updateClientScopes,
 } from "@/app/_lib/oauth/clients"
 import {
   getConnectorSettings,
   isValidHostEntry,
   saveConnectorSettings,
 } from "@/app/_lib/oauth/connector-config"
+import { MCP_SCOPES, type McpScope } from "@/app/_lib/oauth/types"
 import { firstError } from "@/app/_lib/validation"
 
 import { fetchClickupIdentity } from "./_lib/clickup"
@@ -50,7 +52,8 @@ import {
  *
  * @spec L2-AI-02, L2-AI-07, L2-AI-08, L2-EMAIL-02, L2-EMAIL-07,
  *       L2-ANALYTICS-02, L2-SPEECH-02, L2-SPEECH-04, L2-MCP-47, L2-MCP-49,
- *       L2-MCP-50, L2-MCP-52, L2-MCP-53, L2-CLICKUP-02, L2-CLICKUP-03,
+ *       L2-MCP-50, L2-MCP-52, L2-MCP-53, L2-MCP-66, L2-CLICKUP-02,
+ *       L2-CLICKUP-03,
  *       L2-SLACK-03, L2-SLACK-04, L2-SLACK-05, L2-SLACK-06, L2-N8N-02,
  *       L2-N8N-03
  */
@@ -308,7 +311,8 @@ export async function listSpeechModels(): Promise<ListSpeechModelsState> {
  * clients. Every action re-checks the `settings` capability itself; the
  * tab's visibility in the UI is cosmetic only (`L2-AUTH-22`).
  *
- * @spec L2-MCP-25, L2-MCP-47, L2-MCP-49, L2-MCP-50, L2-MCP-52, L2-MCP-53
+ * @spec L2-MCP-25, L2-MCP-47, L2-MCP-49, L2-MCP-50, L2-MCP-52, L2-MCP-53,
+ *       L2-MCP-66
  */
 
 export type ConnectorActionState = { ok: boolean; message: string } | null
@@ -438,6 +442,8 @@ const createClientSchema = z.object({
   clientName: z.string().trim().min(1, "Name is required.").max(200),
   redirectUris: z.array(z.string()).min(1, "Add at least one redirect URI."),
   allowLoopbackPorts: z.boolean(),
+  /** The new client's scope ceiling (`L2-MCP-66`) — the capability picker. */
+  scopes: z.array(z.enum(MCP_SCOPES)).min(1, "Select at least one capability."),
 })
 
 export type CreateClientState =
@@ -480,6 +486,7 @@ export async function createConnectorClient(
     clientName: String(formData.get("clientName") ?? ""),
     redirectUris,
     allowLoopbackPorts: formData.get("allowLoopbackPorts") != null,
+    scopes: formData.getAll("scopes").map((v) => String(v)),
   })
   if (!parsed.success) {
     return { ok: false, message: firstError(parsed.error) }
@@ -498,6 +505,7 @@ export async function createConnectorClient(
       redirectUris: parsed.data.redirectUris,
       allowLoopbackPorts: parsed.data.allowLoopbackPorts,
       createdByUserId: session.user.id,
+      scopes: parsed.data.scopes,
     })
     revalidatePath("/backflip/settings")
     return {
@@ -535,6 +543,46 @@ export async function deleteConnectorClient(
   await deleteClient(clientDbId)
   revalidatePath("/backflip/settings")
   return { ok: true, message: "Client deleted." }
+}
+
+const scopesSchema = z
+  .array(z.enum(MCP_SCOPES))
+  .min(1, "Select at least one capability.")
+
+/**
+ * Widen or narrow a client's scope ceiling (`L2-MCP-66`). Used by the
+ * one-click "Allow all capabilities" fix for a client registered before newer
+ * scopes existed. Narrowing does not touch tokens already issued — those keep
+ * what they were minted with until revoked or expired.
+ */
+export async function updateConnectorClientScopes(
+  clientDbId: string,
+  scopes: McpScope[]
+): Promise<ConnectorActionState> {
+  const session = await auth()
+  if (!session?.user || !canAccessSettings(session.user.role)) {
+    return { ok: false, message: "Unauthorized" }
+  }
+  if (!clientDbId) return { ok: false, message: "Missing client id." }
+
+  const parsed = scopesSchema.safeParse(scopes)
+  if (!parsed.success) {
+    return { ok: false, message: firstError(parsed.error) }
+  }
+
+  try {
+    await updateClientScopes(clientDbId, parsed.data)
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Couldn't update capabilities.",
+    }
+  }
+  revalidatePath("/backflip/settings")
+  return { ok: true, message: "Capabilities updated." }
 }
 
 /**

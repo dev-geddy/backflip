@@ -85,7 +85,15 @@ export type AuthorizationRequest = {
   clientId: string
   clientName: string
   redirectUri: string
+  /** Requested ∩ `MCP_SCOPES` ∩ the client's own ceiling (`L2-MCP-66`). */
   scopes: McpScope[]
+  /**
+   * Scopes the client asked for that its own registration does not allow. Kept
+   * on the request so the consent screen can say *why* something it was asked
+   * for is not on offer — a silently shortened scope list is the failure mode
+   * this whole area is being fixed for.
+   */
+  withheldByClient: McpScope[]
   state: string | null
   codeChallenge: string
   codeChallengeMethod: "S256"

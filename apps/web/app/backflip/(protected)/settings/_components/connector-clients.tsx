@@ -42,15 +42,27 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea"
 import { RiAddLine, RiDeleteBinLine } from "@remixicon/react"
 
+// From `scope-gaps`, not `grant-health`: this is a client component, and
+// `grant-health` reaches the tool registry (and through it the db client).
+import { clientCeilingHealth } from "@/app/_lib/oauth/scope-gaps"
+import { SCOPE_LABELS } from "@/app/_lib/oauth/scopes"
+import { MCP_SCOPES } from "@/app/_lib/oauth/types"
+
 import {
   createConnectorClient,
   deleteConnectorClient,
+  updateConnectorClientScopes,
   type CreateClientState,
 } from "../_actions"
 import { ConnectorCopyField } from "./connector-copy-field"
 import type { ConnectorClientRow } from "./connectors-integration"
 
-/** Client table + create-client dialog (`L2-MCP-50`). */
+/**
+ * Client table + create-client dialog. Rows also show each client's scope
+ * ceiling and flag one that predates a scope the server now offers.
+ *
+ * @spec L2-MCP-50, L2-MCP-66
+ */
 export function ConnectorClients({
   clients,
   mcpUrl,
@@ -89,6 +101,7 @@ export function ConnectorClients({
                 <TableHead>Name</TableHead>
                 <TableHead>Client ID</TableHead>
                 <TableHead>Origin</TableHead>
+                <TableHead>Capabilities</TableHead>
                 <TableHead>Redirect URIs</TableHead>
                 <TableHead>Loopback</TableHead>
                 <TableHead>Created</TableHead>
@@ -117,6 +130,9 @@ export function ConnectorClients({
 function ClientRow({ client }: { client: ConnectorClientRow }) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [removing, startRemove] = useTransition()
+  const [allowingAll, startAllowAll] = useTransition()
+
+  const health = clientCeilingHealth(client.scopes)
 
   function handleDelete() {
     startRemove(async () => {
@@ -130,6 +146,14 @@ function ClientRow({ client }: { client: ConnectorClientRow }) {
     })
   }
 
+  function handleAllowAll() {
+    startAllowAll(async () => {
+      const res = await updateConnectorClientScopes(client.id, [...MCP_SCOPES])
+      if (res?.ok) toast.success(res.message)
+      else toast.error(res?.message ?? "Couldn't update capabilities.")
+    })
+  }
+
   return (
     <TableRow>
       <TableCell className="font-medium">{client.clientName}</TableCell>
@@ -138,6 +162,42 @@ function ClientRow({ client }: { client: ConnectorClientRow }) {
         <Badge variant={client.origin === "manual" ? "default" : "secondary"}>
           {client.origin === "manual" ? "Manual" : "Dynamic"}
         </Badge>
+      </TableCell>
+      <TableCell className="max-w-56 min-w-40">
+        <div className="flex flex-wrap gap-1">
+          {client.scopes.map((scope) => (
+            <Badge
+              key={scope}
+              variant="outline"
+              className="text-[10px] font-normal"
+            >
+              {SCOPE_LABELS[scope].title}
+            </Badge>
+          ))}
+        </div>
+
+        {health.limited ? (
+          <div className="mt-2 rounded-md border border-amber-400 bg-amber-50 p-2 dark:border-amber-700 dark:bg-amber-950/40">
+            <div className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+              Registered before newer capabilities existed
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/90">
+              Missing: {health.withheld.map((w) => w.label).join(", ")}.
+              Reconnecting won&rsquo;t fix this — the client&rsquo;s own ceiling
+              has to be widened.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={allowingAll}
+              onClick={handleAllowAll}
+              className="mt-2 h-6 px-2 text-[11px]"
+            >
+              {allowingAll ? "Allowing…" : "Allow all capabilities"}
+            </Button>
+          </div>
+        ) : null}
       </TableCell>
       <TableCell className="max-w-56">
         <div className="flex flex-col gap-0.5">
@@ -357,6 +417,37 @@ function CreateClientForm({
             </span>
           </span>
         </label>
+
+        <Field>
+          <FieldLabel>Capabilities</FieldLabel>
+          <div className="flex flex-col gap-2">
+            {MCP_SCOPES.map((scope) => (
+              <label key={scope} className="flex items-start gap-3">
+                <Checkbox
+                  name="scopes"
+                  value={scope}
+                  defaultChecked
+                  className="mt-0.5"
+                />
+                <span className="text-sm">
+                  <span className="block font-medium">
+                    {SCOPE_LABELS[scope].title}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {SCOPE_LABELS[scope].description}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <FieldDescription>
+            This caps what any connection through this client can ever be
+            granted — the consent screen can never offer more than what&rsquo;s
+            ticked here, however the connecting client asks. Narrowing this
+            later doesn&rsquo;t touch tokens already issued; those keep what
+            they were minted with until revoked or expired.
+          </FieldDescription>
+        </Field>
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
