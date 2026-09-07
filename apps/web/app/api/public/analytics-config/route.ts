@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic"
  * id, no timestamps.
  *
  * Fetching this client-side (rather than reading the DB in a server component)
- * is what keeps `/` and `/getting-started/*` statically prerendered.
+ * is what keeps `/` statically prerendered.
  *
  * Cached ~5 min at the CDN/browser, so an admin change reaches visitors within
  * that window. Never 500s: on a DB error it reports analytics-off so a broken

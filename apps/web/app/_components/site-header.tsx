@@ -28,14 +28,6 @@ export function SiteHeader() {
       >
         <Wordmark />
         <div className="flex items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
-            render={<a href="/getting-started" />}
-          >
-            Getting started
-          </Button>
           <ThemeToggle />
           {/* Brand-filled, per the hero design. `--brand` only resolves under
               `[data-surface="public"]` (`L2-UI-56`), so the admin's own header

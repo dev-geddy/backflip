@@ -41,7 +41,7 @@ Privilege model (both flavors): locked `backflip` app user (`APP_USER` in `lib/c
 - `deploy_env` / `deploy_env_local` secrets are set (2026-08-06), so **every** deploy rewrites the droplet's `.env` and `.env.local` from Drone. Droplet-side hand edits to those files will be clobbered — change the secret, not the file.
 - `devops.md` (root) → `devops/docs/{droplet-setup,deploy-local,deploy-github-actions,deploy-drone}.md`.
 - `.claude/skills/digitalocean-devops/SKILL.md` — explicit-trigger skill.
-- `apps/web/app/getting-started/setup-on-digitalocean-droplet/` (pm2 flavour) + `…-docker-flavour/` (docker flavour) — public web guides rendering these commands with operator-supplied variables (client-only, nothing persisted or sent). Every command string lives in that guide's `_components/setup-vars.ts` — **update both whenever a script flag, default or deploy path changes here**; the two flavours diverge (no certbot email and a POSTGRES_PASSWORD field on the docker side, `deploy-for-docker.sh` instead of `deploy-for-pm2*.sh`, no nvm in the owner-seed line). Mirrors `L2-DEVOPS-01`, `L2-DEVOPS-02`, `L2-DEVOPS-06`; UI details in ui L3.
+- The two public setup wizards that mirrored these command strings (`apps/web/app/getting-started/…`) are **deleted** (`L2-UI-63`). Nothing outside `devops/` duplicates them any more, so a flag, default or deploy-path change here no longer needs a second edit in the web app.
 
 ## How it hangs together
 - App runs ON the host (pm2, fork mode, 1 instance); only Postgres is dockerized; Caddy native fronts 80/443 → 127.0.0.1:3070.

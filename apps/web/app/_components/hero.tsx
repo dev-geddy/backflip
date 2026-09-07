@@ -67,9 +67,9 @@ export function Hero() {
             <Button
               size="lg"
               className="bg-[var(--brand)] text-[var(--brand-foreground)] hover:bg-[var(--brand)]/90"
-              render={<a href="/getting-started" />}
+              render={<a href="/backflip" />}
             >
-              Getting started
+              Open Admin
               <RiArrowRightLine className="size-4" aria-hidden="true" />
             </Button>
             {/* GitHub's /fork route opens the fork dialog (and prompts sign-in

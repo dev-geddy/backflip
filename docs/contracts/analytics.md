@@ -39,7 +39,7 @@ Explicitly **not** owned: any analytics inside `/backflip/*` (admin is never mea
 - `L2-ANALYTICS-17` — Fresh DB after `db:migrate`: row exists, banner enabled, default copy present in the admin UI, no measurement id → public site shows no banner and loads no GA.
 - `L2-ANALYTICS-18` — Save `G-XXXXXXXXXX` with banner on → public page shows the banner; DevTools shows **no** `googletagmanager.com` request until Accept; after Accept the tag loads and the banner is gone on reload; after Decline no request is ever made and the banner stays gone.
 - `L2-ANALYTICS-19` — Banner off + id set → gtag.js loads on first paint, no banner.
-- `L2-ANALYTICS-20` — `next build` keeps `/`, `/getting-started`, `/getting-started/setup-on-digitalocean-droplet*` marked `○`.
+- `L2-ANALYTICS-20` — `next build` keeps `/` marked `○`. (Was a list of routes; `/getting-started*` is gone with `L2-UI-63`, leaving `/` as the whole public surface.)
 
 ## Constrained L3
 - `/docs/notes/analytics.md`

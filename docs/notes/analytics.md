@@ -28,7 +28,7 @@ Default is a conversion problem, not a legal one — the consent gate is strict 
 - Copy is operator-editable at `/backflip/settings`, so retuning needs no deploy. `FALLBACK_TEXT` in `analytics-gate.tsx` mirrors the seed and must be updated with it.
 
 ## Why the config is fetched, not server-rendered
-Public pages (`/`, `/getting-started`, both guides) build as `○` static. Reading `analytics_config` in those pages — or in the root layout — would flip them to `ƒ`, and the root layout is shared with `/backflip`, so it would drag the whole app dynamic.
+Public pages (just `/` since `L2-UI-63`) build as `○` static. Reading `analytics_config` in those pages — or in the root layout — would flip them to `ƒ`, and the root layout is shared with `/backflip`, so it would drag the whole app dynamic.
 
 Chosen: **static pages + client fetch of `/api/public/analytics-config`.** The route is the only dynamic piece; the pages stay prerendered. Verified in the build route table (`L2-ANALYTICS-11`, `L2-ANALYTICS-20`).
 
@@ -49,7 +49,7 @@ Cost of the choice: config changes reach visitors within ~5 min (cache window), 
 
 ## Verification
 - `yarn workspace web typecheck` — clean. `@workspace/db typecheck` — clean. `yarn workspace web lint` — 0 errors (15 pre-existing warnings, none in new files).
-- `yarn workspace web build` — passes. Route table unchanged for public pages: `○ /`, `○ /getting-started`, `○ /getting-started/setup-on-digitalocean-droplet`, `○ /getting-started/setup-on-digitalocean-droplet-docker-flavour`; new `ƒ /api/public/analytics-config`.
+- `yarn workspace web build` — passes. Route table for the public surface: `○ /` (the `/getting-started*` routes it also listed are gone, `L2-UI-63`); `ƒ /api/public/analytics-config`.
 - Migrations applied to a throwaway database in the dev container: `0005` `CREATE TABLE`, `0006` `INSERT 0 1`, re-run `INSERT 0 0` (idempotent). Journal + snapshot `prevId`/`id` chain verified continuous. Throwaway db dropped.
 
 ## State

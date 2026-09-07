@@ -1,14 +1,8 @@
 import type { Metadata } from "next"
 
-import { BuildLoop } from "./_components/build-loop"
-import { CapabilityList } from "./_components/capability-list"
-import { ClaudeConnector } from "./_components/claude-connector"
-import { FeatureList } from "./_components/feature-list"
 import { Hero } from "./_components/hero"
-import { HowItWorks } from "./_components/how-it-works"
 import { SiteFooter } from "./_components/site-footer"
 import { SiteHeader } from "./_components/site-header"
-import { WordmarkBand } from "./_components/wordmark-band"
 
 export const metadata: Metadata = {
   title: "Backflip — a batteries-included platform foundation",
@@ -27,14 +21,6 @@ export default function HomePage() {
       <SiteHeader />
       <main>
         <Hero />
-        {/* Directly under the hero: the fastest way to explain what this is
-            is to show the four prompts it takes (`L2-UI-48`). */}
-        <BuildLoop />
-        <CapabilityList />
-        <FeatureList />
-        <HowItWorks />
-        <ClaudeConnector />
-        <WordmarkBand />
       </main>
       <SiteFooter />
     </div>
