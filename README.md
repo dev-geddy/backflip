@@ -133,7 +133,7 @@ To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
 ## License
 [PolyForm Internal Use License 1.0.0](./LICENSE) © dev-geddy
 
-Internal business use is permitted; distribution is not. Releases published before September 11, 2026 remain available under the MIT License they shipped with.
+Internal business use is permitted, and so is personal, non-commercial use — hobby projects, study, experiments (see the additional permission at the end of [`LICENSE`](./LICENSE)). Distribution is not permitted. Releases published before September 11, 2026 remain available under the MIT License they shipped with.
 
 <!-- README view pixel. Counts image fetches of this README, served by the live
      deployment (see the GitHub integration in the admin console). GitHub proxies
