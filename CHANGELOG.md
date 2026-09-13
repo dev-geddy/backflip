@@ -1,3 +1,10 @@
+## [1.20.2](https://github.com/dev-geddy/backflip/compare/v1.20.1...v1.20.2) (2026-09-13)
+
+
+### Bug Fixes
+
+* **web:** anchor the hero fade to the content box on wide screens ([#51](https://github.com/dev-geddy/backflip/issues/51)) ([87342aa](https://github.com/dev-geddy/backflip/commit/87342aa0ad1d5afa4af0002588cf65288da5f2b3))
+
 ## [1.20.1](https://github.com/dev-geddy/backflip/compare/v1.20.0...v1.20.1) (2026-09-13)
 
 
