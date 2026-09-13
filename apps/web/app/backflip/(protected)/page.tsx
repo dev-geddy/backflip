@@ -118,13 +118,13 @@ export default async function BackflipOverviewPage() {
     {
       label: "Connect an AI provider",
       done: providersConfigured > 0,
-      href: "/backflip/settings",
+      href: "/backflip/settings/integrations",
       cta: "Integrations",
     },
     {
       label: "Configure email sending",
       done: emailConfigured,
-      href: "/backflip/settings",
+      href: "/backflip/settings/integrations",
       cta: "Integrations",
     },
   ]

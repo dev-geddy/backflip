@@ -314,12 +314,12 @@ async function setDcrMode(mode: "off" | "allowlist" | "open"): Promise<void> {
   }
 }
 
-/** Selects the "MCP Connectors" row in `/backflip/settings`'s master list,
+/** Selects the "MCP Connectors" row in `/backflip/settings/integrations`'s master list,
  *  landing on the `ConnectorsIntegration` detail pane. Caller must already be
  *  authenticated as an owner (`settings` capability) — a teammate never sees
  *  this page at all. */
 async function openConnectorsTab(page: Page): Promise<void> {
-  await page.goto("/backflip/settings")
+  await page.goto("/backflip/settings/integrations")
   await page.getByRole("button", { name: "MCP Connectors" }).click()
 }
 
@@ -353,7 +353,7 @@ async function createManualClientViaUI(
   await openConnectorsTab(page)
   await page.getByRole("button", { name: "Add client" }).click()
 
-  await page.getByLabel("Name").fill(opts.clientName)
+  await page.getByLabel("Name", { exact: true }).fill(opts.clientName)
   await page.getByLabel("Redirect URIs").fill(opts.redirectUri)
   if (opts.nativeClient) {
     await page.getByRole("checkbox", { name: /Native client/ }).check()

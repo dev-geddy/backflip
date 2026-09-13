@@ -106,7 +106,7 @@ export default async function McpCapabilitiesPage() {
           />
         </div>
         <Link
-          href="/backflip/settings"
+          href="/backflip/settings/integrations"
           className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
         >
           Manage the connector and its clients

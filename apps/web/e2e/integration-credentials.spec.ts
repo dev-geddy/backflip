@@ -21,7 +21,7 @@ async function loginAsOwner(page: Page) {
 }
 
 async function openAiIntegration(page: Page) {
-  await page.goto("/backflip/settings")
+  await page.goto("/backflip/settings/integrations")
   await page
     .getByRole("button", { name: /AI providers/ })
     .first()
@@ -103,7 +103,7 @@ test("a stored API key is read-only, removable, and gates the model list", async
 
 test("the open pane and AI provider survive a reload", async ({ page }) => {
   await loginAsOwner(page)
-  await page.goto("/backflip/settings")
+  await page.goto("/backflip/settings/integrations")
 
   // Master list → the URL names the pane.
   await page.getByRole("button", { name: /Slack/ }).first().click()
@@ -114,14 +114,14 @@ test("the open pane and AI provider survive a reload", async ({ page }) => {
   ).toBeVisible()
 
   // AI tabs → the URL names the provider too, and a reload keeps that tab.
-  await page.goto("/backflip/settings?integration=ai")
+  await page.goto("/backflip/settings/integrations?integration=ai")
   await page.getByRole("button", { name: "OpenAI" }).click()
   await expect(page).toHaveURL(/provider=openai/)
   await page.reload()
   await expect(page.locator("#key-openai")).toBeVisible()
 
   // A junk value falls back to the first pane instead of rendering nothing.
-  await page.goto("/backflip/settings?integration=nope&provider=nope")
+  await page.goto("/backflip/settings/integrations?integration=nope&provider=nope")
   await expect(
     page.getByRole("heading", { name: "AI providers" })
   ).toBeVisible()

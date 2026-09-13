@@ -7,7 +7,7 @@
 > **Depends on L2:** `db` (`slack_app`, `slack_webhook`, `L2-DB-16` crypto), `auth` (settings gate), `ui` (Table/Dialog/AlertDialog/Input/Switch/Badge)
 
 ## Owns
-Slack credentials under `/backflip/settings`, in two independent multi-row lists:
+Slack credentials under `/backflip/settings/integrations`, in two independent multi-row lists:
 - **Apps** — any number of Slack apps, each with its own bot token (`xoxb-…`) and optional signing secret.
 - **Incoming webhooks** — any number of post-only `hooks.slack.com` URLs.
 
@@ -16,11 +16,11 @@ Both lists support add / edit / test / remove per row.
 Explicitly **not** owned: message-sending call sites in app code (none exist yet), Slack event/interactivity endpoints (the signing secret is stored for them, unused today), and Slack OAuth install flow (tokens are pasted by the operator).
 
 ## Interfaces
-- `L2-SLACK-03` — Server actions `saveSlackApp(prev, formData)` (create when `id` absent, update when present) + `deleteSlackApp(id)` — `settings`-gated. Bot token required on create; `xoxb-` prefix enforced. (`settings/_actions.ts`, UI `settings/_components/slack-apps.tsx`)
-- `L2-SLACK-04` — Server actions `saveSlackWebhook(prev, formData)` + `deleteSlackWebhook(id)` — `settings`-gated. URL required on create and validated against `https://hooks.slack.com/services/…` (`isSlackWebhookUrl`). (`settings/_actions.ts`, UI `settings/_components/slack-webhooks.tsx`)
-- `L2-SLACK-05` — Server action `testSlackApp(id)` + `slackAuthTest(botToken)` — `POST https://slack.com/api/auth.test` (`Authorization: Bearer`), token decrypted server-side only. On success stores `teamName`, `appId`, `lastCheckedAt`. Read-only in Slack — nothing is posted. 10s timeout. (`settings/_actions.ts`, `settings/_lib/slack.ts`)
-- `L2-SLACK-06` — Server action `testSlackWebhook(id)` + `postSlackWebhook(url, text)` — **posts a real message** to the webhook's channel; Slack gives incoming webhooks no read API, so delivery is the only possible check. Operator-triggered only, never automatic; the UI states this before the action. Stores `lastCheckedAt` on success. (`settings/_actions.ts`, `settings/_lib/slack.ts`)
-- `L2-SLACK-08` — Route `/backflip/settings` → Slack integration — seventh master-detail entry; a list pane, not a form: status header + Apps table + Webhooks table, each row with Test / Edit / Remove. List row reads "connected" iff any app or webhook row exists. (`settings/_components/slack-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
+- `L2-SLACK-03` — Server actions `saveSlackApp(prev, formData)` (create when `id` absent, update when present) + `deleteSlackApp(id)` — `settings`-gated. Bot token required on create; `xoxb-` prefix enforced. (`settings/integrations/_actions.ts`, UI `settings/integrations/_components/slack-apps.tsx`)
+- `L2-SLACK-04` — Server actions `saveSlackWebhook(prev, formData)` + `deleteSlackWebhook(id)` — `settings`-gated. URL required on create and validated against `https://hooks.slack.com/services/…` (`isSlackWebhookUrl`). (`settings/integrations/_actions.ts`, UI `settings/integrations/_components/slack-webhooks.tsx`)
+- `L2-SLACK-05` — Server action `testSlackApp(id)` + `slackAuthTest(botToken)` — `POST https://slack.com/api/auth.test` (`Authorization: Bearer`), token decrypted server-side only. On success stores `teamName`, `appId`, `lastCheckedAt`. Read-only in Slack — nothing is posted. 10s timeout. (`settings/integrations/_actions.ts`, `settings/integrations/_lib/slack.ts`)
+- `L2-SLACK-06` — Server action `testSlackWebhook(id)` + `postSlackWebhook(url, text)` — **posts a real message** to the webhook's channel; Slack gives incoming webhooks no read API, so delivery is the only possible check. Operator-triggered only, never automatic; the UI states this before the action. Stores `lastCheckedAt` on success. (`settings/integrations/_actions.ts`, `settings/integrations/_lib/slack.ts`)
+- `L2-SLACK-08` — Route `/backflip/settings/integrations` → Slack integration — seventh master-detail entry; a list pane, not a form: status header + Apps table + Webhooks table, each row with Test / Edit / Remove. List row reads "connected" iff any app or webhook row exists. (`settings/integrations/_components/slack-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
 
 ## Schemas
 - `L2-SLACK-01` — `slack_app` table (many rows): `id`, `name` (unique), `botTokenEnc` (AES, `L2-DB-16`), `signingSecretEnc` (AES, nullable), `defaultChannel`, `teamName` + `appId` (display metadata from `auth.test`), `enabled` (default true), `lastCheckedAt`, `createdAt`, `updatedAt`. Migration `0012` creates it. `db` counterpart: `L2-DB-30`. (`packages/db/src/schema.ts`)

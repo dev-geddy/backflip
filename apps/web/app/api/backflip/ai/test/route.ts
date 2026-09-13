@@ -10,7 +10,7 @@ import {
   MAX_PROMPT_CHARS,
   streamTestPrompt,
   type TestProvider,
-} from "@/app/backflip/(protected)/settings/_lib/ai-test"
+} from "@/app/backflip/(protected)/settings/integrations/_lib/ai-test"
 
 // Uses pg (db) + the key decryption cipher — Node runtime, not edge.
 export const runtime = "nodejs"

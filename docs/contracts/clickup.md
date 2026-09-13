@@ -7,15 +7,15 @@
 > **Depends on L2:** `db` (`clickup_config`, `L2-DB-16` crypto), `auth` (settings gate), `ui` (Input/Switch/Field/Button)
 
 ## Owns
-ClickUp operator config under `/backflip/settings` (backed by `clickup_config`) — personal API token, default workspace id, enabled flag — plus a read-only connection probe.
+ClickUp operator config under `/backflip/settings/integrations` (backed by `clickup_config`) — personal API token, default workspace id, enabled flag — plus a read-only connection probe.
 
 Explicitly **not** owned: task/list/comment call sites (none exist yet — this is config plumbing for them), and the OAuth app flow (reserved columns only, `L2-CLICKUP-07`).
 
 ## Interfaces
-- `L2-CLICKUP-02` — Server action `saveClickupConfig(prev, formData)` — upserts the single `clickup_config` row on `kind`. `settings`-gated. Token encrypted when supplied; blank keeps existing. (`apps/web/app/backflip/(protected)/settings/_actions.ts`)
-- `L2-CLICKUP-03` — Server action `testClickupConnection()` + `fetchClickupIdentity(token)` — probe via `GET https://api.clickup.com/api/v2/user` + `/team` (`Authorization: <token>`, no `Bearer`), token decrypted server-side only; returns `{ok, message}` naming the resolved user + workspace count. 10s timeout, no-store. Read-only in ClickUp. (`settings/_actions.ts`, `settings/_lib/clickup.ts`)
+- `L2-CLICKUP-02` — Server action `saveClickupConfig(prev, formData)` — upserts the single `clickup_config` row on `kind`. `settings`-gated. Token encrypted when supplied; blank keeps existing. (`apps/web/app/backflip/(protected)/settings/integrations/_actions.ts`)
+- `L2-CLICKUP-03` — Server action `testClickupConnection()` + `fetchClickupIdentity(token)` — probe via `GET https://api.clickup.com/api/v2/user` + `/team` (`Authorization: <token>`, no `Bearer`), token decrypted server-side only; returns `{ok, message}` naming the resolved user + workspace count. 10s timeout, no-store. Read-only in ClickUp. (`settings/integrations/_actions.ts`, `settings/integrations/_lib/clickup.ts`)
 - `L2-CLICKUP-13` — The personal API token uses the shared credential block (`L2-AI-23`): stored → read-only masked row with Replace and a confirmed Remove. Removing nulls **`apiTokenEnc`** (ClickUp's column is not `apiKeyEnc`) and sets `enabled = false`; the default workspace id is kept.
-- `L2-CLICKUP-04` — Route `/backflip/settings` → ClickUp integration — sixth master-detail entry; fields: API token (masked, no reveal), default workspace id, Enabled, plus "Test connection". List row reads "connected" iff a token is saved. (`settings/_components/clickup-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
+- `L2-CLICKUP-04` — Route `/backflip/settings/integrations` → ClickUp integration — sixth master-detail entry; fields: API token (masked, no reveal), default workspace id, Enabled, plus "Test connection". List row reads "connected" iff a token is saved. (`settings/integrations/_components/clickup-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
 
 ## Schemas
 - `L2-CLICKUP-01` — `clickup_config` table (single row, `kind` unique default `clickup`): `id`, `kind`, `apiTokenEnc` (AES, `L2-DB-16`), `teamId` (nullable plaintext — a workspace id, not a secret), `clientId` + `clientSecretEnc` (nullable, reserved), `enabled` (default false), `updatedAt`. Migration `0012` creates it. `db` counterpart: `L2-DB-29`. (`packages/db/src/schema.ts`)

@@ -7,15 +7,15 @@
 > **Depends on L2:** `db` (`analytics_config`), `auth` (admin gate), `ui` (Button/Switch/Textarea/Field)
 
 ## Owns
-Google Analytics (gtag.js) on the **public** surface, its operator config under `/backflip/settings` (backed by `analytics_config`), and the cookie-consent gate that decides whether analytics may run at all.
+Google Analytics (gtag.js) on the **public** surface, its operator config under `/backflip/settings/integrations` (backed by `analytics_config`), and the cookie-consent gate that decides whether analytics may run at all.
 
 Explicitly **not** owned: any analytics inside `/backflip/*` (admin is never measured), server-side event tracking, non-Google providers. Server-side start telemetry — how many people run the starter locally — is the `telemetry` domain (`/docs/contracts/telemetry.md`); it shares nothing with this one: no cookies, no browser, no consent surface, admin-only display.
 
 ## Interfaces
-- `L2-ANALYTICS-02` — Server action `saveAnalyticsConfig(prev, formData)` — upserts the single `analytics_config` row on `kind`. `settings`-gated. Normalizes the measurement id to upper case; blank clears it. (`apps/web/app/backflip/(protected)/settings/_actions.ts`)
+- `L2-ANALYTICS-02` — Server action `saveAnalyticsConfig(prev, formData)` — upserts the single `analytics_config` row on `kind`. `settings`-gated. Normalizes the measurement id to upper case; blank clears it. (`apps/web/app/backflip/(protected)/settings/integrations/_actions.ts`)
 - `L2-ANALYTICS-03` — Route `GET /api/public/analytics-config` — unauthenticated; returns exactly `{ measurementId: string|null, cookieBannerEnabled: boolean, cookieBannerText: string }` and nothing else from the row. `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600`. `runtime = "nodejs"`, `dynamic = "force-dynamic"`. Never 5xx: on DB error it answers analytics-off. (`apps/web/app/api/public/analytics-config/route.ts`)
 - `L2-ANALYTICS-04` — Client components `AnalyticsGate` (decides + injects gtag.js) and `CookieBanner` (presentational bottom bar, Accept/Decline). Gate is mounted from `SiteFooter`, the only chrome shared by every public page and no admin page. (`apps/web/app/_components/analytics-gate.tsx`, `cookie-banner.tsx`)
-- `L2-ANALYTICS-05` — Route `/backflip/settings` → Google Analytics integration — third master-detail entry; fields: Measurement ID (plain text), Cookie banner `Switch`, banner text `Textarea`. List row reads "connected" iff a measurement id is saved. (`settings/_components/analytics-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
+- `L2-ANALYTICS-05` — Route `/backflip/settings/integrations` → Google Analytics integration — third master-detail entry; fields: Measurement ID (plain text), Cookie banner `Switch`, banner text `Textarea`. List row reads "connected" iff a measurement id is saved. (`settings/integrations/_components/analytics-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
 
 ## Schemas
 - `L2-ANALYTICS-01` — `analytics_config` table (single row per `kind`, `kind` unique default `google_analytics`): `id`, `kind`, `measurementId` (nullable text, plaintext), `cookieBannerEnabled` (bool, default `true`), `cookieBannerText` (nullable text), `updatedAt`. Migration `0005` creates it; `0006` seeds the singleton row with the default banner copy, `ON CONFLICT (kind) DO NOTHING` (re-runnable). `db` counterpart: `L2-DB-23`. (`packages/db/src/schema.ts`)

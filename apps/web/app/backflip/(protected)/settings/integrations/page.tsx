@@ -37,9 +37,11 @@ import { type SlackWebhookRow } from "./_components/slack-webhooks"
 import { type SpeechConfig } from "./_components/speech-integration"
 import { keyPreview, urlPreview } from "./_lib/mask"
 import type { Metadata } from "next"
-import { titleFor } from "../../_lib/crumbs"
+import { titleFor } from "../../../_lib/crumbs"
 
-export const metadata: Metadata = { title: titleFor("/backflip/settings") }
+export const metadata: Metadata = {
+  title: titleFor("/backflip/settings/integrations"),
+}
 
 const PROVIDERS = ["anthropic", "openai", "google"] as const
 
@@ -48,7 +50,7 @@ const CONNECTOR_DATE_FMT = new Intl.DateTimeFormat("en-US", {
 })
 
 /**
- * /backflip/settings — admin Integrations (owner only). Master-detail over
+ * /backflip/settings/integrations — admin Integrations (owner only). Master-detail over
  * eight surfaces: AI providers (per provider), Email (Resend), Google
  * Analytics, Speech (Deepgram), the Connectors (MCP OAuth client) admin,
  * ClickUp, Slack (many apps + many webhooks) and n8n. Secrets are never sent

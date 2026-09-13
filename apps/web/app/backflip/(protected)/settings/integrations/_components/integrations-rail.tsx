@@ -1,4 +1,4 @@
-import { SectionLabel } from "../../_components/page-heading"
+import { SectionLabel } from "../../../_components/page-heading"
 
 type AboutLink = { label: string; href: string }
 

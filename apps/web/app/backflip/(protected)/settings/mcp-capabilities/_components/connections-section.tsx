@@ -37,7 +37,7 @@ export function ConnectionsSection({ grants }: { grants: GrantWithHealth[] }) {
         <p className="text-sm text-muted-foreground">
           Nothing is connected yet. Create a client under{" "}
           <Link
-            href="/backflip/settings"
+            href="/backflip/settings/integrations"
             className="font-medium text-primary hover:underline"
           >
             Settings

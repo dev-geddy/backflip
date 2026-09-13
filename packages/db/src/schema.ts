@@ -212,7 +212,7 @@ export const connectorDcrMode = pgEnum("connector_dcr_mode", [
 
 /**
  * Connector (MCP) settings — single row, owner-managed under
- * `/backflip/settings`. Holds the redirect-host allowlist enforced for every
+ * `/backflip/settings/integrations`. Holds the redirect-host allowlist enforced for every
  * OAuth client (manual or dynamic) and the dynamic-registration mode.
  *
  * `redirectHosts` seeds to Claude's two callback origins; an owner may add

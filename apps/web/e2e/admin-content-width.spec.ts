@@ -51,7 +51,7 @@ test.describe("wide viewport", () => {
     expect(canvas.x + canvas.width).toBeCloseTo(1920, 0)
 
     // A master-detail page is capped the same way.
-    await page.goto("/backflip/settings")
+    await page.goto("/backflip/settings/integrations")
     expect((await content(page).boundingBox())!.width).toBe(CAP)
   })
 })
