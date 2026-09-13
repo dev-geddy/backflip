@@ -22,7 +22,7 @@ import { Button } from "@workspace/ui/components/button"
  * `[data-surface="public"]` (`L2-UI-56`). Nothing in this file touches a token
  * the admin renders.
  *
- * @spec L2-UI-56
+ * @spec L2-UI-56, L2-UI-65
  */
 export function Hero() {
   return (
@@ -37,10 +37,17 @@ export function Hero() {
         aria-hidden="true"
         className="absolute inset-0 bg-card [background-image:repeating-linear-gradient(135deg,var(--brand-stripe)_0_2px,transparent_2px_22px)]"
       />
-      {/* Readability overlay — fades to the theme background where the copy sits. */}
+      {/* Readability overlay — fades to the theme background where the copy
+          sits. The horizontal stops are anchored to the content box, not the
+          viewport: `max(0px, 50% - 36rem)` is the box's left edge (36rem =
+          half of `max-w-6xl`, 0 once the window is narrower than the box), and
+          the two offsets are 34% / 82% of the box's 72rem. Percent stops
+          scaled with the window, so on a wide monitor the fade — and the
+          stripes behind it — drifted far right of the headline. The texture
+          itself still runs to the right window edge (`L2-UI-65`). */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,var(--background)_34%,transparent_82%),linear-gradient(0deg,var(--background)_2%,transparent_34%)]"
+        className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0,var(--background)_calc(max(0px,50%-36rem)+24.5rem),transparent_calc(max(0px,50%-36rem)+59rem)),linear-gradient(0deg,var(--background)_2%,transparent_34%)]"
       />
 
       <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-26">

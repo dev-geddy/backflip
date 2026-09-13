@@ -54,6 +54,12 @@ Only the ramp is gated. The blur and wash stay on `data-chrome-glass` alone, bec
 - `apps/web/app/_components/site-header.tsx` — Admin button filled with `--brand`.
 - `app/page.tsx` is the only public page root, so it is the only one carrying `data-surface="public"` (`L2-UI-63`; it was six before the trim, all with an identical root element).
 
+### Fade anchored to the content box (`L2-UI-65`)
+- 2026-09-13: overlay 90deg stops changed from `34% / 82%` to `calc(max(0px, 50% - 36rem) + 24.5rem) / calc(… + 59rem)`. Same numbers expressed in box units (72rem × 0.34 / 0.82); `max(0px, …)` pins the anchor to 0 once the window is narrower than the box, so nothing changes below 72rem.
+- Texture layer untouched — still `absolute inset-0` on the section, full-bleed.
+- Base font is 17px, so 36rem here is 612px, matching `max-w-6xl` which is also rem-based; keep both in rem.
+- Check at ≥2000px wide: stripes begin ~half-way across the copy column, run to the right edge.
+
 ### Why a scoped attribute rather than new `:root` tokens
 New token names at `:root` would already have been safe — the admin references none of them. The attribute buys something the naming alone does not: it makes the separation *enforceable by reading*. A brand token cannot resolve inside `/backflip/*` at all, so a future component that reaches for `--brand` in the admin renders with no colour rather than quietly importing the marketing palette. That failure is loud, which is the point.
 
