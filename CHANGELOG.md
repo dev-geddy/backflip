@@ -1,3 +1,10 @@
+## [1.20.1](https://github.com/dev-geddy/backflip/compare/v1.20.0...v1.20.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* **web:** let the admin canvas paint the ground past the content cap ([#50](https://github.com/dev-geddy/backflip/issues/50)) ([945d776](https://github.com/dev-geddy/backflip/commit/945d77659fbacb5db241e7cfcc1fe5da720cdb70))
+
 # [1.20.0](https://github.com/dev-geddy/backflip/compare/v1.19.0...v1.20.0) (2026-09-13)
 
 
