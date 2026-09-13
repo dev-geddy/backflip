@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/dev-geddy/backflip/compare/v1.19.0...v1.20.0) (2026-09-13)
+
+
+### Features
+
+* **web:** move integrations to /backflip/settings/integrations ([#49](https://github.com/dev-geddy/backflip/issues/49)) ([d9b987b](https://github.com/dev-geddy/backflip/commit/d9b987b08e35878d90a2bb7ef2d701b7e2711d2d))
+
 # [1.19.0](https://github.com/dev-geddy/backflip/compare/v1.18.0...v1.19.0) (2026-09-07)
 
 
