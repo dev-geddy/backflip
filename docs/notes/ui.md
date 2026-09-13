@@ -128,6 +128,7 @@ The header used to read `4 of 24` at all times. A real user read that as "there 
 - There is no naming *mode* any more, so Escape is free to do what Escape does in a dialog: close it. Enter still runs the primary action.
 
 ## Overview page — design 5A (L2-UI-03)
+- 2026-09-13: page root lost `bg-muted dark:bg-background` (same on `account/page.tsx` and `ui-samples/page.tsx`). The canvas in `(protected)/layout.tsx` is the one ground (`bg-muted/40`, `L2-UI-61`); a page-level ground sat inside the 1440px wrapper and showed as a darker box with lighter gutters on anything wider. Light mode is now a shade lighter behind the cards, dark mode a shade lighter than pure `background` — both match what every master-detail page already showed.
 `/backflip` rebuilt from generic stat-cards/chart/table to the 5A home. **Real data only.**
 - `page.tsx` (RSC) — greeting (`Welcome back, {firstName}`, real date, subtitle "Pick up where you left off.") + 3 real stat cards (Members total/active/pending, Integrations enabled + health dot, Pending) + 2 info cards: **Finish setting up** (4 real steps derived from name/user-count/ai/email config) + **Recent members** (newest 4 from `users`). Full-bleed, `max-w-[900px]` centered; canvas mirrors ui-samples (`bg-muted dark:bg-background`, hero stripe backdrop removed), each card `rounded-xl border bg-card p-5` (was a flat `bg-card` page with borderless-bg cards).
 - Removed: `section-cards.tsx`, `dashboard-chart.tsx`, `recent-table.tsx`.
