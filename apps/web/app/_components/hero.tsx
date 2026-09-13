@@ -86,7 +86,7 @@ export function Hero() {
               }
             >
               <RiGitForkLine className="size-4" aria-hidden="true" />
-              Fork it, make it yours
+              Fork it, build on it
             </Button>
           </div>
           <a

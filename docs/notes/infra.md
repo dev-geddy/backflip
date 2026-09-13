@@ -9,7 +9,9 @@
 - `.env.example` — committed template. `.env` — gitignored, local creds. Satisfies `L2-INF-07`, `L2-INF-09`.
 - `apps/web/package.json` — `dev` = `next dev -p 3070`, `start` = `next start -p 3070`. Satisfies `L2-INF-03`.
 - `.gitignore` — `.env*` then `!.env.example`. Satisfies `L2-INF-09`.
-- `README.md` — run instructions (local-app+docker-db; full-docker).
+- `README.md` — run instructions (local-app+docker-db; full-docker); license notice blockquote under the self-hosted callout + `## License` section, both naming PolyForm Internal Use 1.0.0 and the MIT cutoff date.
+- `LICENSE` — PolyForm Internal Use License 1.0.0 verbatim (relicensed from MIT 2026-09-11; licensor `dev-geddy`, software `Backflip`), plus an appended **Additional Permission — Personal Use** section carrying PolyForm Noncommercial 1.0.0's "Personal Uses" clause word for word. Permitted purposes are therefore internal business operations + personal non-commercial use; distribution is prohibited either way. The PolyForm block is kept byte-verbatim so the license stays identifiable — extra grants go after the `---`, never inline. A freelancer's own work is already covered by the base text: `sole proprietorship` is named in the Definitions "your company" clause. Releases tagged before that date stay MIT — history is not rewritten.
+- `package.json` (root) + `packages/typescript-config/package.json` — `"license": "SEE LICENSE IN LICENSE"` (npm-valid; PolyForm has no SPDX id). Latter was `PROPRIETARY`. Other workspace manifests carry no `license` field; all are `private: true`, nothing is published.
 
 ## State
 - Preferred dev: app local (3070) + db in Docker — plain `docker compose up -d` starts ONLY `backflip-db` (web/seed are behind profiles). Full-docker (app 3071): `docker compose --profile web up -d --build`; both can run at once against the same db.
