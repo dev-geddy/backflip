@@ -200,7 +200,7 @@ export default function UISamplesPage() {
   const [threshold, setThreshold] = useState([2500])
 
   return (
-    <main className="min-h-svh bg-muted px-4 py-8 md:px-8 dark:bg-background">
+    <main className="min-h-svh px-4 py-8 md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="space-y-2">
           <h1 className="text-2xl font-medium tracking-tight">UI Samples</h1>

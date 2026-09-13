@@ -133,7 +133,7 @@ export default async function BackflipOverviewPage() {
   return (
     // Canvas mirrors ui-samples (bg-muted light / bg-background dark) so
     // bg-card cards pop in light mode.
-    <div className="h-full overflow-y-auto bg-muted dark:bg-background">
+    <div className="h-full overflow-y-auto">
       <div className="relative min-h-full">
         <div className="relative mx-auto flex max-w-[900px] flex-col gap-6 p-6 lg:p-8">
           {/* Greeting */}

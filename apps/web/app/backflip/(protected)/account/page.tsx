@@ -90,7 +90,7 @@ export default async function AccountPage() {
   return (
     // Canvas mirrors ui-samples (bg-muted light / bg-background dark); only
     // cards sit on bg-card.
-    <div className="flex h-full min-h-0 flex-col bg-muted lg:flex-row dark:bg-background">
+    <div className="flex h-full min-h-0 flex-col lg:flex-row">
       {/* Main */}
       <div className="min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-[900px] min-w-0 flex-col gap-6 p-6 lg:p-8">
