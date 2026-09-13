@@ -353,7 +353,7 @@ async function createManualClientViaUI(
   await openConnectorsTab(page)
   await page.getByRole("button", { name: "Add client" }).click()
 
-  await page.getByLabel("Name").fill(opts.clientName)
+  await page.getByLabel("Name", { exact: true }).fill(opts.clientName)
   await page.getByLabel("Redirect URIs").fill(opts.redirectUri)
   if (opts.nativeClient) {
     await page.getByRole("checkbox", { name: /Native client/ }).check()
