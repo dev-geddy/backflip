@@ -49,13 +49,13 @@ test("wrong password shows an error and grants no session", async ({
   await expect(page).toHaveURL("/backflip/login?from=%2Fbackflip")
 })
 
-test("teammate is redirected away from /backflip/settings", async ({
+test("teammate is redirected away from /backflip/settings/integrations", async ({
   page,
 }) => {
   await login(page, TEAMMATE.email, TEAMMATE.password)
   await expect(page).toHaveURL("/backflip")
 
-  await page.goto("/backflip/settings")
+  await page.goto("/backflip/settings/integrations")
 
   await expect(page).toHaveURL("/backflip")
   await expect(

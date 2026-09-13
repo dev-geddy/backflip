@@ -51,8 +51,8 @@ test("admin home page", async ({ page }) => {
 
 test("admin integrations page", async ({ page }) => {
   await loginAsOwner(page)
-  await page.goto("/backflip/settings")
-  await expect(page).toHaveURL("/backflip/settings")
+  await page.goto("/backflip/settings/integrations")
+  await expect(page).toHaveURL("/backflip/settings/integrations")
 
   await shot(page, "admin-integrations")
 })

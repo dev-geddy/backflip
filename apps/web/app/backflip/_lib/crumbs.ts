@@ -55,7 +55,7 @@ const CRUMBS: { match: (p: string) => boolean; trail: string[] }[] = [
     trail: ["Workspace", "Integrations", "MCP capabilities"],
   },
   {
-    match: (p) => p.startsWith("/backflip/settings"),
+    match: (p) => p.startsWith("/backflip/settings/integrations"),
     trail: ["Workspace", "Integrations"],
   },
   {

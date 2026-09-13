@@ -50,7 +50,7 @@ const NAV_GROUPS: { label: string; pinBottom?: boolean; items: NavItem[] }[] = [
     items: [
       {
         title: "Integrations",
-        url: "/backflip/settings",
+        url: "/backflip/settings/integrations",
         icon: RiLinksLine,
         capability: "settings",
       },

@@ -9,7 +9,7 @@ import { Switch } from "@workspace/ui/components/switch"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { listSpeechModels, saveSpeechConfig } from "../_actions"
-import { SectionLabel } from "../../_components/page-heading"
+import { SectionLabel } from "../../../_components/page-heading"
 import { CredentialField } from "./credential-field"
 
 export type SpeechConfig = {

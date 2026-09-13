@@ -30,7 +30,7 @@ export const JUMP_GROUPS: {
       },
       {
         label: "Integrations",
-        href: "/backflip/settings",
+        href: "/backflip/settings/integrations",
         keywords:
           "settings ai providers email resend keys clickup slack webhooks n8n connectors",
       },

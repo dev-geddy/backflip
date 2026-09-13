@@ -104,7 +104,7 @@ export async function saveAiConfig(
       .where(ne(aiConfig.provider, provider as Provider))
   }
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -183,7 +183,7 @@ export async function saveEmailConfig(
     .values(set as typeof emailConfig.$inferInsert)
     .onConflictDoUpdate({ target: emailConfig.provider, set })
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -236,7 +236,7 @@ export async function saveAnalyticsConfig(
     .values(set)
     .onConflictDoUpdate({ target: analyticsConfig.kind, set })
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -269,7 +269,7 @@ export async function saveSpeechConfig(
     .values(set as typeof speechConfig.$inferInsert)
     .onConflictDoUpdate({ target: speechConfig.provider, set })
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -338,7 +338,7 @@ export async function setConnectorEnabled(
 
   const enabled = formData.get("enabled") != null
   await saveConnectorSettings({ enabled })
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return {
     ok: true,
     message: enabled ? "Connector enabled." : "Connector disabled.",
@@ -364,7 +364,7 @@ export async function saveDcrMode(
   }
 
   await saveConnectorSettings({ dcrMode: parsed.data })
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -407,7 +407,7 @@ export async function addRedirectHost(
       message: error instanceof Error ? error.message : "Couldn't add host.",
     }
   }
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: `Added ${host}.` }
 }
 
@@ -434,7 +434,7 @@ export async function removeRedirectHost(
   await saveConnectorSettings({
     redirectHosts: current.redirectHosts.filter((h) => h !== host),
   })
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: `Removed ${host}.` }
 }
 
@@ -507,7 +507,7 @@ export async function createConnectorClient(
       createdByUserId: session.user.id,
       scopes: parsed.data.scopes,
     })
-    revalidatePath("/backflip/settings")
+    revalidatePath("/backflip/settings/integrations")
     return {
       ok: true,
       message: "Client created.",
@@ -541,7 +541,7 @@ export async function deleteConnectorClient(
   if (!clientDbId) return { ok: false, message: "Missing client id." }
 
   await deleteClient(clientDbId)
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Client deleted." }
 }
 
@@ -581,7 +581,7 @@ export async function updateConnectorClientScopes(
           : "Couldn't update capabilities.",
     }
   }
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Capabilities updated." }
 }
 
@@ -620,7 +620,7 @@ export async function saveClickupConfig(
     .values(set as typeof clickupConfig.$inferInsert)
     .onConflictDoUpdate({ target: clickupConfig.kind, set })
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -718,7 +718,7 @@ export async function saveSlackApp(
     return { ok: false, message: "An app with that name already exists." }
   }
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -731,7 +731,7 @@ export async function deleteSlackApp(id: string): Promise<SaveState> {
   if (!id) return { ok: false, message: "Missing app id." }
 
   await db.delete(slackApps).where(eq(slackApps.id, id))
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "App removed." }
 }
 
@@ -762,7 +762,7 @@ export async function testSlackApp(id: string): Promise<SaveState> {
         updatedAt: new Date(),
       })
       .where(eq(slackApps.id, id))
-    revalidatePath("/backflip/settings")
+    revalidatePath("/backflip/settings/integrations")
     return {
       ok: true,
       message: `Connected to ${identity.teamName}${identity.botUser ? ` as ${identity.botUser}` : ""}.`,
@@ -831,7 +831,7 @@ export async function saveSlackWebhook(
     return { ok: false, message: "A webhook with that label already exists." }
   }
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -844,7 +844,7 @@ export async function deleteSlackWebhook(id: string): Promise<SaveState> {
   if (!id) return { ok: false, message: "Missing webhook id." }
 
   await db.delete(slackWebhooks).where(eq(slackWebhooks.id, id))
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Webhook removed." }
 }
 
@@ -873,7 +873,7 @@ export async function testSlackWebhook(id: string): Promise<SaveState> {
       .update(slackWebhooks)
       .set({ lastCheckedAt: new Date(), updatedAt: new Date() })
       .where(eq(slackWebhooks.id, id))
-    revalidatePath("/backflip/settings")
+    revalidatePath("/backflip/settings/integrations")
     return { ok: true, message: "Test message delivered." }
   } catch {
     return { ok: false, message: "Slack rejected the webhook URL." }
@@ -922,7 +922,7 @@ export async function saveN8nConfig(
     .values(set as typeof n8nConfig.$inferInsert)
     .onConflictDoUpdate({ target: n8nConfig.kind, set })
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Saved." }
 }
 
@@ -1025,6 +1025,6 @@ export async function clearIntegrationKey(target: string): Promise<SaveState> {
       .where(eq(n8nConfig.kind, "n8n"))
   }
 
-  revalidatePath("/backflip/settings")
+  revalidatePath("/backflip/settings/integrations")
   return { ok: true, message: "Key removed." }
 }

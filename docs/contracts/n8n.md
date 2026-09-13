@@ -7,15 +7,15 @@
 > **Depends on L2:** `db` (`n8n_config`, `L2-DB-16` crypto), `auth` (settings gate), `ui` (Input/Switch/Field/Button)
 
 ## Owns
-n8n operator config under `/backflip/settings` (backed by `n8n_config`) — one instance URL + public API key + enabled flag — plus a read-only connection probe.
+n8n operator config under `/backflip/settings/integrations` (backed by `n8n_config`) — one instance URL + public API key + enabled flag — plus a read-only connection probe.
 
 Explicitly **not** owned: workflow triggering / execution call sites (none exist yet — this is config plumbing for them), and multi-instance support (single row by design, `L2-N8N-05`).
 
 ## Interfaces
-- `L2-N8N-02` — Server action `saveN8nConfig(prev, formData)` + `normalizeN8nBaseUrl(input)` — upserts the single `n8n_config` row on `kind`; the URL is normalized to origin + sub-path, trailing slash dropped, non-http(s) refused. `settings`-gated. Key encrypted when supplied; blank keeps existing. (`settings/_actions.ts`, `settings/_lib/n8n.ts`)
+- `L2-N8N-02` — Server action `saveN8nConfig(prev, formData)` + `normalizeN8nBaseUrl(input)` — upserts the single `n8n_config` row on `kind`; the URL is normalized to origin + sub-path, trailing slash dropped, non-http(s) refused. `settings`-gated. Key encrypted when supplied; blank keeps existing. (`settings/integrations/_actions.ts`, `settings/integrations/_lib/n8n.ts`)
 - `L2-N8N-13` — The n8n API key uses the shared credential block (`L2-AI-23`): stored → read-only masked row with Replace and a confirmed Remove; removing nulls `apiKeyEnc` and sets `enabled = false`. The instance URL is kept, so reconnecting is one paste.
-- `L2-N8N-03` — Server action `testN8nConnection()` + `fetchN8nStatus(baseUrl, apiKey)` — probe via `GET {baseUrl}/api/v1/workflows?limit=1` (`X-N8N-API-KEY`), key decrypted server-side only; returns `{hasWorkflows}` — deliberately not a count, the probe reads one row. 10s timeout, no-store. Executes nothing. (`settings/_actions.ts`, `settings/_lib/n8n.ts`)
-- `L2-N8N-04` — Route `/backflip/settings` → n8n integration — eighth master-detail entry; fields: instance URL, public API key (masked, no reveal), Enabled, plus "Test connection". List row reads "connected" iff both URL and key are saved. (`settings/_components/n8n-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
+- `L2-N8N-03` — Server action `testN8nConnection()` + `fetchN8nStatus(baseUrl, apiKey)` — probe via `GET {baseUrl}/api/v1/workflows?limit=1` (`X-N8N-API-KEY`), key decrypted server-side only; returns `{hasWorkflows}` — deliberately not a count, the probe reads one row. 10s timeout, no-store. Executes nothing. (`settings/integrations/_actions.ts`, `settings/integrations/_lib/n8n.ts`)
+- `L2-N8N-04` — Route `/backflip/settings/integrations` → n8n integration — eighth master-detail entry; fields: instance URL, public API key (masked, no reveal), Enabled, plus "Test connection". List row reads "connected" iff both URL and key are saved. (`settings/integrations/_components/n8n-integration.tsx`, `integrations-view.tsx`, `integrations-rail.tsx`, `page.tsx`)
 
 ## Schemas
 - `L2-N8N-01` — `n8n_config` table (single row, `kind` unique default `n8n`): `id`, `kind`, `baseUrl` (nullable plaintext — an instance origin, not a secret), `apiKeyEnc` (AES, `L2-DB-16`), `enabled` (default false), `updatedAt`. Migration `0012` creates it. `db` counterpart: `L2-DB-32`. (`packages/db/src/schema.ts`)

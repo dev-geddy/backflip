@@ -71,6 +71,23 @@ const WELL_KNOWN_REWRITES = [
   },
 ]
 
+/**
+ * `/backflip/settings` used to be the Integrations page itself; it is now a
+ * section prefix (`/settings/integrations`, `/settings/mcp-capabilities`).
+ * Keep the old address answering so bookmarks and deep links
+ * (`?integration=…`, `L2-UI-59`) still land — the query string survives a
+ * config redirect untouched.
+ *
+ * @spec L2-UI-64
+ */
+const SETTINGS_REDIRECTS = [
+  {
+    source: "/backflip/settings",
+    destination: "/backflip/settings/integrations",
+    permanent: false,
+  },
+]
+
 /** @spec L2-UI-10, L2-UI-19, L2-DEVOPS-16, L2-DEVOPS-21, L2-MCP-10, L2-MCP-11 */
 const nextConfig: NextConfig = {
   env: {
@@ -81,6 +98,9 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return WELL_KNOWN_REWRITES
+  },
+  async redirects() {
+    return SETTINGS_REDIRECTS
   },
   // Self-contained server bundle (.next/standalone) — run with `node server.js`,
   // not `next start`. Prod runtime: pm2 on the droplet, node in Docker locally.

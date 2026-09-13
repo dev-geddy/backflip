@@ -30,7 +30,7 @@ export function ConsentForm({
   /** Scopes the client asked for that its own registration ceiling does not
    *  allow — a limit on the app, not on this account (`L2-MCP-66`). */
   withheldByClient: McpScope[]
-  /** Whether the signed-in viewer can reach `/backflip/settings` to widen the
+  /** Whether the signed-in viewer can reach `/backflip/settings/integrations` to widen the
    *  client's own scope ceiling. */
   canManageSettings: boolean
   rawParams: Record<string, string>
@@ -116,7 +116,7 @@ export function ConsentForm({
             <p className="mt-1 text-muted-foreground">
               To let it request this,{" "}
               <Link
-                href="/backflip/settings"
+                href="/backflip/settings/integrations"
                 className="font-medium text-primary hover:underline"
               >
                 widen the client’s allowed capabilities
