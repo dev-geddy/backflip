@@ -1,3 +1,10 @@
+## [1.20.4](https://github.com/dev-geddy/backflip/compare/v1.20.3...v1.20.4) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** patch high vulnerabilities in mcp sdk, undici, vite and transitive deps ([3f2aae4](https://github.com/dev-geddy/backflip/commit/3f2aae45b80d100976fcd6285f55ea282fb21eb4))
+
 ## [1.20.3](https://github.com/dev-geddy/backflip/compare/v1.20.2...v1.20.3) (2026-10-23)
 
 
