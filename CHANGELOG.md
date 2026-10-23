@@ -1,3 +1,10 @@
+## [1.20.3](https://github.com/dev-geddy/backflip/compare/v1.20.2...v1.20.3) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deps:** patch critical vulnerabilities in next, handlebars and proxy-addr ([147b1cb](https://github.com/dev-geddy/backflip/commit/147b1cba58d32e25b7fcc96f4a98b22eb43c0867))
+
 ## [1.20.2](https://github.com/dev-geddy/backflip/compare/v1.20.1...v1.20.2) (2026-09-13)
 
 
