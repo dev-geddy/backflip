@@ -88,7 +88,7 @@ Colocation convention: non-route code → underscore dirs (`_components`, `_hook
 - Explanations: use `hover-card` (`@workspace/ui/components/hover-card`) for contextual detail/definitions where helpful — keep inline UI clean, reveal depth on hover. Don't overuse.
 
 ## Stack
-Next.js 16.2.6 · React 19.2.4 · TypeScript 5 · Tailwind v4 · shadcn/ui · Turborepo · yarn 4.17.1.
+Next.js 16.4.2 · React 19.2.4 · TypeScript 5 · Tailwind v4 · shadcn/ui · Turborepo · yarn 4.17.1.
 
 ## Releases
 Automated — do not bump versions or cut tags by hand (`L2-DEVOPS-29`).
