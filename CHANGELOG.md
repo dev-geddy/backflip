@@ -1,3 +1,10 @@
+## [1.20.5](https://github.com/dev-geddy/backflip/compare/v1.20.4...v1.20.5) (2026-10-27)
+
+
+### Bug Fixes
+
+* **deps:** patch high advisories in body-parser and zod ([#54](https://github.com/dev-geddy/backflip/issues/54)) ([1ccbd90](https://github.com/dev-geddy/backflip/commit/1ccbd9014ed2f8762c34cecd85097f1863343d20))
+
 ## [1.20.4](https://github.com/dev-geddy/backflip/compare/v1.20.3...v1.20.4) (2026-10-23)
 
 
