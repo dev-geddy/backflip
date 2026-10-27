@@ -5,8 +5,9 @@
 ## File map
 - `packages/db/src/schema.ts` — `telemetryInstall` + `telemetryStart`. Satisfies `L2-TELEMETRY-01`, `L2-TELEMETRY-02`, `L2-DB-34`, `L2-DB-35`.
 - `packages/db/migrations/0017_curved_inhumans.sql` — drizzle-kit generated; both tables + two indexes on `telemetry_start`.
-- `scripts/track-start.mjs` — the client. Reads/creates `.backflip/install-id`, prints the first-run notice, posts once. Satisfies `L2-TELEMETRY-10`, `L2-TELEMETRY-11`, `L2-TELEMETRY-15`.
-- `package.json` — root `dev` is `node scripts/track-start.mjs & turbo dev`. Yarn's portable shell handles `&`, so this stays cross-platform.
+- `apps/web/instrumentation.ts` — Next `register()` hook; on the Node runtime (not during `next build`) dynamic-imports the sender and fires it un-awaited. Satisfies `L2-TELEMETRY-10`, `L2-TELEMETRY-15`.
+- `apps/web/app/_lib/telemetry/report-start.ts` — the sender: opt-out check, install-id resolution (`dbStore` → `fileStore` → random), one POST. Satisfies `L2-TELEMETRY-10`, `L2-TELEMETRY-11`, `L2-TELEMETRY-15`, `L2-TELEMETRY-38`.
+- `packages/db/migrations/0020_whole_paper_doll.sql` — drizzle-kit generated; `telemetry_identity`. Satisfies `L2-TELEMETRY-39`, `L2-DB-38`.
 - `apps/web/app/_lib/telemetry/config.ts` — salt lookup, `telemetryHash`, `utcDay`, the four tuning constants. Satisfies `L2-TELEMETRY-03`, `L2-TELEMETRY-04`.
 - `apps/web/app/_lib/telemetry/payload.ts` — strict zod schema + `plausibleVersion`. Satisfies `L2-TELEMETRY-06`.
 - `apps/web/app/_lib/telemetry/limits.ts` — the three budgets. Satisfies `L2-TELEMETRY-05`.
@@ -20,8 +21,8 @@
 - `apps/web/app/backflip/(protected)/page.tsx` — gates on `canAccessSettings`, `.catch(() => null)` around the read. Satisfies `L2-TELEMETRY-19`, `L2-TELEMETRY-25`.
 - `apps/web/app/_lib/client-ip.ts` — `clientIp`, moved up from `_lib/oauth/limits.ts` (which re-exports it) when a second surface needed it. Shared by `L2-MCP-30` and `L2-TELEMETRY-05`.
 - `devops/nginx/backflip-http.conf` / `backflip.conf` — `backflip_telemetry` zone (5r/m) + the `location = /api/public/telemetry/start` block with `client_max_body_size 2k`. Satisfies `L2-DEVOPS-27`.
-- `apps/web/app/_lib/telemetry/{config,payload,retention-cutoff}.test.ts` — unit suites. Satisfies `L2-TELEMETRY-30`.
-- `.env.example`, `README.md` (§ Anonymous usage telemetry) — the disclosure and both opt-outs.
+- `apps/web/app/_lib/telemetry/{config,payload,retention-cutoff,report-start}.test.ts` — unit suites. Satisfies `L2-TELEMETRY-30`.
+- `.env.example`, `README.md` (§ Anonymous usage telemetry) — the disclosure and the env vars.
 
 ## Why budgets are spent by effect, not per request
 The two figures are not equally worth forging. Inflating *total starts* buys an attacker a bigger number on a private dashboard; inflating *unique installs* fakes adoption, which is the only claim these numbers actually make. So the route checks the burst budget first (cheap, before the body is read), then lets `recordStart` report whether the write created a row, and only *then* spends new-install budget. A caller who has run out of new-install budget still gets their existing install counted — the tight budget throttles the expensive effect without punishing an honest developer on a shared address.
@@ -44,7 +45,9 @@ An earlier design counted only installs seen on ≥2 distinct days, so a one-sho
 ## Gotchas
 - `NEXT_PUBLIC_APP_VERSION` is inlined by `next.config.ts` and is absent under Vitest, where it falls back to `"0.0.0"`. `plausibleVersion` treats that placeholder as "unknown ceiling" and skips the check rather than rejecting every report; the ceiling is injectable so tests can assert the real behaviour.
 - `payload.ts` reads the version from `process.env` rather than importing `APP_VERSION` from `_components/app-version.tsx`: the unit suite runs in the node environment and cannot parse JSX.
-- `.backflip/` is gitignored. A clone is therefore a new install, which is the intent — two people sharing one checkout are not two installs, and a fork is not the parent.
+- Install id lives in the `telemetry_identity` table so it survives blue/green release dirs and containers; `.backflip/` (gitignored) is only the fallback, and a read-only container filesystem just means a fresh id when the DB is also down. A clone has its own DB, so it is a new install, which is the intent. Existing file ids are copied into the DB the first time it is reachable.
+- `register()` fires once per server instance, so restarts report each time; the receiver's per-install 60s ceiling (`L2-TELEMETRY-17`) absorbs rapid restarts. `next build` is skipped via `NEXT_PHASE`.
+- Standalone: `instrumentation.ts` compiles to `.next/server/instrumentation.js`, which the standalone trace includes; `NEXT_PUBLIC_APP_VERSION` is inlined at build, so no package.json is needed at runtime.
 - Local verification without touching the running dev server: start a second dev server on a spare port with `TELEMETRY_HASH_SALT` and `NEXT_DIST_DIR` set, post to it, then read both tables directly.
 
 ## Retention without a scheduler

@@ -5,7 +5,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "build": "turbo build",
-    "dev": "node scripts/track-start.mjs & turbo dev",
+    "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
