@@ -28,10 +28,10 @@ function accepted(): NextResponse {
 
 /**
  * POST /api/public/telemetry/start — the one telemetry surface. Receives a
- * start report from `scripts/track-start.mjs` when someone runs `yarn dev` on
- * a checkout of this project.
+ * start report from `instrumentation.ts` whenever a server of this project
+ * starts.
  *
- * Unauthenticated by necessity: the client is a plain Node script in a public
+ * Unauthenticated by necessity: the client ships in a public
  * repository, so it holds no secret worth checking. Defense is therefore about
  * cost and recoverability, in this order:
  *

@@ -46,6 +46,9 @@
 - Both key on `installIdHash`, never a raw install id, and `telemetry_start.ipHash` is an HMAC of the source IP (`L2-DB-36`). The salt is `TELEMETRY_HASH_SALT`, deliberately not `ENCRYPTION_KEY`: these values are only ever compared, never decrypted, so they want a keyed digest rather than reversible encryption.
 - No fk between the two tables. `telemetry_start` rows are written by an unauthenticated endpoint and the join is on the hash; a fk would turn a race between two concurrent first-reports into a write error for something that is allowed to be lossy.
 
+## Telemetry identity table (0020)
+- `telemetry_identity`, drizzle-kit generated, no seed. Single row keyed by unique `kind`, written by the telemetry sender on first start (`L2-DB-38`, `L2-TELEMETRY-39`). Separate from `telemetry_install` (receiver side).
+
 ## Chrome presets table (0018, 0019)
 - `chrome_preset`, drizzle-kit generated, no seed. Owned by the `ui` domain (`L2-UI-55`); `L2-DB-37` is the db-side counterpart.
 - Its own table rather than more columns on `user_preference`: this is a *list*, and that row is deliberately one-per-user (pk-as-fk, `L2-DB-33`).

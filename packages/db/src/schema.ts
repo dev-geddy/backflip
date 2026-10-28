@@ -550,6 +550,24 @@ export const telemetryStart = pgTable(
 )
 
 /**
+ * Telemetry — this deployment's own install id, the one it sends upstream on
+ * every start. Single row (`kind` unique), created on first start. Lives in the
+ * database rather than a file so the id survives blue/green release dirs and
+ * container rebuilds, which would otherwise mint a new install per deploy. The
+ * id is random and carries no information about the host.
+ *
+ * @spec L2-DB-38, L2-TELEMETRY-39
+ */
+export const telemetryIdentity = pgTable("telemetry_identity", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  kind: text("kind").notNull().unique().default("install"),
+  installId: text("installId").notNull(),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+})
+
+/**
  * Chrome colour presets — the palettes offered in the sidebar/header picker.
  *
  * **One table, two kinds.** A `system` row is shipped with the platform and has
