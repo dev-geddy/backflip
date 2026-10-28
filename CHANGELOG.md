@@ -1,3 +1,15 @@
+# [1.21.0](https://github.com/dev-geddy/backflip/compare/v1.20.5...v1.21.0) (2026-10-28)
+
+
+### Bug Fixes
+
+* **web:** anchor the hero fade to the content box on wide screens ([#52](https://github.com/dev-geddy/backflip/issues/52)) ([b3a85ea](https://github.com/dev-geddy/backflip/commit/b3a85ea671ea25af22b62c70ad6825dd3dd4eec1))
+
+
+### Features
+
+* **telemetry:** report every app start ([#53](https://github.com/dev-geddy/backflip/issues/53)) ([f760e2e](https://github.com/dev-geddy/backflip/commit/f760e2eed174e959ccd2baf90f84d77d168e0178))
+
 ## [1.20.5](https://github.com/dev-geddy/backflip/compare/v1.20.4...v1.20.5) (2026-10-27)
 
 
