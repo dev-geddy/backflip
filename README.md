@@ -22,7 +22,7 @@ Stack: Next.js 16 · React 19 · Tailwind v4 · shadcn/ui · Drizzle + Postgres 
 
 > **Self-hosted starter.** You run this yourself and supply your own secrets. The values in `.env.example` are local-dev defaults only — generate real secrets before deploying anywhere (see [Security](#security)).
 
-> **License notice.** As of September 11, 2026, this project is licensed under the [PolyForm Internal Use License 1.0.0](./LICENSE). Versions released before this date remain available under the MIT License under which they were originally published.
+> **License notice.** As of November 15, 2026, this project is licensed under the [Backflip License](./LICENSE) (PolyForm Strict 1.0.0 plus no-commercial-use terms): personal and noncommercial use only. Earlier releases remain available under the licenses they shipped with: MIT before September 11, 2026, and PolyForm Internal Use from then until November 15, 2026.
 
 ## How it works
 Set up once — clone, [provision a droplet](./devops.md), first deploy — then every feature runs the same loop: describe it, let Claude Code build to spec, review the PR, deploy.
@@ -131,9 +131,9 @@ Before deploying, generate real secrets — never reuse the `.env.example` defau
 To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
 
 ## License
-[PolyForm Internal Use License 1.0.0](./LICENSE) © dev-geddy
+[Backflip License](./LICENSE) (PolyForm Strict License 1.0.0 plus Backflip Additional Terms) © dev-geddy
 
-Internal business use is permitted, and so is personal, non-commercial use — hobby projects, study, experiments (see the additional permission at the end of [`LICENSE`](./LICENSE)). Distribution is not permitted. Releases published before September 11, 2026 remain available under the MIT License they shipped with.
+Personal and noncommercial use only. No commercial use of any kind: that includes business and internal company use, client or employer work, hosted services or products, and revenue-generating sites. No redistribution, no copies beyond what your own use needs, and no replicas (including through AI tools). See [`LICENSE`](./LICENSE) for the full terms. Releases published before September 11, 2026 remain under MIT, and those until November 15, 2026 under PolyForm Internal Use. For a commercial license, get in touch via [github.com/dev-geddy](https://github.com/dev-geddy).
 
 <!-- README view pixel. Counts image fetches of this README, served by the live
      deployment (see the GitHub integration in the admin console). GitHub proxies
