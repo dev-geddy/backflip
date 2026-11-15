@@ -1,6 +1,5 @@
 import {
   RiArrowRightLine,
-  RiGitForkLine,
   RiGithubLine,
   RiSparkling2Line,
 } from "@remixicon/react"
@@ -79,32 +78,21 @@ export function Hero() {
               Open Admin
               <RiArrowRightLine className="size-4" aria-hidden="true" />
             </Button>
-            {/* GitHub's /fork route opens the fork dialog (and prompts sign-in
-                when signed out) — the closest thing to a one-click fork. */}
             <Button
               variant="outline"
               size="lg"
               render={
                 <a
-                  href="https://github.com/dev-geddy/backflip/fork"
+                  href="https://github.com/dev-geddy/backflip"
                   target="_blank"
                   rel="noreferrer"
                 />
               }
             >
-              <RiGitForkLine className="size-4" aria-hidden="true" />
-              Fork it, build on it
+              <RiGithubLine className="size-4" aria-hidden="true" />
+              View the source
             </Button>
           </div>
-          <a
-            href="https://github.com/dev-geddy/backflip"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <RiGithubLine className="size-4" aria-hidden="true" />
-            github.com/dev-geddy/backflip
-          </a>
         </div>
       </div>
     </section>
