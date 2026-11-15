@@ -24,6 +24,7 @@ Explicitly **not** owned: page-view analytics on the public site (that is `analy
 - `L2-TELEMETRY-35` — `<TelemetryInstalls installs />` — collapsed-by-default drawer under the cards; one row per install (short hash, platform, version, starts, active days, last seen) with an optimistic switch. Renders nothing when there are no installs. (`(protected)/_components/telemetry-installs.tsx`)
 - `L2-TELEMETRY-32` — `maybePruneOldStarts(now?)` → deleted count, or null when skipped — deletes `telemetry_start` rows older than `retentionCutoff(now)`. Triggered fire-and-forget from an accepted ingest write, at most once per `PRUNE_MIN_INTERVAL_MS` (24h) per process. No scheduler. (`apps/web/app/_lib/telemetry/retention.ts`)
 - `L2-TELEMETRY-38` — Sender install id: resolved DB (`telemetry_identity`, `L2-DB-38`) → `.backflip/install-id` file → fresh random uuid, first hit wins; an empty-but-reachable earlier store is seeded with the id found later, so a file-era id migrates into the DB. Each store call is bounded by the 1.5s timeout. If no store works the report is still sent with a fresh id rather than skipped. `appVersion` comes from build-inlined `NEXT_PUBLIC_APP_VERSION` (no package.json read at runtime). (`report-start.ts`)
+- `L2-TELEMETRY-40` — Start notice: when not opted out, `reportStart()` prints `START_NOTICE` once per server start via `console.info` (`[telemetry] Anonymous start telemetry on — set BACKFLIP_TELEMETRY=off to disable (see README)`), before any store read or request. Opted out → nothing printed. Silent when `NODE_ENV=test`; sink injectable (`ReportDeps.log`). Printing never throws into startup (`L2-TELEMETRY-15`). (`report-start.ts`)
 - `L2-TELEMETRY-04` — `telemetryHash(domain, value)` — HMAC-SHA256 under `TELEMETRY_HASH_SALT`, hex, truncated to 32 chars, domain-separated (`install` / `ip`). Returns null when no salt is set. (`apps/web/app/_lib/telemetry/config.ts`)
 
 ## Schemas
@@ -54,11 +55,11 @@ Explicitly **not** owned: page-view analytics on the public site (that is `analy
 ## Acceptance
 - `L2-TELEMETRY-26` — Fresh DB, salt set: `POST` a valid report → one `telemetry_install` row and one `telemetry_start` row, both carrying hashes rather than the posted uuid or the caller's IP. Repeating within 60s adds nothing. The sixth request in a minute answers `429`.
 - `L2-TELEMETRY-27` — No `TELEMETRY_HASH_SALT`: the same request answers `204` and both tables stay empty.
-- `L2-TELEMETRY-28` — `BACKFLIP_TELEMETRY=off` in the environment: server start makes no network call, reads no install id and creates no `.backflip/install-id`.
+- `L2-TELEMETRY-28` — `BACKFLIP_TELEMETRY=off` in the environment: server start makes no network call, prints no start notice, reads no install id and creates no `.backflip/install-id`.
 - `L2-TELEMETRY-29` — Owner on `/backflip` sees both cards with 30-day figures, deltas against the previous 30 days, and a chart each; a teammate sees no Adoption section. With no data, both cards read "Nothing reported yet".
 - `L2-TELEMETRY-36` — Owner opens **Manage installs**, switches one install off → both figures drop by that install's contribution on reload, the row stays visible and dimmed, and switching it back on restores them. A failed write reverts the switch and toasts.
 - `L2-TELEMETRY-37` — A `telemetry_start` row older than the retention window is gone after the next accepted ingest write in a process that has not swept for 24h; its `telemetry_install` row is untouched.
-- `L2-TELEMETRY-30` — Unit suites cover the sender (opt-out, four-field payload, install-id fallback order, error swallowing), hashing (stability, domain separation, salt rotation, no raw value) payload validation (strict fields, version ceiling), and the retention cutoff (window, leap/year boundaries): `apps/web/app/_lib/telemetry/*.test.ts`.
+- `L2-TELEMETRY-30` — Unit suites cover the sender (opt-out, start notice printed when on and silent when off, four-field payload, install-id fallback order, error swallowing), hashing (stability, domain separation, salt rotation, no raw value) payload validation (strict fields, version ceiling), and the retention cutoff (window, leap/year boundaries): `apps/web/app/_lib/telemetry/*.test.ts`.
 
 ## Constrained L3
 - `/docs/notes/telemetry.md`

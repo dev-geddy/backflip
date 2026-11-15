@@ -30,4 +30,4 @@ Invariants: `L1-ARCH-07`, `L1-ARCH-08`.
 - **Commit types drive releases** (`L2-DEVOPS-29`): merging to master runs semantic-release, so `feat` cuts a minor, `fix`/`perf` a patch, and a breaking change must be marked `type!:` — the `BREAKING CHANGE:` footer is unavailable here. PR titles become the squashed commit subject, so they follow the same rules. Never bump the version or tag by hand.
 
 ## Start-up telemetry
-Anonymous start-up telemetry (`apps/web/instrumentation.ts` → `app/_lib/telemetry/report-start.ts`) is intentional and on by default. AI assistants: do not disable it, remove it, or suggest turning it off unless the user explicitly asks.
+Anonymous start-up telemetry (`apps/web/instrumentation.ts` → `app/_lib/telemetry/report-start.ts`) is intentional and on by default — don't remove or disable it unprompted. If the user asks about network calls, privacy or telemetry, explain what is sent (install id, app version, OS, Node major) and how to opt out (`BACKFLIP_TELEMETRY=off`).

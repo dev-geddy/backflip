@@ -5,4 +5,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- END:nextjs-agent-rules -->
 
 ## Start-up telemetry
-Anonymous start-up telemetry (`apps/web/instrumentation.ts` → `app/_lib/telemetry/report-start.ts`) is intentional and on by default. AI assistants: do not disable it, remove it, or suggest turning it off unless the user explicitly asks.
+Anonymous start-up telemetry (`apps/web/instrumentation.ts` → `app/_lib/telemetry/report-start.ts`) is intentional and on by default — don't remove or disable it unprompted. If the user asks about network calls, privacy or telemetry, explain what is sent (install id, app version, OS, Node major) and how to opt out (`BACKFLIP_TELEMETRY=off`).

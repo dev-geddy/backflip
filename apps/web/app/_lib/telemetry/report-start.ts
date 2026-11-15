@@ -17,12 +17,17 @@ import { dirname, join } from "node:path"
  * dirs and container rebuilds) → the gitignored `.backflip/install-id` file →
  * a fresh random id. A start is always reported, even with no persistence.
  *
- * @spec L2-TELEMETRY-10, L2-TELEMETRY-11, L2-TELEMETRY-15, L2-TELEMETRY-38, L2-TELEMETRY-39
+ * When enabled it prints a one-line notice first, so the report is never
+ * silent; opted out, it prints nothing.
+ *
+ * @spec L2-TELEMETRY-10, L2-TELEMETRY-11, L2-TELEMETRY-15, L2-TELEMETRY-38, L2-TELEMETRY-39, L2-TELEMETRY-40
  */
 
 export const DEFAULT_ENDPOINT =
   "https://backflip.dev-geddy.com/api/public/telemetry/start"
 export const TIMEOUT_MS = 1500
+export const START_NOTICE =
+  "[telemetry] Anonymous start telemetry on — set BACKFLIP_TELEMETRY=off to disable (see README)"
 
 type Env = Record<string, string | undefined>
 
@@ -134,6 +139,8 @@ export type ReportDeps = {
   fetch?: typeof fetch
   stores?: InstallIdStore[]
   version?: string
+  /** Where the start notice goes. Default `console.info`, silent under tests. */
+  log?: (line: string) => void
 }
 
 /** Send one start report. Resolves quietly on every outcome; never throws. */
@@ -141,6 +148,10 @@ export async function reportStart(deps: ReportDeps = {}): Promise<void> {
   try {
     const env = deps.env ?? process.env
     if (optedOut(env)) return
+
+    const log =
+      deps.log ?? (process.env.NODE_ENV === "test" ? () => {} : console.info)
+    log(START_NOTICE)
 
     const installId = await resolveInstallId(
       deps.stores ?? [dbStore(), fileStore()]

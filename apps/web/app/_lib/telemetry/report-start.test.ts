@@ -9,6 +9,7 @@ import {
   optedOut,
   reportStart,
   resolveInstallId,
+  START_NOTICE,
   type InstallIdStore,
 } from "./report-start"
 
@@ -140,6 +141,32 @@ describe("reportStart", () => {
     })
     expect(fetchMock).not.toHaveBeenCalled()
     expect(store.writes).toEqual([])
+  })
+
+  it("prints the start notice once when enabled", async () => {
+    const log = vi.fn()
+    await reportStart({
+      env: {},
+      fetch: vi.fn(
+        async () => new Response(null, { status: 204 })
+      ) as unknown as typeof fetch,
+      stores: [memory(A)],
+      log,
+    })
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledWith(START_NOTICE)
+    expect(START_NOTICE).toContain("BACKFLIP_TELEMETRY=off")
+  })
+
+  it("prints nothing when opted out", async () => {
+    const log = vi.fn()
+    await reportStart({
+      env: { BACKFLIP_TELEMETRY: "off" },
+      fetch: vi.fn() as unknown as typeof fetch,
+      stores: [memory(A)],
+      log,
+    })
+    expect(log).not.toHaveBeenCalled()
   })
 
   it("swallows network errors", async () => {
