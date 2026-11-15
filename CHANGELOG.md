@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/dev-geddy/backflip/compare/v1.21.0...v1.22.0) (2026-11-15)
+
+
+### Features
+
+* **telemetry:** print a start-up notice while telemetry is on ([f213a16](https://github.com/dev-geddy/backflip/commit/f213a16a4f8f95f2e6383aa615f9cc08bd047a69))
+
 # [1.21.0](https://github.com/dev-geddy/backflip/compare/v1.20.5...v1.21.0) (2026-10-28)
 
 
