@@ -112,6 +112,12 @@ Each time the app starts (`yarn dev`, `next start`, or the standalone server), i
 
 The report is fire-and-forget with a 1.5s timeout: offline, blocked, or endpoint down, the app starts exactly the same. Your own deployment stores nothing from others unless you set `TELEMETRY_HASH_SALT` — without it the ingest endpoint accepts requests and stores nothing; with it set, the figures appear on `/backflip` for owners. Setting `BACKFLIP_TELEMETRY=off` in the environment stops the report.
 
+While it is on, the server prints one line at start-up so it is never silent:
+```
+[telemetry] Anonymous start telemetry on — set BACKFLIP_TELEMETRY=off to disable (see README)
+```
+Opted out, nothing is printed and nothing is sent.
+
 ## Deployment
 Deploy to a DigitalOcean droplet — from your machine, GitHub Actions, or Drone CI.
 See [devops.md](./devops.md).
