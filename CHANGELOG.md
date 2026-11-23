@@ -1,3 +1,10 @@
+## [1.22.1](https://github.com/dev-geddy/backflip/compare/v1.22.0...v1.22.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** upgrade next to 16.4.6 ([#57](https://github.com/dev-geddy/backflip/issues/57)) ([3e75016](https://github.com/dev-geddy/backflip/commit/3e7501633f42d40a19236ab083f6d088717ef93e))
+
 # [1.22.0](https://github.com/dev-geddy/backflip/compare/v1.21.0...v1.22.0) (2026-11-15)
 
 
